@@ -967,6 +967,49 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme);
   }, []);
 
+  const exportReport = async () => {
+    try {
+      const reportData = {
+        filename: `Reporte_SGSI_${new Date().toISOString().split('T')[0]}.pdf`,
+        generated_at: new Date().toISOString(),
+        view: view,
+        summary: summary,
+        kpis: kpis,
+        incidents: incidents,
+        incident_stats: incidentStats,
+        controls: controls,
+        compliance_stats: complianceStats,
+        risk_current: riskCurrent,
+        risk_domains: riskDomains,
+        snapshots: snapshots
+      };
+
+      const response = await fetch('https://n8n.agustinynatalia.site/webhook/bcc86df1-874b-4314-80ea-b4da42acb961', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reportData)
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = reportData.filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+      } else {
+        console.error('Error al exportar reporte:', response.statusText);
+        alert('Error al generar el reporte. Intente nuevamente.');
+      }
+    } catch (error) {
+      console.error('Error al exportar reporte:', error);
+      alert('Error al conectar con el servicio de reportes.');
+    }
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -1174,7 +1217,7 @@ function App() {
             <button className="glass-card" style={{ padding: '0.75rem', color: 'var(--text-main)', cursor: 'pointer' }} onClick={fetchData}>
               <RefreshCcw size={20} className={loading ? 'animate-spin' : ''} />
             </button>
-            <button className="glass-card desktop-only" style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)', cursor: 'pointer' }}>
+            <button className="glass-card desktop-only" style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)', cursor: 'pointer' }} onClick={exportReport}>
               <Download size={20} />
               <span>Exportar Reporte</span>
             </button>
