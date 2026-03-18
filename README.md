@@ -82,6 +82,10 @@ docker-compose up --build
 - `/dashboard` - Métricas del dashboard
 - `/snapshots` - Snapshots históricos
 
+## Autor
+
+Agustin Peralta
+
 ## Licencia
 
-Privado - Antigravity
+MIT License - Copyright (c) 2026 Agustin Peralta
