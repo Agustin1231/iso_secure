@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ISO_SECURE — API KPIs SGSI</title>
+<title>ISO_SECURE â€” API KPIs SGSI</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -148,6 +148,68 @@
     flex: 1;
     height: 1px;
     background: var(--border);
+  }
+
+  /* Content card */
+  .content-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 24px;
+    margin-bottom: 32px;
+  }
+  .content-card h2 {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 16px;
+    letter-spacing: 0.05em;
+  }
+  .content-card p {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+  .content-card p:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Tables */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-top: 16px;
+  }
+  .data-table th {
+    text-align: left;
+    padding: 10px 12px;
+    background: var(--surface2);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border-bottom: 1px solid var(--border);
+  }
+  .data-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .data-table tr:last-child td {
+    border-bottom: none;
+  }
+  .data-table code {
+    color: var(--accent);
+    background: rgba(0,212,255,0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
   }
 
   /* Architecture flow */
@@ -353,20 +415,13 @@
     border-radius: 2px;
     border: 1px solid rgba(245,158,11,0.3);
   }
-  .fk-badge {
-    font-size: 9px;
-    color: var(--muted);
-    background: var(--surface2);
-    padding: 1px 4px;
-    border-radius: 2px;
-    border: 1px solid var(--border);
-  }
 
   /* Footer metrics */
   .metrics-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 12px;
+    margin-bottom: 48px;
   }
   .metric-card {
     background: var(--surface);
@@ -394,13 +449,43 @@
     letter-spacing: 0.1em;
   }
 
-  @media (max-width: 700px) {
-    .arch-container { grid-template-columns: 1fr; }
-    .arrow { display: none; }
-    .metrics-row { grid-template-columns: repeat(2, 1fr); }
-    .header { flex-direction: column; }
-    .header-right { align-items: flex-start; }
+  /* Info card */
+  .info-card {
+    background: linear-gradient(135deg, var(--accent) 0%, #0099cc 100%);
+    border-radius: 6px;
+    padding: 24px;
+    margin-bottom: 32px;
   }
+  .info-card h3 {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 12px;
+  }
+  .info-card p {
+    font-size: 13px;
+    color: rgba(255,255,255,0.9);
+    margin-bottom: 6px;
+  }
+  .info-card a {
+    color: #fff;
+    font-weight: 600;
+  }
+
+  /* Back link */
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--accent);
+    text-decoration: none;
+    font-family: var(--mono);
+    font-size: 12px;
+    margin-bottom: 24px;
+    transition: opacity 0.2s;
+  }
+  .back-link:hover { opacity: 0.8; }
 
   /* Ecosistema image block */
   .ecosistema-block {
@@ -423,20 +508,35 @@
     border-radius: 3px;
   }
 
+  @media (max-width: 700px) {
+    .arch-container { grid-template-columns: 1fr; }
+    .arrow { display: none; }
+    .metrics-row { grid-template-columns: repeat(2, 1fr); }
+    .header { flex-direction: column; }
+    .header-right { align-items: flex-start; }
+  }
 </style>
 </head>
 <body>
 <div class="page">
+
+  <!-- Back Link -->
+  <a href="/" class="back-link">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    Volver al Dashboard
+  </a>
 
   <!-- Header -->
   <div class="header">
     <div class="header-left">
       <div class="badge">ISO_SECURE 27001</div>
       <h1>SGSI <span>KPI</span> API</h1>
-      <div class="subtitle">// Arquitectura de endpoints — Indicadores y Métricas de Seguridad</div>
+      <div class="subtitle">// API de Indicadores y Métricas de Seguridad</div>
     </div>
     <div class="header-right">
-      <div class="version-tag">v1.0.0 — PoC</div>
+      <div class="version-tag">v1.0.0 â€” Production</div>
       <div class="stack-tags">
         <span class="tag">FastAPI</span>
         <span class="tag">PostgreSQL</span>
@@ -447,13 +547,15 @@
     </div>
   </div>
 
-  <!-- Diagramas de Arquitectura -->
+    <!-- Ecosistema KPIs -->
   <div class="ecosistema-block">
     <div class="section-label" style="margin-bottom:12px;">Ecosistema de indicadores SGSI (ISO/IEC 27001)</div>
     <div class="ecosistema-img-wrap">
       <img class="ecosistema-img" src="imagen1.png" alt="Ecosistema SGSI">
     </div>
   </div>
+
+  <!-- Flujo de Autenticación -->
   <div class="ecosistema-block">
     <div class="section-label" style="margin-bottom:12px;">Flujo de Autenticación y Autorización</div>
     <div class="ecosistema-img-wrap">
@@ -461,25 +563,98 @@
     </div>
   </div>
 
-  <!-- Architecture layers -->
-  <div class="section-label">Arquitectura del sistema</div>
+  <!-- Metrics Summary -->
+  <div class="metrics-row">
+    <div class="metric-card">
+      <div class="metric-num">16</div>
+      <div class="metric-label">Endpoints totales</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num">4</div>
+      <div class="metric-label">Dominios API</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num">4</div>
+      <div class="metric-label">Tablas PostgreSQL</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num">ISO</div>
+      <div class="metric-label">27001 / 27004</div>
+    </div>
+  </div>
+
+  <!-- 01 Descripción -->
+  <div class="section-label">01 / Descripción del Proyecto</div>
+  <div class="content-card">
+    <p><strong>ISO_SECURE</strong> es una API REST desarrollada con FastAPI que expone endpoints para consultar, registrar y analizar los Indicadores Clave de Rendimiento (KPIs) del Sistema de Gestión de Seguridad de la Información (SGSI) de una organización, alineados con la norma <strong>ISO/IEC 27001:2022</strong> y el marco de medición <strong>ISO/IEC 27004</strong>.</p>
+    <p>El sistema permite a la alta dirección disponer de información cuantitativa y trazable sobre el estado de seguridad de la información, facilitando la toma de decisiones, la mejora continua bajo el ciclo PHVA (Planificar-Hacer-Verificar-Actuar) y el cumplimiento normativo.</p>
+  </div>
+
+  <!-- 02 Stack -->
+  <div class="section-label">02 / Stack Tecnológico</div>
+  <div class="content-card">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Capa</th>
+          <th>Tecnología</th>
+          <th>Rol</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Backend</td>
+          <td><code>FastAPI + Python 3.11</code></td>
+          <td>Framework principal de la API REST</td>
+        </tr>
+        <tr>
+          <td>Validación</td>
+          <td><code>Pydantic v2</code></td>
+          <td>Schemas de request/response y validación de datos</td>
+        </tr>
+        <tr>
+          <td>ORM / DB</td>
+          <td><code>SQLAlchemy + PostgreSQL</code></td>
+          <td>Persistencia de datos y modelado relacional</td>
+        </tr>
+        <tr>
+          <td>Servidor</td>
+          <td><code>Uvicorn (ASGI)</code></td>
+          <td>Servidor de producción asincrónico</td>
+        </tr>
+        <tr>
+          <td>Frontend</td>
+          <td><code>React + Vite</code></td>
+          <td>Dashboard interactivo de KPIs</td>
+        </tr>
+        <tr>
+          <td>Docs</td>
+          <td><code>Swagger UI / ReDoc</code></td>
+          <td>Documentación interactiva auto-generada</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 03 Arquitectura -->
+  <div class="section-label">03 / Arquitectura del Sistema</div>
   <div class="arch-container">
     <div class="arch-layer client">
       <div class="layer-title">Cliente / Consumer</div>
       <div class="layer-items">
-        <div class="layer-item highlight-yellow">Swagger UI / Docs</div>
-        <div class="layer-item">Dashboard Frontend</div>
+        <div class="layer-item highlight-yellow">Dashboard Frontend</div>
+        <div class="layer-item">Swagger UI / Docs</div>
         <div class="layer-item">n8n Workflows</div>
         <div class="layer-item">Postman / Tests</div>
       </div>
     </div>
     <div class="arrow">
-      <span>→</span>
+      <span>â†’</span>
       <div class="arrow-label">HTTP<br>REST</div>
-      <span>←</span>
+      <span>â†</span>
     </div>
     <div class="arch-layer api">
-      <div class="layer-title">FastAPI — Core</div>
+      <div class="layer-title">FastAPI â€” Core</div>
       <div class="layer-items">
         <div class="layer-item highlight">Router /incidents</div>
         <div class="layer-item highlight">Router /controls</div>
@@ -490,12 +665,12 @@
       </div>
     </div>
     <div class="arrow">
-      <span>→</span>
+      <span>â†’</span>
       <div class="arrow-label">SQLAlchemy<br>ORM</div>
-      <span>←</span>
+      <span>â†</span>
     </div>
     <div class="arch-layer db">
-      <div class="layer-title">PostgreSQL — DB</div>
+      <div class="layer-title">PostgreSQL â€” DB</div>
       <div class="layer-items">
         <div class="layer-item highlight-green">incidents</div>
         <div class="layer-item highlight-green">controls</div>
@@ -505,31 +680,31 @@
     </div>
   </div>
 
-  <!-- Endpoints -->
-  <div class="section-label">Endpoints de la API</div>
+  <!-- 04 Endpoints -->
+  <div class="section-label">04 / Endpoints de la API</div>
   <div class="endpoints-grid">
 
     <!-- Incidents -->
     <div class="endpoint-group group-incidents">
       <div class="group-header">
-        <div class="group-title">🔴 /incidents</div>
+        <div class="group-title"><span style="color:#ef4444">●</span> /incidents</div>
         <div class="group-count">5 endpoints</div>
       </div>
       <div class="endpoint-list">
         <div class="endpoint-row">
           <span class="method get">GET</span>
           <span class="endpoint-path">/incidents</span>
-          <span class="endpoint-desc">Listar todos</span>
+          <span class="endpoint-desc">Listar todos los incidentes con filtros</span>
         </div>
         <div class="endpoint-row">
           <span class="method post">POST</span>
           <span class="endpoint-path">/incidents</span>
-          <span class="endpoint-desc">Reportar incidente</span>
+          <span class="endpoint-desc">Reportar nuevo incidente</span>
         </div>
         <div class="endpoint-row">
           <span class="method get">GET</span>
           <span class="endpoint-path">/incidents/<span class="param">{id}</span></span>
-          <span class="endpoint-desc">Detalle</span>
+          <span class="endpoint-desc">Obtener detalle específico</span>
         </div>
         <div class="endpoint-row">
           <span class="method put">PUT</span>
@@ -539,7 +714,7 @@
         <div class="endpoint-row">
           <span class="method get">GET</span>
           <span class="endpoint-path">/incidents/stats</span>
-          <span class="endpoint-desc">KPIs incidentes</span>
+          <span class="endpoint-desc">KPIs: total, resueltos, MTTR</span>
         </div>
       </div>
     </div>
@@ -547,29 +722,29 @@
     <!-- Controls -->
     <div class="endpoint-group group-controls">
       <div class="group-header">
-        <div class="group-title">🟣 /controls</div>
+        <div class="group-title"><span style="color:#7c3aed">●</span> /controls</div>
         <div class="group-count">4 endpoints</div>
       </div>
       <div class="endpoint-list">
         <div class="endpoint-row">
           <span class="method get">GET</span>
           <span class="endpoint-path">/controls</span>
-          <span class="endpoint-desc">Listar controles</span>
+          <span class="endpoint-desc">Listar controles ISO 27001</span>
         </div>
         <div class="endpoint-row">
           <span class="method post">POST</span>
           <span class="endpoint-path">/controls</span>
-          <span class="endpoint-desc">Crear control</span>
+          <span class="endpoint-desc">Registrar nuevo control</span>
         </div>
         <div class="endpoint-row">
           <span class="method put">PUT</span>
           <span class="endpoint-path">/controls/<span class="param">{id}</span></span>
-          <span class="endpoint-desc">Actualizar</span>
+          <span class="endpoint-desc">Actualizar cumplimiento</span>
         </div>
         <div class="endpoint-row">
           <span class="method get">GET</span>
           <span class="endpoint-path">/controls/compliance</span>
-          <span class="endpoint-desc">% Cumplimiento</span>
+          <span class="endpoint-desc">% global de cumplimiento</span>
         </div>
       </div>
     </div>
@@ -577,29 +752,29 @@
     <!-- Risk -->
     <div class="endpoint-group group-risk">
       <div class="group-header">
-        <div class="group-title">🟡 /risk</div>
+        <div class="group-title"><span style="color:#f59e0b">●</span> /risk</div>
         <div class="group-count">4 endpoints</div>
       </div>
       <div class="endpoint-list">
         <div class="endpoint-row">
           <span class="method get">GET</span>
           <span class="endpoint-path">/risk/current</span>
-          <span class="endpoint-desc">Nivel actual</span>
+          <span class="endpoint-desc">Nivel de riesgo actual</span>
         </div>
         <div class="endpoint-row">
           <span class="method post">POST</span>
           <span class="endpoint-path">/risk</span>
-          <span class="endpoint-desc">Registrar nivel</span>
+          <span class="endpoint-desc">Registrar evaluación</span>
         </div>
         <div class="endpoint-row">
           <span class="method get">GET</span>
           <span class="endpoint-path">/risk/history</span>
-          <span class="endpoint-desc">Historial</span>
+          <span class="endpoint-desc">Historial por período</span>
         </div>
         <div class="endpoint-row">
           <span class="method get">GET</span>
           <span class="endpoint-path">/risk/by-domain</span>
-          <span class="endpoint-desc">Riesgo por dominio</span>
+          <span class="endpoint-desc">Riesgo por dominio ISO</span>
         </div>
       </div>
     </div>
@@ -607,32 +782,32 @@
     <!-- Dashboard -->
     <div class="endpoint-group group-dashboard">
       <div class="group-header">
-        <div class="group-title">🔵 /dashboard</div>
+        <div class="group-title"><span style="color:#00d4ff">●</span> /dashboard</div>
         <div class="group-count">3 endpoints</div>
       </div>
       <div class="endpoint-list">
         <div class="endpoint-row">
           <span class="method get">GET</span>
           <span class="endpoint-path">/dashboard/summary</span>
-          <span class="endpoint-desc">Resumen ejecutivo</span>
+          <span class="endpoint-desc">Resumen ejecutivo consolidado</span>
         </div>
         <div class="endpoint-row">
           <span class="method get">GET</span>
           <span class="endpoint-path">/dashboard/kpis</span>
-          <span class="endpoint-desc">Todos los KPIs</span>
+          <span class="endpoint-desc">KPIs con tendencias</span>
         </div>
         <div class="endpoint-row">
           <span class="method get">GET</span>
           <span class="endpoint-path">/dashboard/export</span>
-          <span class="endpoint-desc">Export JSON/CSV</span>
+          <span class="endpoint-desc">Exportar JSON/CSV</span>
         </div>
       </div>
     </div>
 
   </div>
 
-  <!-- Data models -->
-  <div class="section-label">Modelos de datos — PostgreSQL</div>
+  <!-- 05 Modelos -->
+  <div class="section-label">05 / Modelo de Datos â€” PostgreSQL</div>
   <div class="models-grid">
 
     <div class="model-card">
@@ -644,8 +819,8 @@
         <div class="field-row"><span class="field-name">id</span><span class="field-type">UUID</span><span class="pk-badge">PK</span></div>
         <div class="field-row"><span class="field-name">title</span><span class="field-type">VARCHAR(200)</span></div>
         <div class="field-row"><span class="field-name">description</span><span class="field-type">TEXT</span></div>
-        <div class="field-row"><span class="field-name">severity</span><span class="field-type">ENUM(low/med/high/crit)</span></div>
-        <div class="field-row"><span class="field-name">status</span><span class="field-type">ENUM(open/in_progress/closed)</span></div>
+        <div class="field-row"><span class="field-name">severity</span><span class="field-type">ENUM</span></div>
+        <div class="field-row"><span class="field-name">status</span><span class="field-type">ENUM</span></div>
         <div class="field-row"><span class="field-name">reported_at</span><span class="field-type">TIMESTAMP</span></div>
         <div class="field-row"><span class="field-name">resolved_at</span><span class="field-type">TIMESTAMP?</span></div>
         <div class="field-row"><span class="field-name">category</span><span class="field-type">VARCHAR(100)</span></div>
@@ -661,7 +836,7 @@
         <div class="field-row"><span class="field-name">id</span><span class="field-type">UUID</span><span class="pk-badge">PK</span></div>
         <div class="field-row"><span class="field-name">iso_domain</span><span class="field-type">VARCHAR(10)</span></div>
         <div class="field-row"><span class="field-name">name</span><span class="field-type">VARCHAR(200)</span></div>
-        <div class="field-row"><span class="field-name">status</span><span class="field-type">ENUM(compliant/partial/non)</span></div>
+        <div class="field-row"><span class="field-name">status</span><span class="field-type">ENUM</span></div>
         <div class="field-row"><span class="field-name">compliance_pct</span><span class="field-type">DECIMAL(5,2)</span></div>
         <div class="field-row"><span class="field-name">last_reviewed</span><span class="field-type">DATE</span></div>
         <div class="field-row"><span class="field-name">responsible</span><span class="field-type">VARCHAR(100)</span></div>
@@ -676,10 +851,10 @@
       <div class="model-fields">
         <div class="field-row"><span class="field-name">id</span><span class="field-type">UUID</span><span class="pk-badge">PK</span></div>
         <div class="field-row"><span class="field-name">domain</span><span class="field-type">VARCHAR(100)</span></div>
-        <div class="field-row"><span class="field-name">level</span><span class="field-type">ENUM(low/medium/high/critical)</span></div>
-        <div class="field-row"><span class="field-name">score</span><span class="field-type">INTEGER (1–25)</span></div>
-        <div class="field-row"><span class="field-name">probability</span><span class="field-type">INTEGER (1–5)</span></div>
-        <div class="field-row"><span class="field-name">impact</span><span class="field-type">INTEGER (1–5)</span></div>
+        <div class="field-row"><span class="field-name">level</span><span class="field-type">ENUM</span></div>
+        <div class="field-row"><span class="field-name">score</span><span class="field-type">INTEGER 1-25</span></div>
+        <div class="field-row"><span class="field-name">probability</span><span class="field-type">INTEGER 1-5</span></div>
+        <div class="field-row"><span class="field-name">impact</span><span class="field-type">INTEGER 1-5</span></div>
         <div class="field-row"><span class="field-name">recorded_at</span><span class="field-type">TIMESTAMP</span></div>
       </div>
     </div>
@@ -702,184 +877,122 @@
 
   </div>
 
-  <!-- Summary metrics -->
-  <div class="section-label">Resumen del PoC</div>
-  <div class="metrics-row">
-    <div class="metric-card">
-      <div class="metric-num">16</div>
-      <div class="metric-label">Endpoints totales</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-num">4</div>
-      <div class="metric-label">Dominios de la API</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-num">4</div>
-      <div class="metric-label">Tablas PostgreSQL</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-num">ISO</div>
-      <div class="metric-label">27001 / 27004</div>
-    </div>
-  </div>
-
-  <!-- Descripción del Proyecto -->
-  <div class="section-label">Descripción del Proyecto</div>
-  <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 20px; margin-bottom: 20px;">
-    <p style="margin-bottom: 12px;">ISO_SECURE es una API REST desarrollada con FastAPI que expone endpoints para consultar, registrar y analizar los <strong style="color: var(--accent);">Indicadores Clave de Rendimiento (KPIs)</strong> del Sistema de Gestión de Seguridad de la Información (SGSI) de una organización, alineados con la norma ISO/IEC 27001:2022 y el marco de medición ISO/IEC 27004.</p>
-    <p style="color: var(--muted); font-size: 13px;">El sistema permite a la alta dirección disponer de información cuantitativa y trazable sobre el estado de seguridad de la información, facilitando la toma de decisiones, la mejora continua bajo el ciclo PHVA (Planificar-Hacer-Verificar-Actuar) y el cumplimiento normativo.</p>
-  </div>
-
-  <!-- Stack Tecnológico -->
-  <div class="section-label">Stack Tecnológico</div>
-  <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 20px;">
-    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+  <!-- 06 KPIs -->
+  <div class="section-label">06 / KPIs Expuestos por la API</div>
+  <div class="content-card">
+    <table class="data-table">
       <thead>
-        <tr style="background: var(--surface2);">
-          <th style="padding: 12px; text-align: left; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;">Capa</th>
-          <th style="padding: 12px; text-align: left; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;">Tecnología</th>
-          <th style="padding: 12px; text-align: left; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;">Rol</th>
+        <tr>
+          <th>KPI</th>
+          <th>Endpoint</th>
+          <th>Descripción</th>
+          <th>Tipo</th>
         </tr>
       </thead>
       <tbody>
-        <tr style="border-top: 1px solid var(--border);">
-          <td style="padding: 12px; color: var(--accent);">Backend</td>
-          <td style="padding: 12px; font-family: var(--mono);">FastAPI + Python 3.11</td>
-          <td style="padding: 12px; color: var(--muted);">Framework principal de la API REST</td>
+        <tr>
+          <td>Incidentes totales / período</td>
+          <td><code>GET /incidents/stats</code></td>
+          <td>Cantidad de incidentes en rango de fechas</td>
+          <td>Lagging</td>
         </tr>
-        <tr style="border-top: 1px solid var(--border);">
-          <td style="padding: 12px; color: var(--accent2);">Validación</td>
-          <td style="padding: 12px; font-family: var(--mono);">Pydantic v2</td>
-          <td style="padding: 12px; color: var(--muted);">Schemas de request/response y validación de datos</td>
+        <tr>
+          <td>Tasa de resolución</td>
+          <td><code>GET /incidents/stats</code></td>
+          <td>Porcentaje de incidentes cerrados vs abiertos</td>
+          <td>Lagging</td>
         </tr>
-        <tr style="border-top: 1px solid var(--border);">
-          <td style="padding: 12px; color: var(--accent3);">ORM / DB</td>
-          <td style="padding: 12px; font-family: var(--mono);">SQLAlchemy + PostgreSQL</td>
-          <td style="padding: 12px; color: var(--muted);">Persistencia de datos y modelado relacional</td>
+        <tr>
+          <td>Tiempo medio de resolución (MTTR)</td>
+          <td><code>GET /incidents/stats</code></td>
+          <td>Promedio de horas para cerrar un incidente</td>
+          <td>Lagging</td>
         </tr>
-        <tr style="border-top: 1px solid var(--border);">
-          <td style="padding: 12px; color: var(--accent4);">Servidor</td>
-          <td style="padding: 12px; font-family: var(--mono);">Uvicorn (ASGI)</td>
-          <td style="padding: 12px; color: var(--muted);">Servidor de producción asincrónico</td>
+        <tr>
+          <td>Cumplimiento de controles (%)</td>
+          <td><code>GET /controls/compliance</code></td>
+          <td>Porcentaje global de controles ISO cumplidos</td>
+          <td>KPI Proceso</td>
         </tr>
-        <tr style="border-top: 1px solid var(--border);">
-          <td style="padding: 12px; color: var(--danger);">Docs</td>
-          <td style="padding: 12px; font-family: var(--mono);">Swagger UI / ReDoc</td>
-          <td style="padding: 12px; color: var(--muted);">Documentación interactiva auto-generada</td>
+        <tr>
+          <td>No conformidades activas</td>
+          <td><code>GET /controls</code></td>
+          <td>Controles en estado non_compliant</td>
+          <td>KPI Proceso</td>
+        </tr>
+        <tr>
+          <td>Nivel de riesgo global</td>
+          <td><code>GET /risk/current</code></td>
+          <td>Score consolidado de riesgo del SGSI</td>
+          <td>KRI</td>
+        </tr>
+        <tr>
+          <td>Riesgo por dominio ISO</td>
+          <td><code>GET /risk/by-domain</code></td>
+          <td>Mapa de riesgo desglosado por dominio A.X</td>
+          <td>KRI</td>
+        </tr>
+        <tr>
+          <td>Snapshot ejecutivo</td>
+          <td><code>GET /dashboard/summary</code></td>
+          <td>Visión consolidada de todos los KPIs</td>
+          <td>Dashboard</td>
         </tr>
       </tbody>
     </table>
   </div>
 
-  <!-- KPIs Expuestos -->
-  <div class="section-label">KPIs Expuestos por la API</div>
-  <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 20px;">
-    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+  <!-- 07 Despliegue -->
+  <div class="section-label">07 / Estrategia de Despliegue</div>
+  <div class="content-card">
+    <p><strong>Desarrollo local:</strong> uvicorn main:app --reload | Python 3.11 + venv | PostgreSQL local | Swagger en localhost:8000/docs</p>
+    <p><strong>Producción (VPS):</strong> Docker + Coolify | Cloudflare Tunnel | PostgreSQL en contenedor | Dominio: fast-api.agustinynatalia.site</p>
+  </div>
+
+  <!-- 08 ISO -->
+  <div class="section-label">08 / Alineación con ISO/IEC 27001:2022</div>
+  <div class="content-card">
+    <p>El diseÃ±o de la API responde directamente a la <strong>Cláusula 9</strong> de ISO 27001 (Evaluación del DesempeÃ±o), la cual exige que la organización evalÃºe el rendimiento y la eficacia del SGSI de manera sistemática. Complementariamente, la ISO/IEC 27004 establece el marco metodológico para definir, recopilar y analizar los indicadores â€” ciclo que esta API automatiza.</p>
+    <table class="data-table">
       <thead>
-        <tr style="background: var(--surface2);">
-          <th style="padding: 10px; text-align: left; color: var(--muted); font-size: 10px; text-transform: uppercase;">KPI</th>
-          <th style="padding: 10px; text-align: left; color: var(--muted); font-size: 10px; text-transform: uppercase;">Endpoint</th>
-          <th style="padding: 10px; text-align: left; color: var(--muted); font-size: 10px; text-transform: uppercase;">Tipo</th>
+        <tr>
+          <th>Norma / Cláusula</th>
+          <th>Aplicación en la API</th>
         </tr>
       </thead>
       <tbody>
-        <tr style="border-top: 1px solid var(--border);">
-          <td style="padding: 10px;">Incidentes totales / período</td>
-          <td style="padding: 10px; font-family: var(--mono); color: var(--accent); font-size: 11px;">GET /incidents/stats</td>
-          <td style="padding: 10px;"><span style="background: rgba(239,68,68,0.1); color: var(--danger); padding: 2px 6px; border-radius: 3px; font-size: 10px;">Lagging</span></td>
+        <tr>
+          <td>ISO 27001 â€” Cláusula 9.1 (Monitoreo y medición)</td>
+          <td>Los endpoints GET /incidents/stats y GET /controls/compliance proveen las métricas de desempeÃ±o requeridas por la norma para evaluar la eficacia del SGSI.</td>
         </tr>
-        <tr style="border-top: 1px solid var(--border);">
-          <td style="padding: 10px;">Tasa de resolución</td>
-          <td style="padding: 10px; font-family: var(--mono); color: var(--accent); font-size: 11px;">GET /incidents/stats</td>
-          <td style="padding: 10px;"><span style="background: rgba(239,68,68,0.1); color: var(--danger); padding: 2px 6px; border-radius: 3px; font-size: 10px;">Lagging</span></td>
+        <tr>
+          <td>ISO 27001 â€” Cláusula 9.3 (Revisión por la dirección)</td>
+          <td>GET /dashboard/summary genera el reporte ejecutivo consolidado listo para presentar a la alta dirección en las revisiones periódicas.</td>
         </tr>
-        <tr style="border-top: 1px solid var(--border);">
-          <td style="padding: 10px;">Tiempo medio de resolución (MTTR)</td>
-          <td style="padding: 10px; font-family: var(--mono); color: var(--accent); font-size: 11px;">GET /incidents/stats</td>
-          <td style="padding: 10px;"><span style="background: rgba(239,68,68,0.1); color: var(--danger); padding: 2px 6px; border-radius: 3px; font-size: 10px;">Lagging</span></td>
+        <tr>
+          <td>ISO 27004 (Marco de medición)</td>
+          <td>Cada KPI tiene definida su fórmula, fuente de datos, periodicidad y umbral de alerta (verde / ámbar / rojo) conforme al ciclo de medición ISO 27004.</td>
         </tr>
-        <tr style="border-top: 1px solid var(--border);">
-          <td style="padding: 10px;">Cumplimiento de controles (%)</td>
-          <td style="padding: 10px; font-family: var(--mono); color: var(--accent2); font-size: 11px;">GET /controls/compliance</td>
-          <td style="padding: 10px;"><span style="background: rgba(124,58,237,0.1); color: var(--accent2); padding: 2px 6px; border-radius: 3px; font-size: 10px;">KPI Proceso</span></td>
-        </tr>
-        <tr style="border-top: 1px solid var(--border);">
-          <td style="padding: 10px;">Nivel de riesgo global</td>
-          <td style="padding: 10px; font-family: var(--mono); color: var(--accent4); font-size: 11px;">GET /risk/current</td>
-          <td style="padding: 10px;"><span style="background: rgba(245,158,11,0.1); color: var(--accent4); padding: 2px 6px; border-radius: 3px; font-size: 10px;">KRI</span></td>
-        </tr>
-        <tr style="border-top: 1px solid var(--border);">
-          <td style="padding: 10px;">Riesgo por dominio ISO</td>
-          <td style="padding: 10px; font-family: var(--mono); color: var(--accent4); font-size: 11px;">GET /risk/by-domain</td>
-          <td style="padding: 10px;"><span style="background: rgba(245,158,11,0.1); color: var(--accent4); padding: 2px 6px; border-radius: 3px; font-size: 10px;">KRI</span></td>
-        </tr>
-        <tr style="border-top: 1px solid var(--border);">
-          <td style="padding: 10px;">Snapshot ejecutivo</td>
-          <td style="padding: 10px; font-family: var(--mono); color: var(--accent); font-size: 11px;">GET /dashboard/summary</td>
-          <td style="padding: 10px;"><span style="background: rgba(0,212,255,0.1); color: var(--accent); padding: 2px 6px; border-radius: 3px; font-size: 10px;">Dashboard</span></td>
+        <tr>
+          <td>ISO 27005 (Gestión de riesgos)</td>
+          <td>El módulo /risk implementa la matriz probabilidad x impacto (score 1-25) por dominio del Anexo A de ISO 27001.</td>
         </tr>
       </tbody>
     </table>
   </div>
 
-  <!-- Alineación ISO -->
-  <div class="section-label">Alineación con ISO/IEC 27001:2022</div>
-  <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 20px; margin-bottom: 20px;">
-    <p style="margin-bottom: 15px; font-size: 13px;">El diseño de la API responde directamente a la <strong style="color: var(--accent);">Cláusula 9</strong> de ISO 27001 (Evaluación del Desempeño), la cual exige que la organización evalúe el rendimiento y la eficacia del SGSI de manera sistemática.</p>
-    <div style="display: grid; gap: 10px;">
-      <div style="background: var(--surface2); padding: 12px; border-radius: 4px; border-left: 3px solid var(--accent);">
-        <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">ISO 27001 — Cláusula 9.1</div>
-        <div style="font-size: 12px;">Los endpoints <code style="color: var(--accent);">/incidents/stats</code> y <code style="color: var(--accent);">/controls/compliance</code> proveen las métricas de desempeño requeridas.</div>
-      </div>
-      <div style="background: var(--surface2); padding: 12px; border-radius: 4px; border-left: 3px solid var(--accent2);">
-        <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">ISO 27001 — Cláusula 9.3</div>
-        <div style="font-size: 12px;"><code style="color: var(--accent2);">/dashboard/summary</code> genera el reporte ejecutivo consolidado para la alta dirección.</div>
-      </div>
-      <div style="background: var(--surface2); padding: 12px; border-radius: 4px; border-left: 3px solid var(--accent4);">
-        <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">ISO 27005 — Gestión de riesgos</div>
-        <div style="font-size: 12px;">El módulo <code style="color: var(--accent4);">/risk</code> implementa la matriz probabilidad × impacto (score 1-25) por dominio.</div>
-      </div>
-    </div>
+  <!-- 09 Demo -->
+  <div class="section-label">09 / Demo en Vivo</div>
+  <div class="content-card">
+    <p><strong>Dashboard interactivo</strong> â€” Acceso en vivo: <a href="https://iso-secure.agustinynatalia.site/" style="color: var(--accent);">https://iso-secure.agustinynatalia.site/</a></p>
+    <p>El dashboard expone en tiempo real todos los KPIs del SGSI: incidentes reportados, nivel de cumplimiento de controles ISO 27001 y nivel de riesgo por dominio.</p>
   </div>
 
-  <!-- Información del Proyecto -->
-  <div class="section-label">Información del Proyecto</div>
-  <div style="background: linear-gradient(135deg, rgba(0,212,255,0.05), rgba(124,58,237,0.05)); border: 1px solid var(--border); border-radius: 6px; padding: 20px; margin-bottom: 20px;">
-    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; font-size: 13px;">
-      <div>
-        <div style="color: var(--muted); font-size: 11px; margin-bottom: 4px;">PROYECTO</div>
-        <div style="color: var(--accent); font-weight: 600;">ISO_SECURE 27001</div>
-      </div>
-      <div>
-        <div style="color: var(--muted); font-size: 11px; margin-bottom: 4px;">ASIGNATURA</div>
-        <div>Seguridad Informática</div>
-      </div>
-      <div>
-        <div style="color: var(--muted); font-size: 11px; margin-bottom: 4px;">PROGRAMA</div>
-        <div>Ingeniería de Sistemas</div>
-      </div>
-      <div>
-        <div style="color: var(--muted); font-size: 11px; margin-bottom: 4px;">FECHA</div>
-        <div>18 de Marzo 2026</div>
-      </div>
-    </div>
-    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border); text-align: center;">
-      <div style="color: var(--accent2); font-weight: 600;">Universidad de San Buenaventura</div>
-    </div>
-  </div>
-
-  <!-- Demo en Vivo -->
-  <div class="section-label">Demo en Vivo</div>
-  <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 20px; margin-bottom: 20px;">
-    <p><strong>Dashboard interactivo</strong> — Acceso en vivo: <a href="https://iso-secure.agustinynatalia.site/" style="color: var(--accent);">https://iso-secure.agustinynatalia.site/</a></p>
-    <p style="color: var(--muted); margin-top: 10px; font-size: 13px;">El dashboard expone en tiempo real todos los KPIs del SGSI: incidentes reportados, nivel de cumplimiento de controles ISO 27001 y nivel de riesgo por dominio.</p>
-  </div>
-
-  <!-- Repositorio -->
-  <div class="section-label">Repositorio</div>
-  <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 20px; margin-bottom: 20px;">
+  <!-- 10 Repositorio -->
+  <div class="section-label">10 / Repositorio</div>
+  <div class="content-card">
     <p><strong>Código fuente</strong> — GitHub: <a href="https://github.com/Agustin1231/iso_secure" style="color: var(--accent);" target="_blank">https://github.com/Agustin1231/iso_secure</a></p>
-    <p style="color: var(--muted); margin-top: 10px; font-size: 13px;">Repositorio con el código completo del proyecto: API FastAPI, Frontend React y configuración Docker.</p>
+    <p>Repositorio con el código completo del proyecto: API FastAPI, Frontend React y configuración Docker.</p>
   </div>
 
 </div>
