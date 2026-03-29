@@ -70,6 +70,7 @@ const ALL_NAV_ITEMS = [
   { id: 'risk', icon: <Activity size={20} />, label: 'Riesgos', roles: ['admin', 'auditor'] },
   { id: 'history', icon: <History size={20} />, label: 'Historial', roles: ['admin', 'supervisor'] },
   { id: 'empresas', icon: <Building2 size={20} />, label: 'Empresas', roles: ['admin', 'auditor'] },
+  { id: 'usuarios', icon: <Users size={20} />, label: 'Usuarios', roles: ['admin'] },
 ];
 
 const viewTitles = {
@@ -79,6 +80,7 @@ const viewTitles = {
   risk: 'Gestión de Riesgos',
   history: 'Historial de Snapshots',
   empresas: 'Registro de Empresas',
+  usuarios: 'Gestión de Usuarios',
 };
 
 // ─── LoginPage ────────────────────────────────────────────────────────────────
@@ -959,6 +961,165 @@ const EmpresasView = ({ empresas, loading, userRole, onRefresh }) => {
   );
 };
 
+// ─── UsersView ────────────────────────────────────────────────────────────────
+const ROLES = ['admin', 'auditor', 'supervisor', 'analista'];
+const ROLE_LABELS = { admin: 'Administrador', auditor: 'Auditor', supervisor: 'Supervisor', analista: 'Analista' };
+const ROLE_COLORS = { admin: 'var(--danger)', auditor: 'var(--primary)', supervisor: 'var(--warning)', analista: 'var(--success)' };
+
+const UsersView = ({ users, empresas, loading, onRefresh }) => {
+  const [savingId, setSavingId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [pendingChanges, setPendingChanges] = useState({}); // { user_id: { role, empresa_id } }
+
+  const filtered = users.filter(u =>
+    u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.role?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleChange = (userId, field, value) => {
+    setPendingChanges(prev => ({
+      ...prev,
+      [userId]: { ...prev[userId], [field]: value }
+    }));
+  };
+
+  const handleSave = async (user) => {
+    const changes = pendingChanges[user.user_id];
+    if (!changes) return;
+    setSavingId(user.user_id);
+    try {
+      await api.put(`/auth/users/${user.user_id}/role`, {
+        role: changes.role ?? user.role,
+        empresa_id: (changes.empresa_id ?? user.empresa_id) || null,
+      });
+      setPendingChanges(prev => { const n = { ...prev }; delete n[user.user_id]; return n; });
+      onRefresh();
+    } catch (err) {
+      alert('Error al guardar cambios.');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const hasPending = (userId) => !!pendingChanges[userId];
+
+  return (
+    <div className="animate-fade-in">
+      <div className="kpi-grid" style={{ marginBottom: '2rem' }}>
+        <KPICard title="Usuarios Registrados" value={users.length} unit="" status="primary" description="Cuentas en el sistema" />
+        <KPICard title="Administradores" value={users.filter(u => u.role === 'admin').length} unit="" status="red" description="Acceso total" />
+        <KPICard title="Auditores" value={users.filter(u => u.role === 'auditor').length} unit="" status="amber" description="Acceso a auditoría" />
+        <KPICard title="Analistas" value={users.filter(u => u.role === 'analista').length} unit="" status="green" description="Acceso operativo" />
+      </div>
+
+      <div className="glass-card" style={{ overflow: 'hidden' }}>
+        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: 0 }}>
+            <Users size={20} color="var(--primary)" />
+            Directorio de Usuarios
+          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--color-bg-elevated)', borderRadius: '8px', padding: '0.5rem 1rem', border: '1px solid var(--glass-border)' }}>
+            <Search size={16} color="var(--text-muted)" />
+            <input type="text" placeholder="Buscar usuario..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ background: 'none', border: 'none', color: 'var(--text-main)', outline: 'none', width: '180px', fontSize: '0.9rem' }} />
+          </div>
+        </div>
+
+        <div className="table-responsive">
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '750px' }}>
+            <thead>
+              <tr style={{ background: 'var(--glass)', textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                <th style={{ padding: '1rem' }}>USUARIO</th>
+                <th style={{ padding: '1rem' }}>ROL ACTUAL</th>
+                <th style={{ padding: '1.25rem' }}>CAMBIAR ROL</th>
+                <th style={{ padding: '1.25rem' }}>EMPRESA ASIGNADA</th>
+                <th style={{ padding: '1.25rem' }}>ACCIONES</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((user) => {
+                const changes = pendingChanges[user.user_id] || {};
+                const currentRole = changes.role ?? user.role;
+                const currentEmpresa = changes.empresa_id !== undefined ? changes.empresa_id : user.empresa_id;
+                const isDirty = hasPending(user.user_id);
+                const isSaving = savingId === user.user_id;
+
+                return (
+                  <tr key={user.user_id} style={{ borderTop: '1px solid var(--glass-border)', transition: 'background 0.2s', background: isDirty ? 'rgba(0,210,255,0.03)' : 'transparent' }} className="table-row-hover">
+                    <td style={{ padding: '1.25rem' }}>
+                      <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{user.email || '—'}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{user.user_id?.slice(0, 12)}...</div>
+                    </td>
+
+                    <td style={{ padding: '1.25rem' }}>
+                      <span style={{ fontSize: '0.8rem', padding: '0.3rem 0.75rem', borderRadius: '20px', fontWeight: '600', background: `${ROLE_COLORS[user.role]}22`, color: ROLE_COLORS[user.role] }}>
+                        {ROLE_LABELS[user.role] || user.role}
+                      </span>
+                    </td>
+
+                    <td style={{ padding: '1.25rem' }}>
+                      <select
+                        value={currentRole}
+                        onChange={(e) => handleChange(user.user_id, 'role', e.target.value)}
+                        style={{ padding: '0.5rem 0.75rem', background: 'var(--color-bg-elevated)', border: `1px solid ${isDirty && changes.role ? 'var(--primary)' : 'var(--glass-border)'}`, borderRadius: '6px', color: 'var(--text-main)', fontSize: '0.85rem', cursor: 'pointer', outline: 'none' }}
+                      >
+                        {ROLES.map(r => (
+                          <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                        ))}
+                      </select>
+                    </td>
+
+                    <td style={{ padding: '1.25rem' }}>
+                      <select
+                        value={currentEmpresa || ''}
+                        onChange={(e) => handleChange(user.user_id, 'empresa_id', e.target.value || null)}
+                        style={{ padding: '0.5rem 0.75rem', background: 'var(--color-bg-elevated)', border: `1px solid ${isDirty && changes.empresa_id !== undefined ? 'var(--primary)' : 'var(--glass-border)'}`, borderRadius: '6px', color: 'var(--text-main)', fontSize: '0.85rem', cursor: 'pointer', outline: 'none', maxWidth: '180px' }}
+                      >
+                        <option value="">Sin empresa</option>
+                        {empresas.map(e => (
+                          <option key={e.id} value={e.id}>{e.nombre}</option>
+                        ))}
+                      </select>
+                    </td>
+
+                    <td style={{ padding: '1.25rem' }}>
+                      {isDirty ? (
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button
+                            onClick={() => handleSave(user)}
+                            disabled={isSaving}
+                            style={{ padding: '0.4rem 0.9rem', background: 'var(--primary)', border: 'none', borderRadius: '6px', color: 'white', fontSize: '0.8rem', fontWeight: '600', cursor: isSaving ? 'not-allowed' : 'pointer', opacity: isSaving ? 0.7 : 1 }}
+                          >
+                            {isSaving ? '...' : 'Guardar'}
+                          </button>
+                          <button
+                            onClick={() => setPendingChanges(prev => { const n = { ...prev }; delete n[user.user_id]; return n; })}
+                            style={{ padding: '0.4rem 0.7rem', background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'var(--text-muted)', fontSize: '0.8rem', cursor: 'pointer' }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Sin cambios</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+              {filtered.length === 0 && !loading && (
+                <tr><td colSpan="5" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>No hay usuarios registrados.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--glass-border)', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+          Modifica rol y empresa en cada fila y presiona <strong>Guardar</strong> para aplicar los cambios.
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── Main App Component ───────────────────────────────────────────────────────
 function App() {
   // Auth state
@@ -983,6 +1144,7 @@ function App() {
   const [riskDomains, setRiskDomains] = useState(null);
   const [snapshots, setSnapshots] = useState([]);
   const [empresas, setEmpresas] = useState([]);
+  const [usuarios, setUsuarios] = useState([]);
 
   // Inject token in every api request
   useEffect(() => {
@@ -1082,6 +1244,13 @@ function App() {
       } else if (view === 'empresas') {
         const data = await api.get('/empresas/').then(r => r.data);
         setEmpresas(data.items || []);
+      } else if (view === 'usuarios') {
+        const [usersData, empresasData] = await Promise.all([
+          api.get('/auth/users').then(r => r.data),
+          api.get('/empresas/').then(r => r.data),
+        ]);
+        setUsuarios(usersData.items || []);
+        setEmpresas(empresasData.items || []);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -1225,6 +1394,7 @@ function App() {
               {view === 'risk' && <RiskView riskCurrent={riskCurrent} riskDomains={riskDomains} loading={loading} />}
               {view === 'history' && <HistoryView snapshots={snapshots} loading={loading} />}
               {view === 'empresas' && <EmpresasView empresas={empresas} loading={loading} userRole={userProfile?.role} onRefresh={fetchData} />}
+              {view === 'usuarios' && <UsersView users={usuarios} empresas={empresas} loading={loading} onRefresh={fetchData} />}
             </motion.div>
           </AnimatePresence>
         )}
