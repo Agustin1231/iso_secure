@@ -561,9 +561,11 @@ h3 { font-size: 1.25rem; }
   }
   
   .sidebar {
-    position: sticky !important;
+    position: fixed !important;
+    top: 0 !important;
     left: 0 !important;
-    width: auto !important;
+    width: 260px !important;
+    height: 100vh !important;
   }
   
   .sidebar-overlay {
