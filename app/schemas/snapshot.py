@@ -13,7 +13,7 @@ class KpiSnapshotResponse(BaseModel):
     avg_resolution_hrs: Optional[float]
     total_controls: int
     controls_compliant: int
-    controls_partial: int
+    controls_en_proceso: int
     controls_non_compliant: int
     global_compliance_pct: Optional[float]
     global_risk_score: Optional[float]

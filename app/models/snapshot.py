@@ -17,7 +17,7 @@ class KpiSnapshot(Base):
     avg_resolution_hrs: Mapped[float] = mapped_column(Numeric(8, 2, asdecimal=False), nullable=True)
     total_controls: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     controls_compliant: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    controls_partial: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    controls_en_proceso: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     controls_non_compliant: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     global_compliance_pct: Mapped[float] = mapped_column(Numeric(5, 2, asdecimal=False), nullable=True)
     global_risk_score: Mapped[float] = mapped_column(Numeric(5, 2, asdecimal=False), nullable=True)

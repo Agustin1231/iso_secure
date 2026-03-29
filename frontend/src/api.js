@@ -4,6 +4,15 @@ const api = axios.create({
   baseURL: '/api/v1',
 });
 
+// Inject stored token on every request
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('iso_token');
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export const dashboardApi = {
   getSummary: () => api.get('/dashboard/summary').then(res => res.data),
   getKpis: () => api.get('/dashboard/kpis').then(res => res.data),
@@ -30,6 +39,21 @@ export const controlApi = {
 export const snapshotApi = {
   getHistory: (limit) => api.get('/snapshots', { params: { limit } }).then(res => res.data),
   create: () => api.post('/snapshots').then(res => res.data),
+};
+
+export const empresaApi = {
+  getAll: (params) => api.get('/empresas/', { params }).then(res => res.data),
+  getById: (id) => api.get(`/empresas/${id}`).then(res => res.data),
+  create: (data) => api.post('/empresas/', data).then(res => res.data),
+  update: (id, data) => api.put(`/empresas/${id}`, data).then(res => res.data),
+  delete: (id) => api.delete(`/empresas/${id}`),
+};
+
+export const authApi = {
+  getMe: () => api.get('/auth/me').then(res => res.data),
+  registerProfile: () => api.post('/auth/register-profile').then(res => res.data),
+  listUsers: () => api.get('/auth/users').then(res => res.data),
+  updateUserRole: (userId, data) => api.put(`/auth/users/${userId}/role`, data).then(res => res.data),
 };
 
 export default api;

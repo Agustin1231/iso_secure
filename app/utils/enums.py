@@ -13,7 +13,7 @@ class IncidentStatusEnum(str, enum.Enum):
 
 class ControlStatusEnum(str, enum.Enum):
     compliant = "compliant"
-    partial = "partial"
+    en_proceso = "en_proceso"
     non_compliant = "non_compliant"
 
 class RiskLevelEnum(str, enum.Enum):
@@ -21,3 +21,9 @@ class RiskLevelEnum(str, enum.Enum):
     medium = "medium"
     high = "high"
     critical = "critical"
+
+class UserRoleEnum(str, enum.Enum):
+    admin = "admin"
+    auditor = "auditor"
+    supervisor = "supervisor"
+    analista = "analista"

@@ -80,14 +80,14 @@ class ControlService:
             return {
                 "total_controls": 0,
                 "compliant": 0,
-                "partial": 0,
+                "en_proceso": 0,
                 "non_compliant": 0,
                 "global_compliance_pct": 0.0,
                 "by_domain": {}
             }
-            
+
         compliant = (await db.execute(select(func.count(Control.id)).where(Control.status == ControlStatusEnum.compliant))).scalar() or 0
-        partial = (await db.execute(select(func.count(Control.id)).where(Control.status == ControlStatusEnum.partial))).scalar() or 0
+        en_proceso = (await db.execute(select(func.count(Control.id)).where(Control.status == ControlStatusEnum.en_proceso))).scalar() or 0
         non_compliant = (await db.execute(select(func.count(Control.id)).where(Control.status == ControlStatusEnum.non_compliant))).scalar() or 0
         
         global_compliance_pct = (compliant / total) * 100
@@ -98,7 +98,7 @@ class ControlService:
                 Control.iso_domain,
                 func.count(Control.id).label("total"),
                 func.count(Control.id).filter(Control.status == ControlStatusEnum.compliant).label("compliant"),
-                func.count(Control.id).filter(Control.status == ControlStatusEnum.partial).label("partial"),
+                func.count(Control.id).filter(Control.status == ControlStatusEnum.en_proceso).label("en_proceso"),
                 func.count(Control.id).filter(Control.status == ControlStatusEnum.non_compliant).label("non_compliant")
             ).group_by(Control.iso_domain)
         )
@@ -110,7 +110,7 @@ class ControlService:
             by_domain[row.iso_domain] = {
                 "total": domain_total,
                 "compliant": domain_compliant,
-                "partial": row.partial,
+                "en_proceso": row.en_proceso,
                 "non_compliant": row.non_compliant,
                 "compliance_pct": round((domain_compliant / domain_total * 100), 2) if domain_total > 0 else 0.0
             }
@@ -118,7 +118,7 @@ class ControlService:
         return {
             "total_controls": total,
             "compliant": compliant,
-            "partial": partial,
+            "en_proceso": en_proceso,
             "non_compliant": non_compliant,
             "global_compliance_pct": round(global_compliance_pct, 2),
             "by_domain": by_domain

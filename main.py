@@ -2,7 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.database import engine, Base
-from app.routers import incidents, controls, risk, dashboard, snapshots
+from app.routers import incidents, controls, risk, dashboard, snapshots, empresa, auth_router
+from app.models import empresa as empresa_model, user_profile as user_profile_model
 import os
 from dotenv import load_dotenv
 
@@ -38,6 +39,8 @@ app.include_router(controls.router, prefix=f"{API_PREFIX}/controls", tags=["Cont
 app.include_router(risk.router, prefix=f"{API_PREFIX}/risk", tags=["Risk"])
 app.include_router(dashboard.router, prefix=f"{API_PREFIX}/dashboard", tags=["Dashboard"])
 app.include_router(snapshots.router, prefix=f"{API_PREFIX}/snapshots", tags=["Snapshots"])
+app.include_router(empresa.router, prefix=f"{API_PREFIX}/empresas", tags=["Empresas"])
+app.include_router(auth_router.router, prefix=f"{API_PREFIX}/auth", tags=["Auth"])
 
 @app.get("/", tags=["Health"])
 async def root():

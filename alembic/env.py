@@ -18,6 +18,8 @@ from app.models.incident import Incident
 from app.models.control import Control
 from app.models.risk import RiskLevel
 from app.models.snapshot import KpiSnapshot
+from app.models.empresa import Empresa
+from app.models.user_profile import UserProfile
 
 load_dotenv()
 

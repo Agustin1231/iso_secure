@@ -39,7 +39,7 @@ class ControlResponse(BaseModel):
 class ComplianceResponse(BaseModel):
     total_controls: int
     compliant: int
-    partial: int
+    en_proceso: int
     non_compliant: int
     global_compliance_pct: float
     by_domain: dict  # {"A.5": {"compliant": 3, "total": 4, "pct": 75.0}, ...}
