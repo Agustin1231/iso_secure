@@ -1141,7 +1141,6 @@ const PROGRESO_COLORS = { pendiente: 'var(--text-muted)', en_proceso: 'var(--war
 
 const CapacitacionesView = ({ cursos, loading, onRefresh, userRole }) => {
   const [selected, setSelected] = useState(null);
-  const [updatingId, setUpdatingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ titulo: '', descripcion: '', video_url: '', material_texto: '', categoria: '', nivel: 'basico' });
@@ -1151,15 +1150,6 @@ const CapacitacionesView = ({ cursos, loading, onRefresh, userRole }) => {
     c.titulo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.categoria?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const handleProgresoChange = async (curso, newStatus) => {
-    setUpdatingId(curso.id);
-    try {
-      await capacitacionApi.updateProgreso(curso.id, newStatus);
-      onRefresh();
-    } catch { alert('Error al actualizar progreso.'); }
-    finally { setUpdatingId(null); }
-  };
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -1173,15 +1163,11 @@ const CapacitacionesView = ({ cursos, loading, onRefresh, userRole }) => {
     finally { setSaving(false); }
   };
 
-  const completed = cursos.filter(c => c.progreso === 'completado').length;
-  const inProgress = cursos.filter(c => c.progreso === 'en_proceso').length;
-
   return (
     <div className="animate-fade-in">
       <div className="kpi-grid" style={{ marginBottom: '2rem' }}>
         <KPICard title="Total Cursos" value={cursos.length} unit="" status="primary" description="Cursos disponibles en la plataforma" />
-        <KPICard title="Completados" value={completed} unit="" status="green" description="Cursos finalizados por ti" />
-        <KPICard title="En Proceso" value={inProgress} unit="" status="amber" description="Cursos iniciados" />
+        <KPICard title="Por Nivel" value={cursos.filter(c => c.nivel === 'avanzado').length} unit="avanzados" status="amber" description="Cursos de nivel avanzado disponibles" />
       </div>
 
       {selected ? (
@@ -1217,28 +1203,11 @@ const CapacitacionesView = ({ cursos, loading, onRefresh, userRole }) => {
           )}
 
           {selected.material_texto && (
-            <div style={{ marginBottom: '1.5rem', padding: '1.25rem', background: 'var(--color-bg-elevated)', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+            <div style={{ padding: '1.25rem', background: 'var(--color-bg-elevated)', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
               <h4 style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', marginBottom: '0.75rem' }}>Material del Curso</h4>
               <p style={{ lineHeight: '1.8', color: 'var(--text-main)', fontSize: '0.95rem', whiteSpace: 'pre-wrap' }}>{selected.material_texto}</p>
             </div>
           )}
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', paddingTop: '1rem', borderTop: '1px solid var(--glass-border)' }}>
-            <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Tu progreso:</span>
-            <span style={{ fontSize: '0.9rem', fontWeight: '600', color: PROGRESO_COLORS[selected.progreso] }}>● {PROGRESO_LABELS[selected.progreso]}</span>
-            <div style={{ display: 'flex', gap: '0.5rem', marginLeft: 'auto' }}>
-              {['pendiente', 'en_proceso', 'completado'].map(s => (
-                <button
-                  key={s}
-                  onClick={() => handleProgresoChange(selected, s)}
-                  disabled={updatingId === selected.id || selected.progreso === s}
-                  style={{ padding: '0.5rem 1rem', background: selected.progreso === s ? PROGRESO_COLORS[s] : 'var(--glass)', border: `1px solid ${selected.progreso === s ? PROGRESO_COLORS[s] : 'var(--glass-border)'}`, borderRadius: '6px', color: selected.progreso === s ? 'white' : 'var(--text-main)', fontSize: '0.8rem', cursor: selected.progreso === s ? 'default' : 'pointer', fontWeight: selected.progreso === s ? '600' : '400', opacity: updatingId === selected.id ? 0.6 : 1 }}
-                >
-                  {PROGRESO_LABELS[s]}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       ) : (
         <div className="glass-card" style={{ overflow: 'hidden' }}>
@@ -1295,14 +1264,13 @@ const CapacitacionesView = ({ cursos, loading, onRefresh, userRole }) => {
 
           <div style={{ padding: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.25rem' }}>
             {filtered.map((curso) => (
-              <div key={curso.id} className="glass-card" style={{ padding: '1.25rem', cursor: 'pointer', border: `1px solid ${curso.progreso === 'completado' ? 'rgba(34,197,94,0.3)' : 'var(--glass-border)'}`, transition: 'transform 0.15s, border-color 0.15s' }}
+              <div key={curso.id} className="glass-card" style={{ padding: '1.25rem', cursor: 'pointer', border: '1px solid var(--glass-border)', transition: 'transform 0.15s' }}
                 onClick={() => setSelected(curso)}
                 onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
                 onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                <div style={{ marginBottom: '0.75rem' }}>
                   <span style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', background: `${NIVEL_COLORS[curso.nivel]}22`, color: NIVEL_COLORS[curso.nivel], borderRadius: '4px', fontWeight: '600' }}>{NIVEL_LABELS[curso.nivel]}</span>
-                  <span style={{ fontSize: '0.72rem', fontWeight: '600', color: PROGRESO_COLORS[curso.progreso] }}>● {PROGRESO_LABELS[curso.progreso]}</span>
                 </div>
                 <h4 style={{ margin: '0 0 0.5rem', fontSize: '1rem', lineHeight: '1.3' }}>{curso.titulo}</h4>
                 {curso.descripcion && <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.5', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{curso.descripcion}</p>}
@@ -1323,92 +1291,172 @@ const CapacitacionesView = ({ cursos, loading, onRefresh, userRole }) => {
 const ImplementacionView = ({ empresas, loading }) => {
   const [selectedEmpresa, setSelectedEmpresa] = useState('');
   const [recomendaciones, setRecomendaciones] = useState(null);
+  const [auditoriaItems, setAuditoriaItems] = useState([]);
   const [fetching, setFetching] = useState(false);
   const [expanded, setExpanded] = useState({});
+  const [savingIdx, setSavingIdx] = useState(null);
+  const [localStatus, setLocalStatus] = useState({});
 
-  const handleFetch = async () => {
-    if (!selectedEmpresa) return;
+  const handleFetch = async (empresaId) => {
+    const id = empresaId || selectedEmpresa;
+    if (!id) return;
     setFetching(true);
     try {
-      const data = await implementacionApi.getByEmpresa(selectedEmpresa);
-      setRecomendaciones(data);
+      const [recData, auditData] = await Promise.all([
+        implementacionApi.getByEmpresa(id),
+        auditoriaApi.getByEmpresa(id),
+      ]);
+      setRecomendaciones(recData);
+      setAuditoriaItems(auditData);
       setExpanded({});
+      // Seed local statuses from existing auditoria items
+      const statusMap = {};
+      recData.recomendaciones.forEach((rec, idx) => {
+        const match = auditData.find(a => a.iso_control_ref === rec.dominio);
+        if (match) statusMap[idx] = match.status;
+      });
+      setLocalStatus(statusMap);
     } catch { alert('Error al obtener recomendaciones.'); }
     finally { setFetching(false); }
   };
 
+  const handleEmpresaChange = (id) => {
+    setSelectedEmpresa(id);
+    setRecomendaciones(null);
+    setAuditoriaItems([]);
+    setLocalStatus({});
+    if (id) handleFetch(id);
+  };
+
   const toggleExpand = (idx) => setExpanded(prev => ({ ...prev, [idx]: !prev[idx] }));
+
+  const getAuditoriaItem = (rec) => auditoriaItems.find(a => a.iso_control_ref === rec.dominio);
+
+  const handleGuardarEstado = async (rec, idx, newStatus) => {
+    setSavingIdx(idx);
+    try {
+      const existing = getAuditoriaItem(rec);
+      if (existing) {
+        await auditoriaApi.update(existing.id, { status: newStatus });
+      } else {
+        await auditoriaApi.create({
+          empresa_id: selectedEmpresa,
+          iso_control_ref: rec.dominio,
+          control_name: rec.nombre,
+          activity_desc: rec.justificacion,
+          status: newStatus,
+        });
+      }
+      setLocalStatus(prev => ({ ...prev, [idx]: newStatus }));
+      // Refresh auditoria items
+      const updated = await auditoriaApi.getByEmpresa(selectedEmpresa);
+      setAuditoriaItems(updated);
+    } catch { alert('Error al guardar el estado.'); }
+    finally { setSavingIdx(null); }
+  };
+
+  const getStatusColor = (s) => ({ pendiente: 'var(--text-muted)', en_proceso: 'var(--warning)', completado: 'var(--success)' }[s] || 'var(--text-muted)');
+
+  const countByStatus = (s) => Object.values(localStatus).filter(v => v === s).length;
 
   return (
     <div className="animate-fade-in">
       <div className="glass-card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', margin: '0 0 1rem' }}>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '0 0 0.5rem' }}>
           <Wrench size={20} color="var(--primary)" />
-          Recomendaciones ISO 27001 por Empresa
+          Plan de Implementación ISO 27001 por Empresa
         </h3>
-        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem', margin: '0 0 1rem' }}>
-          Selecciona una empresa para ver los dominios ISO 27001:2022 recomendados según su actividad económica.
+        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: '0 0 1rem' }}>
+          Selecciona una empresa para ver los dominios recomendados y gestionar el estado de cada implementación.
         </p>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: '200px' }}>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Empresa</label>
-            <select value={selectedEmpresa} onChange={(e) => { setSelectedEmpresa(e.target.value); setRecomendaciones(null); }} style={{ width: '100%', padding: '0.65rem 0.75rem', background: 'var(--color-bg-elevated)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '0.9rem', outline: 'none' }}>
-              <option value="">Seleccionar empresa...</option>
-              {empresas.map(e => <option key={e.id} value={e.id}>{e.nombre} — {e.actividad_economica}</option>)}
-            </select>
-          </div>
-          <button onClick={handleFetch} disabled={!selectedEmpresa || fetching} style={{ padding: '0.65rem 1.5rem', background: 'var(--primary)', border: 'none', borderRadius: '6px', color: 'white', fontWeight: '600', cursor: !selectedEmpresa || fetching ? 'not-allowed' : 'pointer', opacity: !selectedEmpresa || fetching ? 0.6 : 1 }}>
-            {fetching ? 'Consultando...' : 'Ver Recomendaciones'}
-          </button>
+        <div style={{ flex: 1, minWidth: '200px' }}>
+          <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Empresa</label>
+          <select value={selectedEmpresa} onChange={(e) => handleEmpresaChange(e.target.value)} style={{ width: '100%', maxWidth: '480px', padding: '0.65rem 0.75rem', background: 'var(--color-bg-elevated)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '0.9rem', outline: 'none' }}>
+            <option value="">Seleccionar empresa...</option>
+            {empresas.map(e => <option key={e.id} value={e.id}>{e.nombre} — {e.actividad_economica}</option>)}
+          </select>
         </div>
       </div>
 
-      {recomendaciones && (
+      {fetching && (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
+          <Activity size={32} color="var(--primary)" className="animate-pulse" />
+        </div>
+      )}
+
+      {recomendaciones && !fetching && (
         <div className="animate-fade-in">
+          {/* Summary bar */}
           <div className="glass-card" style={{ padding: '1.25rem 1.5rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
             <div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Empresa</div>
-              <div style={{ fontWeight: '700', fontSize: '1.05rem' }}>{recomendaciones.empresa_nombre}</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>Empresa</div>
+              <div style={{ fontWeight: '700' }}>{recomendaciones.empresa_nombre}</div>
             </div>
             <div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Actividad</div>
-              <div style={{ fontWeight: '600' }}>{recomendaciones.actividad_economica}</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>Sector</div>
+              <span style={{ fontSize: '0.8rem', padding: '0.2rem 0.65rem', background: 'rgba(0,210,255,0.12)', color: 'var(--primary)', borderRadius: '20px', fontWeight: '600', textTransform: 'capitalize' }}>{recomendaciones.sector_detectado}</span>
             </div>
-            <div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Sector detectado</div>
-              <span style={{ fontSize: '0.8rem', padding: '0.25rem 0.75rem', background: 'rgba(0,210,255,0.12)', color: 'var(--primary)', borderRadius: '20px', fontWeight: '600', textTransform: 'capitalize' }}>{recomendaciones.sector_detectado}</span>
-            </div>
-            <div style={{ marginLeft: 'auto' }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Controles recomendados</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--primary)' }}>{recomendaciones.total_recomendaciones}</div>
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: '1.5rem' }}>
+              {[['Completados', 'completado', 'var(--success)'], ['En Proceso', 'en_proceso', 'var(--warning)'], ['Pendientes', 'pendiente', 'var(--text-muted)']].map(([label, key, color]) => (
+                <div key={key} style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '1.4rem', fontWeight: '800', color }}>{countByStatus(key)}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{label}</div>
+                </div>
+              ))}
             </div>
           </div>
 
-          {recomendaciones.recomendaciones.map((rec, idx) => (
-            <div key={idx} className="glass-card" style={{ marginBottom: '0.75rem', overflow: 'hidden' }}>
-              <div
-                style={{ padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', gap: '1rem' }}
-                onClick={() => toggleExpand(idx)}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', padding: '0.25rem 0.6rem', background: 'rgba(0,210,255,0.12)', color: 'var(--primary)', borderRadius: '4px', fontWeight: '700', whiteSpace: 'nowrap' }}>{rec.dominio}</span>
-                  <div>
-                    <div style={{ fontWeight: '600', fontSize: '0.95rem' }}>{rec.nombre}</div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Controles {rec.ref}</div>
+          {/* Recommendations accordion */}
+          {recomendaciones.recomendaciones.map((rec, idx) => {
+            const currentStatus = localStatus[idx] || 'pendiente';
+            const isExpanded = expanded[idx];
+            const isSaving = savingIdx === idx;
+
+            return (
+              <div key={idx} className="glass-card" style={{ marginBottom: '0.75rem', overflow: 'hidden', borderLeft: `3px solid ${getStatusColor(currentStatus)}` }}>
+                <div
+                  style={{ padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', gap: '1rem' }}
+                  onClick={() => toggleExpand(idx)}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
+                    <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', padding: '0.25rem 0.6rem', background: 'rgba(0,210,255,0.12)', color: 'var(--primary)', borderRadius: '4px', fontWeight: '700', whiteSpace: 'nowrap' }}>{rec.dominio}</span>
+                    <div>
+                      <div style={{ fontWeight: '600', fontSize: '0.95rem' }}>{rec.nombre}</div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Controles {rec.ref}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <span style={{ fontSize: '0.78rem', fontWeight: '600', color: getStatusColor(currentStatus) }}>
+                      ● {PROGRESO_LABELS[currentStatus]}
+                    </span>
+                    {isExpanded ? <ChevronUp size={18} color="var(--text-muted)" /> : <ChevronDown size={18} color="var(--text-muted)" />}
                   </div>
                 </div>
-                {expanded[idx] ? <ChevronUp size={18} color="var(--text-muted)" /> : <ChevronDown size={18} color="var(--text-muted)" />}
+
+                {isExpanded && (
+                  <div style={{ padding: '0 1.5rem 1.25rem', borderTop: '1px solid var(--glass-border)' }}>
+                    <div style={{ paddingTop: '0.75rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
+                      <ShieldCheck size={16} color="var(--success)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                      <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-main)', lineHeight: '1.6' }}>{rec.justificacion}</p>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', paddingTop: '0.75rem', borderTop: '1px solid var(--glass-border)' }}>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '500' }}>Estado de implementación:</span>
+                      {['pendiente', 'en_proceso', 'completado'].map(s => (
+                        <button
+                          key={s}
+                          onClick={(e) => { e.stopPropagation(); handleGuardarEstado(rec, idx, s); }}
+                          disabled={isSaving || currentStatus === s}
+                          style={{ padding: '0.4rem 0.9rem', background: currentStatus === s ? getStatusColor(s) : 'var(--glass)', border: `1px solid ${currentStatus === s ? getStatusColor(s) : 'var(--glass-border)'}`, borderRadius: '6px', color: currentStatus === s ? 'white' : 'var(--text-main)', fontSize: '0.8rem', cursor: currentStatus === s || isSaving ? 'not-allowed' : 'pointer', fontWeight: currentStatus === s ? '600' : '400', opacity: isSaving ? 0.6 : 1, transition: 'all 0.15s' }}
+                        >
+                          {isSaving && currentStatus !== s ? '...' : PROGRESO_LABELS[s]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-              {expanded[idx] && (
-                <div style={{ padding: '0 1.5rem 1rem', borderTop: '1px solid var(--glass-border)' }}>
-                  <div style={{ paddingTop: '0.75rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                    <ShieldCheck size={16} color="var(--success)" style={{ flexShrink: 0, marginTop: '2px' }} />
-                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-main)', lineHeight: '1.6' }}>{rec.justificacion}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
