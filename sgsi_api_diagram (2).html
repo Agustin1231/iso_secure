@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISO_SECURE &mdash; API KPIs SGSI</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e17;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d47;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --accent4: #f59e0b;
+    --accent5: #f472b6;
+    --accent6: #34d399;
+    --danger: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 24px 60px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 48px;
+    gap: 20px;
+  }
+  .header-left { flex: 1; }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 4px 10px;
+    border-radius: 2px;
+    margin-bottom: 12px;
+  }
+  .badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+  h1 {
+    font-family: var(--mono);
+    font-size: clamp(22px, 4vw, 36px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: #fff;
+  }
+  h1 span { color: var(--accent); }
+  .subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 8px;
+    font-family: var(--mono);
+  }
+  .header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+  .version-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent3);
+    border: 1px solid var(--accent3);
+    padding: 3px 8px;
+    border-radius: 2px;
+  }
+  .stack-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 3px 8px;
+    border-radius: 2px;
+  }
+
+  /* Section labels */
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Architecture flow */
+  .arch-container {
+    display: grid;
+    grid-template-columns: 1fr 40px 1fr 40px 1fr;
+    gap: 0;
+    align-items: center;
+    margin-bottom: 48px;
+  }
+  .arch-layer {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+    position: relative;
+  }
+  .arch-layer.client { border-top: 2px solid var(--accent4); }
+  .arch-layer.api    { border-top: 2px solid var(--accent);  }
+  .arch-layer.db     { border-top: 2px solid var(--accent3); }
+  .layer-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .arch-layer.client .layer-title { color: var(--accent4); }
+  .arch-layer.api    .layer-title { color: var(--accent);  }
+  .arch-layer.db     .layer-title { color: var(--accent3); }
+  .layer-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .layer-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 10px;
+    font-size: 12px;
+    font-family: var(--mono);
+  }
+  .layer-item.highlight        { border-color: var(--accent);  color: var(--accent);  }
+  .layer-item.highlight-green  { border-color: var(--accent3); color: var(--accent3); }
+  .layer-item.highlight-yellow { border-color: var(--accent4); color: var(--accent4); }
+  .layer-item.highlight-pink   { border-color: var(--accent5); color: var(--accent5); }
+  .arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: var(--muted);
+    font-size: 18px;
+  }
+  .arrow-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+
+  /* Endpoints grid */
+  .endpoints-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+  .endpoint-group {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .group-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .group-title {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .group-incidents     .group-header { background: rgba(239,68,68,0.08);   }
+  .group-incidents     .group-title  { color: var(--danger);  }
+  .group-controls      .group-header { background: rgba(124,58,237,0.08);  }
+  .group-controls      .group-title  { color: var(--accent2); }
+  .group-risk          .group-header { background: rgba(245,158,11,0.08);  }
+  .group-risk          .group-title  { color: var(--accent4); }
+  .group-dashboard     .group-header { background: rgba(0,212,255,0.08);   }
+  .group-dashboard     .group-title  { color: var(--accent);  }
+  .group-empresas      .group-header { background: rgba(16,185,129,0.08);  }
+  .group-empresas      .group-title  { color: var(--accent3); }
+  .group-auth          .group-header { background: rgba(244,114,182,0.08); }
+  .group-auth          .group-title  { color: var(--accent5); }
+  .group-capacitaciones .group-header { background: rgba(52,211,153,0.08); }
+  .group-capacitaciones .group-title  { color: var(--accent6);}
+  .group-implementacion .group-header { background: rgba(245,158,11,0.06); }
+  .group-implementacion .group-title  { color: var(--accent4);}
+  .group-auditoria     .group-header { background: rgba(239,68,68,0.06);   }
+  .group-auditoria     .group-title  { color: #fb923c; }
+  .group-count {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .endpoint-list {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .endpoint-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--surface2);
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: border-color 0.2s;
+    cursor: default;
+  }
+  .endpoint-row:hover { border-color: var(--border); }
+  .method {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    min-width: 42px;
+    text-align: center;
+  }
+  .method.get    { background: rgba(16,185,129,0.15);  color: var(--accent3); border: 1px solid rgba(16,185,129,0.3);  }
+  .method.post   { background: rgba(0,212,255,0.15);   color: var(--accent);  border: 1px solid rgba(0,212,255,0.3);   }
+  .method.put    { background: rgba(245,158,11,0.15);  color: var(--accent4); border: 1px solid rgba(245,158,11,0.3);  }
+  .method.patch  { background: rgba(124,58,237,0.15);  color: var(--accent2); border: 1px solid rgba(124,58,237,0.3);  }
+  .method.delete { background: rgba(239,68,68,0.15);   color: var(--danger);  border: 1px solid rgba(239,68,68,0.3);   }
+  .endpoint-path {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text);
+    flex: 1;
+  }
+  .endpoint-path .param { color: var(--accent4); }
+  .endpoint-desc {
+    font-size: 10px;
+    color: var(--muted);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* Auth info pill */
+  .auth-note {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--accent5);
+    background: rgba(244,114,182,0.08);
+    border: 1px solid rgba(244,114,182,0.2);
+    padding: 2px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+
+  /* Data model */
+  .models-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+  .model-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .model-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .model-name {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .model-name.green  { color: var(--accent3); }
+  .model-name.purple { color: var(--accent2); }
+  .model-name.yellow { color: var(--accent4); }
+  .model-name.pink   { color: var(--accent5); }
+  .model-type {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    margin-left: auto;
+    text-transform: uppercase;
+  }
+  .model-new {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--accent3);
+    background: rgba(16,185,129,0.1);
+    border: 1px solid rgba(16,185,129,0.3);
+    padding: 1px 5px;
+    border-radius: 2px;
+    margin-left: 4px;
+  }
+  .model-fields {
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .field-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .field-name { color: var(--text); flex: 1; }
+  .field-name.new-field { color: var(--accent3); }
+  .field-type { color: var(--accent2); font-size: 10px; }
+  .pk-badge {
+    font-size: 9px;
+    color: var(--accent4);
+    background: rgba(245,158,11,0.1);
+    padding: 1px 4px;
+    border-radius: 2px;
+    border: 1px solid rgba(245,158,11,0.3);
+  }
+  .fk-badge {
+    font-size: 9px;
+    color: var(--muted);
+    background: var(--surface2);
+    padding: 1px 4px;
+    border-radius: 2px;
+    border: 1px solid var(--border);
+  }
+
+  /* Changelog section */
+  .changelog {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent3);
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin-bottom: 48px;
+  }
+  .changelog-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent3);
+    font-weight: 700;
+    margin-bottom: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .changelog-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    list-style: none;
+  }
+  .changelog-list li {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    gap: 10px;
+  }
+  .changelog-list li::before {
+    content: '+';
+    color: var(--accent3);
+    font-weight: 700;
+  }
+
+  /* Footer metrics */
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    text-align: center;
+  }
+  .metric-num {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .metric-card:nth-child(1) .metric-num { color: var(--accent);  }
+  .metric-card:nth-child(2) .metric-num { color: var(--accent2); }
+  .metric-card:nth-child(3) .metric-num { color: var(--accent4); }
+  .metric-card:nth-child(4) .metric-num { color: var(--accent3); }
+  .metric-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  @media (max-width: 700px) {
+    .arch-container { grid-template-columns: 1fr; }
+    .arrow { display: none; }
+    .metrics-row { grid-template-columns: repeat(2, 1fr); }
+    .header { flex-direction: column; }
+    .header-right { align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="badge">ISO_SECURE 27001</div>
+      <h1>SGSI <span>KPI</span> API</h1>
+      <div class="subtitle">// Arquitectura de endpoints &mdash; Indicadores y M&eacute;tricas de Seguridad</div>
+    </div>
+    <div class="header-right">
+      <div class="version-tag">v2.0.0 &mdash; Production</div>
+      <div class="stack-tags">
+        <span class="tag">FastAPI</span>
+        <span class="tag">PostgreSQL</span>
+        <span class="tag">Pydantic v2</span>
+        <span class="tag">SQLAlchemy</span>
+        <span class="tag">Supabase Auth</span>
+        <span class="tag">Docker</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Changelog -->
+  <div class="section-label">02 / Cambios recientes</div>
+  <div class="changelog">
+    <div class="changelog-title">// Changelog v2.0 &mdash; Actualizaciones implementadas</div>
+    <ul class="changelog-list">
+      <li>empresa_id agregado a incidents, controls y risk_levels &mdash; filtrado automático por empresa según rol</li>
+      <li>Roles admin/auditor ven todos los datos; supervisor/analista solo ven datos de su empresa</li>
+      <li>Controles ISO 27001:2022 auto-asignados al crear/actualizar empresa según actividad económica (A.5, A.6, A.7, A.8)</li>
+      <li>Endpoint POST /empresas/{id}/generar-controles para regenerar controles de empresas existentes</li>
+      <li>Videos reales de YouTube embed en los 4 cursos de capacitación</li>
+      <li>Sidebar corregido en desktop (position:fixed + grid-column:2) y mobile (overflow-y:auto)</li>
+      <li>Migración automática en deploy via migrate.py &mdash; idempotente y sin pérdida de datos</li>
+    </ul>
+  </div>
+
+  <!-- Architecture layers -->
+  <div class="section-label">03 / Arquitectura del sistema</div>
+  <div class="arch-container">
+    <div class="arch-layer client">
+      <div class="layer-title">Cliente / Consumer</div>
+      <div class="layer-items">
+        <div class="layer-item highlight-yellow">Dashboard Frontend</div>
+        <div class="layer-item highlight-yellow">Swagger UI / Docs</div>
+        <div class="layer-item">n8n Workflows</div>
+        <div class="layer-item">Postman / Tests</div>
+      </div>
+    </div>
+    <div class="arrow">
+      <span>&rarr;</span>
+      <div class="arrow-label">HTTP<br>REST</div>
+      <span>&larr;</span>
+    </div>
+    <div class="arch-layer api">
+      <div class="layer-title">FastAPI &mdash; Core</div>
+      <div class="layer-items">
+        <div class="layer-item highlight">Router /incidents</div>
+        <div class="layer-item highlight">Router /controls</div>
+        <div class="layer-item highlight">Router /risk</div>
+        <div class="layer-item highlight">Router /dashboard</div>
+        <div class="layer-item highlight">Router /empresas</div>
+        <div class="layer-item highlight">Router /capacitaciones</div>
+        <div class="layer-item highlight">Router /auditoria</div>
+        <div class="layer-item highlight-pink">Router /auth</div>
+        <div class="layer-item">Pydantic Schemas</div>
+        <div class="layer-item highlight-pink">Auth Middleware (Supabase JWT)</div>
+      </div>
+    </div>
+    <div class="arrow">
+      <span>&rarr;</span>
+      <div class="arrow-label">SQLAlchemy<br>ORM</div>
+      <span>&larr;</span>
+    </div>
+    <div class="arch-layer db">
+      <div class="layer-title">PostgreSQL &mdash; DB</div>
+      <div class="layer-items">
+        <div class="layer-item highlight-green">incidents</div>
+        <div class="layer-item highlight-green">controls</div>
+        <div class="layer-item highlight-green">risk_levels</div>
+        <div class="layer-item highlight-green">kpi_snapshots</div>
+        <div class="layer-item highlight-green">empresas</div>
+        <div class="layer-item highlight-green">user_profiles</div>
+        <div class="layer-item highlight-green">cursos</div>
+        <div class="layer-item highlight-green">curso_progreso</div>
+        <div class="layer-item highlight-green">auditoria_items</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Endpoints -->
+  <div class="section-label">04 / Endpoints de la API</div>
+  <div class="endpoints-grid">
+
+    <!-- Incidents -->
+    <div class="endpoint-group group-incidents">
+      <div class="group-header">
+        <div class="group-title">/incidents</div>
+        <div class="group-count">5 endpoints</div>
+      </div>
+      <div class="endpoint-list">
+        <div class="endpoint-row">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/incidents</span>
+          <span class="endpoint-desc">Listar todos los incidentes con filtros</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/incidents</span>
+          <span class="endpoint-desc">Reportar nuevo incidente</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/incidents/<span class="param">{id}</span></span>
+          <span class="endpoint-desc">Obtener detalle específico</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method put">PUT</span>
+          <span class="endpoint-path">/incidents/<span class="param">{id}</span>/status</span>
+          <span class="endpoint-desc">Actualizar estado</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/incidents/stats</span>
+          <span class="endpoint-desc">KPIs de incidentes</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="endpoint-group group-controls">
+      <div class="group-header">
+        <div class="group-title">/controls</div>
+        <div class="group-count">4 endpoints</div>
+      </div>
+      <div class="endpoint-list">
+        <div class="endpoint-row">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/controls</span>
+          <span class="endpoint-desc">Listar controles ISO 27001</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/controls</span>
+          <span class="endpoint-desc">Registrar nuevo control</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method put">PUT</span>
+          <span class="endpoint-path">/controls/<span class="param">{id}</span></span>
+          <span class="endpoint-desc">Actualizar cumplimiento</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/controls/compliance</span>
+          <span class="endpoint-desc">% global de cumplimiento</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Risk -->
+    <div class="endpoint-group group-risk">
+      <div class="group-header">
+        <div class="group-title">/risk</div>
+        <div class="group-count">4 endpoints</div>
+      </div>
+      <div class="endpoint-list">
+        <div class="endpoint-row">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/risk/current</span>
+          <span class="endpoint-desc">Nivel de riesgo actual</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/risk</span>
+          <span class="endpoint-desc">Registrar evaluaci&oacute;n</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/risk/history</span>
+          <span class="endpoint-desc">Historial por per&iacute;odo</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/risk/by-domain</span>
+          <span class="endpoint-desc">Riesgo por dominio ISO</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="endpoint-group group-dashboard">
+      <div class="group-header">
+        <div class="group-title">/dashboard</div>
+        <div class="group-count">3 endpoints</div>
+      </div>
+      <div class="endpoint-list">
+        <div class="endpoint-row">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/dashboard/summary</span>
+          <span class="endpoint-desc">Resumen ejecutivo</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/dashboard/kpis</span>
+          <span class="endpoint-desc">Todos los KPIs</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/dashboard/export</span>
+          <span class="endpoint-desc">Export JSON</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empresas -->
+    <div class="endpoint-group group-empresas">
+      <div class="group-header">
+        <div class="group-title">/empresas</div>
+        <div class="group-count">6 endpoints</div>
+      </div>
+      <div class="endpoint-list">
+        <div class="endpoint-row">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/empresas</span>
+          <span class="endpoint-desc">Listar empresas</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/empresas/<span class="param">{id}</span></span>
+          <span class="endpoint-desc">Detalle empresa</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/empresas</span>
+          <span class="endpoint-desc">Registrar + generar controles</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method put">PUT</span>
+          <span class="endpoint-path">/empresas/<span class="param">{id}</span></span>
+          <span class="endpoint-desc">Actualizar empresa</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/empresas/<span class="param">{id}</span>/generar-controles</span>
+          <span class="endpoint-desc">Regenerar controles ISO</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method delete">DEL</span>
+          <span class="endpoint-path">/empresas/<span class="param">{id}</span></span>
+          <span class="endpoint-desc">Eliminar empresa</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Auth -->
+    <div class="endpoint-group group-auth">
+      <div class="group-header">
+        <div class="group-title">/auth</div>
+        <div class="group-count">4 endpoints</div>
+      </div>
+      <div class="endpoint-list">
+        <div class="endpoint-row">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/auth/me</span>
+          <span class="endpoint-desc">Perfil usuario actual</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/auth/users</span>
+          <span class="endpoint-desc">Listar usuarios (admin)</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method put">PUT</span>
+          <span class="endpoint-path">/auth/users/<span class="param">{id}</span>/role</span>
+          <span class="endpoint-desc">Asignar rol + empresa</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/auth/register-profile</span>
+          <span class="endpoint-desc">Crear perfil inicial</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Capacitaciones -->
+    <div class="endpoint-group group-capacitaciones">
+      <div class="group-header">
+        <div class="group-title">/capacitaciones</div>
+        <div class="group-count">6 endpoints</div>
+      </div>
+      <div class="endpoint-list">
+        <div class="endpoint-row">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/capacitaciones</span>
+          <span class="endpoint-desc">Listar cursos con progreso</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/capacitaciones/<span class="param">{id}</span></span>
+          <span class="endpoint-desc">Detalle + progreso usuario</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/capacitaciones</span>
+          <span class="endpoint-desc">Crear curso (admin)</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method put">PUT</span>
+          <span class="endpoint-path">/capacitaciones/<span class="param">{id}</span></span>
+          <span class="endpoint-desc">Editar curso (admin)</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method delete">DEL</span>
+          <span class="endpoint-path">/capacitaciones/<span class="param">{id}</span></span>
+          <span class="endpoint-desc">Eliminar curso (admin)</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method patch">PATCH</span>
+          <span class="endpoint-path">/capacitaciones/<span class="param">{id}</span>/progreso</span>
+          <span class="endpoint-desc">Actualizar progreso propio</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Implementacion -->
+    <div class="endpoint-group group-implementacion">
+      <div class="group-header">
+        <div class="group-title">/implementacion</div>
+        <div class="group-count">1 endpoint</div>
+      </div>
+      <div class="endpoint-list">
+        <div class="endpoint-row">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/implementacion/<span class="param">{empresa_id}</span></span>
+          <span class="endpoint-desc">Dominios ISO recomendados por actividad</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Auditoria -->
+    <div class="endpoint-group group-auditoria">
+      <div class="group-header">
+        <div class="group-title">/auditoria</div>
+        <div class="group-count">6 endpoints</div>
+      </div>
+      <div class="endpoint-list">
+        <div class="endpoint-row">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/auditoria/empresa/<span class="param">{id}</span></span>
+          <span class="endpoint-desc">Items de auditor&iacute;a por empresa</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method get">GET</span>
+          <span class="endpoint-path">/auditoria/empresa/<span class="param">{id}</span>/resumen</span>
+          <span class="endpoint-desc">Resumen progreso auditor&iacute;a</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/auditoria/empresa/<span class="param">{id}</span>/generar</span>
+          <span class="endpoint-desc">Generar items desde controles</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method post">POST</span>
+          <span class="endpoint-path">/auditoria</span>
+          <span class="endpoint-desc">Crear item manual</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method put">PUT</span>
+          <span class="endpoint-path">/auditoria/<span class="param">{id}</span></span>
+          <span class="endpoint-desc">Actualizar estado item</span>
+        </div>
+        <div class="endpoint-row">
+          <span class="method delete">DEL</span>
+          <span class="endpoint-path">/auditoria/<span class="param">{id}</span></span>
+          <span class="endpoint-desc">Eliminar item</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Data models -->
+  <div class="section-label">05 / Modelos de datos &mdash; PostgreSQL</div>
+  <div class="models-grid">
+
+    <div class="model-card">
+      <div class="model-header">
+        <div class="model-name">incidents</div>
+        <div class="model-type">TABLE</div>
+      </div>
+      <div class="model-fields">
+        <div class="field-row"><span class="field-name">id</span><span class="field-type">UUID</span><span class="pk-badge">PK</span></div>
+        <div class="field-row"><span class="field-name new-field">empresa_id</span><span class="field-type">UUID</span><span class="fk-badge">FK</span></div>
+        <div class="field-row"><span class="field-name">title</span><span class="field-type">VARCHAR(200)</span></div>
+        <div class="field-row"><span class="field-name">description</span><span class="field-type">TEXT</span></div>
+        <div class="field-row"><span class="field-name">severity</span><span class="field-type">ENUM(low/medium/high/critical)</span></div>
+        <div class="field-row"><span class="field-name">status</span><span class="field-type">ENUM(open/in_progress/closed)</span></div>
+        <div class="field-row"><span class="field-name">category</span><span class="field-type">VARCHAR(100)</span></div>
+        <div class="field-row"><span class="field-name">reported_by</span><span class="field-type">VARCHAR(100)</span></div>
+        <div class="field-row"><span class="field-name">reported_at</span><span class="field-type">TIMESTAMPTZ</span></div>
+        <div class="field-row"><span class="field-name">resolved_at</span><span class="field-type">TIMESTAMPTZ?</span></div>
+      </div>
+    </div>
+
+    <div class="model-card">
+      <div class="model-header">
+        <div class="model-name">controls</div>
+        <div class="model-type">TABLE</div>
+      </div>
+      <div class="model-fields">
+        <div class="field-row"><span class="field-name">id</span><span class="field-type">UUID</span><span class="pk-badge">PK</span></div>
+        <div class="field-row"><span class="field-name new-field">empresa_id</span><span class="field-type">UUID</span><span class="fk-badge">FK</span></div>
+        <div class="field-row"><span class="field-name">iso_domain</span><span class="field-type">VARCHAR(10) &mdash; A.5/A.6/A.7/A.8</span></div>
+        <div class="field-row"><span class="field-name">iso_control_ref</span><span class="field-type">VARCHAR(20) &mdash; ej. 5.1</span></div>
+        <div class="field-row"><span class="field-name">name</span><span class="field-type">VARCHAR(200)</span></div>
+        <div class="field-row"><span class="field-name">description</span><span class="field-type">VARCHAR(500)</span></div>
+        <div class="field-row"><span class="field-name">status</span><span class="field-type">ENUM(compliant/en_proceso/non_compliant)</span></div>
+        <div class="field-row"><span class="field-name">compliance_pct</span><span class="field-type">DECIMAL(5,2)</span></div>
+        <div class="field-row"><span class="field-name">responsible</span><span class="field-type">VARCHAR(100)?</span></div>
+        <div class="field-row"><span class="field-name">last_reviewed</span><span class="field-type">DATE?</span></div>
+      </div>
+    </div>
+
+    <div class="model-card">
+      <div class="model-header">
+        <div class="model-name">risk_levels</div>
+        <div class="model-type">TABLE</div>
+      </div>
+      <div class="model-fields">
+        <div class="field-row"><span class="field-name">id</span><span class="field-type">UUID</span><span class="pk-badge">PK</span></div>
+        <div class="field-row"><span class="field-name new-field">empresa_id</span><span class="field-type">UUID</span><span class="fk-badge">FK</span></div>
+        <div class="field-row"><span class="field-name">domain</span><span class="field-type">VARCHAR(100)</span></div>
+        <div class="field-row"><span class="field-name">level</span><span class="field-type">ENUM(low/medium/high/critical)</span></div>
+        <div class="field-row"><span class="field-name">score</span><span class="field-type">INTEGER (1&ndash;25)</span></div>
+        <div class="field-row"><span class="field-name">probability</span><span class="field-type">INTEGER (1&ndash;5)</span></div>
+        <div class="field-row"><span class="field-name">impact</span><span class="field-type">INTEGER (1&ndash;5)</span></div>
+        <div class="field-row"><span class="field-name">notes</span><span class="field-type">VARCHAR(500)?</span></div>
+        <div class="field-row"><span class="field-name">recorded_at</span><span class="field-type">TIMESTAMPTZ</span></div>
+      </div>
+    </div>
+
+    <div class="model-card">
+      <div class="model-header">
+        <div class="model-name">kpi_snapshots</div>
+        <div class="model-type">TABLE</div>
+      </div>
+      <div class="model-fields">
+        <div class="field-row"><span class="field-name">id</span><span class="field-type">UUID</span><span class="pk-badge">PK</span></div>
+        <div class="field-row"><span class="field-name">snapshot_date</span><span class="field-type">DATE</span></div>
+        <div class="field-row"><span class="field-name">total_incidents</span><span class="field-type">INTEGER</span></div>
+        <div class="field-row"><span class="field-name">resolved_incidents</span><span class="field-type">INTEGER</span></div>
+        <div class="field-row"><span class="field-name">avg_resolution_hrs</span><span class="field-type">DECIMAL</span></div>
+        <div class="field-row"><span class="field-name">controls_compliant</span><span class="field-type">INTEGER</span></div>
+        <div class="field-row"><span class="field-name">controls_en_proceso</span><span class="field-type">INTEGER</span></div>
+        <div class="field-row"><span class="field-name">global_risk_score</span><span class="field-type">DECIMAL</span></div>
+      </div>
+    </div>
+
+    <div class="model-card">
+      <div class="model-header">
+        <div class="model-name green">empresas</div>
+        <span class="model-new">NEW</span>
+        <div class="model-type">TABLE</div>
+      </div>
+      <div class="model-fields">
+        <div class="field-row"><span class="field-name">id</span><span class="field-type">UUID</span><span class="pk-badge">PK</span></div>
+        <div class="field-row"><span class="field-name">nombre</span><span class="field-type">VARCHAR(200)</span></div>
+        <div class="field-row"><span class="field-name">tipo_empresa</span><span class="field-type">VARCHAR(100)</span></div>
+        <div class="field-row"><span class="field-name">actividad_economica</span><span class="field-type">VARCHAR(200)</span></div>
+        <div class="field-row"><span class="field-name">representante_legal</span><span class="field-type">VARCHAR(150)</span></div>
+        <div class="field-row"><span class="field-name">nit</span><span class="field-type">VARCHAR(50)?</span></div>
+        <div class="field-row"><span class="field-name">email / telefono</span><span class="field-type">VARCHAR?</span></div>
+        <div class="field-row"><span class="field-name">direccion</span><span class="field-type">VARCHAR(300)?</span></div>
+      </div>
+    </div>
+
+    <div class="model-card">
+      <div class="model-header">
+        <div class="model-name pink">user_profiles</div>
+        <span class="model-new">NEW</span>
+        <div class="model-type">TABLE</div>
+      </div>
+      <div class="model-fields">
+        <div class="field-row"><span class="field-name">id</span><span class="field-type">UUID</span><span class="pk-badge">PK</span></div>
+        <div class="field-row"><span class="field-name">user_id</span><span class="field-type">UUID UNIQUE (Supabase)</span></div>
+        <div class="field-row"><span class="field-name">email</span><span class="field-type">VARCHAR(200)?</span></div>
+        <div class="field-row"><span class="field-name">role</span><span class="field-type">ENUM(admin/auditor/supervisor/analista)</span></div>
+        <div class="field-row"><span class="field-name">empresa_id</span><span class="field-type">UUID</span><span class="fk-badge">FK</span></div>
+      </div>
+    </div>
+
+    <div class="model-card">
+      <div class="model-header">
+        <div class="model-name yellow">cursos</div>
+        <span class="model-new">NEW</span>
+        <div class="model-type">TABLE</div>
+      </div>
+      <div class="model-fields">
+        <div class="field-row"><span class="field-name">id</span><span class="field-type">UUID</span><span class="pk-badge">PK</span></div>
+        <div class="field-row"><span class="field-name">titulo</span><span class="field-type">VARCHAR(200)</span></div>
+        <div class="field-row"><span class="field-name">descripcion</span><span class="field-type">TEXT?</span></div>
+        <div class="field-row"><span class="field-name">video_url</span><span class="field-type">VARCHAR(500)? &mdash; embed YouTube</span></div>
+        <div class="field-row"><span class="field-name">material_texto</span><span class="field-type">TEXT?</span></div>
+        <div class="field-row"><span class="field-name">categoria</span><span class="field-type">VARCHAR(100)?</span></div>
+        <div class="field-row"><span class="field-name">nivel</span><span class="field-type">ENUM(basico/intermedio/avanzado)</span></div>
+      </div>
+    </div>
+
+    <div class="model-card">
+      <div class="model-header">
+        <div class="model-name purple">curso_progreso</div>
+        <span class="model-new">NEW</span>
+        <div class="model-type">TABLE</div>
+      </div>
+      <div class="model-fields">
+        <div class="field-row"><span class="field-name">id</span><span class="field-type">UUID</span><span class="pk-badge">PK</span></div>
+        <div class="field-row"><span class="field-name">curso_id</span><span class="field-type">UUID</span><span class="fk-badge">FK</span></div>
+        <div class="field-row"><span class="field-name">user_id</span><span class="field-type">UUID (Supabase)</span></div>
+        <div class="field-row"><span class="field-name">status</span><span class="field-type">ENUM(pendiente/en_proceso/completado)</span></div>
+        <div class="field-row"><span class="field-name">[UNIQUE]</span><span class="field-type">curso_id + user_id</span></div>
+      </div>
+    </div>
+
+    <div class="model-card">
+      <div class="model-header">
+        <div class="model-name" style="color:#fb923c">auditoria_items</div>
+        <span class="model-new">NEW</span>
+        <div class="model-type">TABLE</div>
+      </div>
+      <div class="model-fields">
+        <div class="field-row"><span class="field-name">id</span><span class="field-type">UUID</span><span class="pk-badge">PK</span></div>
+        <div class="field-row"><span class="field-name">empresa_id</span><span class="field-type">UUID</span><span class="fk-badge">FK</span></div>
+        <div class="field-row"><span class="field-name">iso_control_ref</span><span class="field-type">VARCHAR(20)?</span></div>
+        <div class="field-row"><span class="field-name">control_name</span><span class="field-type">VARCHAR(200)</span></div>
+        <div class="field-row"><span class="field-name">activity_desc</span><span class="field-type">TEXT?</span></div>
+        <div class="field-row"><span class="field-name">status</span><span class="field-type">ENUM(pendiente/en_proceso/completado)</span></div>
+        <div class="field-row"><span class="field-name">auditor_id</span><span class="field-type">UUID? (Supabase)</span></div>
+        <div class="field-row"><span class="field-name">fecha_evaluacion</span><span class="field-type">DATE?</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Summary metrics -->
+  <div class="section-label">06 / Resumen del sistema</div>
+  <div class="metrics-row">
+    <div class="metric-card">
+      <div class="metric-num">39</div>
+      <div class="metric-label">Endpoints totales</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num">9</div>
+      <div class="metric-label">Dominios de la API</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num">9</div>
+      <div class="metric-label">Tablas PostgreSQL</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num">ISO</div>
+      <div class="metric-label">27001:2022 &mdash; 93 controles</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
