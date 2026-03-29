@@ -83,42 +83,48 @@ const viewTitles = {
 
 // ─── LoginPage ────────────────────────────────────────────────────────────────
 const LoginPage = ({ onLogin }) => {
+  const [mode, setMode] = useState('login'); // 'login' | 'register'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  const resetForm = () => {
+    setEmail(''); setPassword(''); setConfirmPassword('');
+    setError(''); setSuccess('');
+  };
+
+  const switchMode = (newMode) => { setMode(newMode); resetForm(); };
+
+  const fetchOrCreateProfile = async (token) => {
+    try {
+      return await axios.get('/api/v1/auth/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(r => r.data);
+    } catch (err) {
+      if (err.response?.status === 403) {
+        return await axios.post('/api/v1/auth/register-profile', {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        }).then(r => r.data);
+      }
+      throw err;
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    setLoading(true); setError('');
     try {
-      // 1. Authenticate with Supabase
       const authRes = await axios.post(
         `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
         { email, password },
         { headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' } }
       );
       const token = authRes.data.access_token;
-
-      // 2. Fetch or create user profile from our backend
-      let profile;
-      try {
-        profile = await axios.get('/api/v1/auth/me', {
-          headers: { Authorization: `Bearer ${token}` }
-        }).then(r => r.data);
-      } catch (profileErr) {
-        if (profileErr.response?.status === 403) {
-          // Auto-register profile with default role
-          profile = await axios.post('/api/v1/auth/register-profile', {}, {
-            headers: { Authorization: `Bearer ${token}` }
-          }).then(r => r.data);
-        } else {
-          throw profileErr;
-        }
-      }
-
+      const profile = await fetchOrCreateProfile(token);
       onLogin(token, profile);
     } catch (err) {
       if (err.response?.status === 400 || err.response?.status === 422) {
@@ -131,15 +137,58 @@ const LoginPage = ({ onLogin }) => {
     }
   };
 
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setError(''); setSuccess('');
+    if (password !== confirmPassword) { setError('Las contraseñas no coinciden.'); return; }
+    if (password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres.'); return; }
+    setLoading(true);
+    try {
+      // 1. Create account in Supabase Auth
+      const signupRes = await axios.post(
+        `${SUPABASE_URL}/auth/v1/signup`,
+        { email, password },
+        { headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' } }
+      );
+
+      const token = signupRes.data.access_token;
+
+      if (!token) {
+        // Supabase sent a confirmation email (email confirmation enabled)
+        setSuccess('Cuenta creada. Revisa tu correo para confirmar tu cuenta y luego inicia sesión.');
+        setLoading(false);
+        return;
+      }
+
+      // 2. Auto-login if token returned (email confirmation disabled)
+      const profile = await fetchOrCreateProfile(token);
+      onLogin(token, profile);
+    } catch (err) {
+      const msg = err.response?.data?.msg || err.response?.data?.error_description || '';
+      if (msg.includes('already registered') || msg.includes('User already registered')) {
+        setError('Este correo ya está registrado. Inicia sesión.');
+      } else {
+        setError('Error al crear la cuenta. Intenta nuevamente.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const inputStyle = {
+    width: '100%',
+    padding: '0.75rem 1rem',
+    background: 'var(--color-bg-elevated)',
+    border: '1px solid var(--glass-border)',
+    borderRadius: '8px',
+    color: 'var(--text-main)',
+    fontSize: '0.95rem',
+    outline: 'none',
+    boxSizing: 'border-box',
+  };
+
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'var(--color-bg)',
-      padding: '1rem',
-    }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg)', padding: '1rem' }}>
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -158,117 +207,82 @@ const LoginPage = ({ onLogin }) => {
             </p>
           </div>
 
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                Correo electrónico
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="usuario@empresa.com"
+          {/* Mode tabs */}
+          <div style={{ display: 'flex', background: 'var(--color-bg-elevated)', borderRadius: '8px', padding: '4px', marginBottom: '1.5rem', border: '1px solid var(--glass-border)' }}>
+            {[{ key: 'login', label: 'Ingresar' }, { key: 'register', label: 'Crear cuenta' }].map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => switchMode(key)}
                 style={{
-                  width: '100%',
-                  padding: '0.75rem 1rem',
-                  background: 'var(--color-bg-elevated)',
-                  border: '1px solid var(--glass-border)',
-                  borderRadius: '8px',
-                  color: 'var(--text-main)',
-                  fontSize: '0.95rem',
-                  outline: 'none',
-                  boxSizing: 'border-box',
+                  flex: 1, padding: '0.6rem', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '600', transition: 'all 0.2s',
+                  background: mode === key ? 'var(--primary)' : 'transparent',
+                  color: mode === key ? 'white' : 'var(--text-muted)',
                 }}
-              />
-            </div>
+              >
+                {label}
+              </button>
+            ))}
+          </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                Contraseña
-              </label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  placeholder="••••••••"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem 3rem 0.75rem 1rem',
-                    background: 'var(--color-bg-elevated)',
-                    border: '1px solid var(--glass-border)',
-                    borderRadius: '8px',
-                    color: 'var(--text-main)',
-                    fontSize: '0.95rem',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '0.75rem',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: 'var(--text-muted)',
-                    padding: 0,
-                  }}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
-
-            {error && (
-              <div style={{
-                padding: '0.75rem 1rem',
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                borderRadius: '8px',
-                color: 'var(--danger)',
-                fontSize: '0.85rem',
-              }}>
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                padding: '0.85rem',
-                background: 'var(--primary)',
-                border: 'none',
-                borderRadius: '8px',
-                color: 'white',
-                fontSize: '1rem',
-                fontWeight: '600',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading ? 0.7 : 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                transition: 'opacity 0.2s',
-              }}
+          <AnimatePresence mode="wait">
+            <motion.form
+              key={mode}
+              initial={{ opacity: 0, x: mode === 'login' ? -20 : 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onSubmit={mode === 'login' ? handleLogin : handleRegister}
+              style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}
             >
-              {loading ? (
-                <Activity size={18} className="animate-spin" />
-              ) : (
-                <LogIn size={18} />
-              )}
-              {loading ? 'Ingresando...' : 'Ingresar'}
-            </button>
-          </form>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Correo electrónico</label>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="usuario@empresa.com" style={inputStyle} />
+              </div>
 
-          <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Contraseña</label>
+                <div style={{ position: 'relative' }}>
+                  <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" style={{ ...inputStyle, paddingRight: '3rem' }} />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0 }}>
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              {mode === 'register' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Confirmar contraseña</label>
+                  <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required placeholder="••••••••" style={inputStyle} />
+                </div>
+              )}
+
+              {error && (
+                <div style={{ padding: '0.75rem 1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: 'var(--danger)', fontSize: '0.85rem' }}>
+                  {error}
+                </div>
+              )}
+
+              {success && (
+                <div style={{ padding: '0.75rem 1rem', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '8px', color: 'var(--success)', fontSize: '0.85rem' }}>
+                  {success}
+                </div>
+              )}
+
+              <button type="submit" disabled={loading} style={{ padding: '0.85rem', background: 'var(--primary)', border: 'none', borderRadius: '8px', color: 'white', fontSize: '1rem', fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'opacity 0.2s' }}>
+                {loading ? <Activity size={18} className="animate-spin" /> : <LogIn size={18} />}
+                {loading ? (mode === 'login' ? 'Ingresando...' : 'Creando cuenta...') : (mode === 'login' ? 'Ingresar' : 'Crear cuenta')}
+              </button>
+            </motion.form>
+          </AnimatePresence>
+
+          {mode === 'register' && (
+            <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              El rol inicial es <strong>Analista</strong>. Un administrador puede cambiarlo después.
+            </p>
+          )}
+
+          <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             Acceso restringido · ISO/IEC 27001:2022
           </p>
         </div>
