@@ -13,13 +13,9 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
 
 
-async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: AsyncSession = Depends(get_db),
-) -> dict:
-    token = credentials.credentials
-
-    # Validate token with Supabase Auth
+async def _validate_supabase_token(token: str) -> dict:
+    """Valida el JWT con Supabase y retorna los datos del usuario.
+    NO verifica si existe perfil en la DB — solo autentica."""
     async with httpx.AsyncClient() as client:
         response = await client.get(
             f"{SUPABASE_URL}/auth/v1/user",
@@ -37,11 +33,27 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    supabase_user = response.json()
-    user_id = supabase_user.get("id")
-    email = supabase_user.get("email")
+    data = response.json()
+    return {"user_id": str(data.get("id")), "email": data.get("email")}
 
-    # Fetch role from user_profiles table
+
+async def get_supabase_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> dict:
+    """Solo valida el JWT de Supabase. No requiere perfil en la DB.
+    Usar para endpoints de bootstrapping (register-profile)."""
+    return await _validate_supabase_token(credentials.credentials)
+
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Valida JWT y verifica que el usuario tenga perfil con rol en la DB."""
+    supabase_user = await _validate_supabase_token(credentials.credentials)
+    user_id = supabase_user["user_id"]
+    email = supabase_user["email"]
+
     from app.models.user_profile import UserProfile
 
     result = await db.execute(
@@ -56,7 +68,7 @@ async def get_current_user(
         )
 
     return {
-        "user_id": str(user_id),
+        "user_id": user_id,
         "email": email,
         "role": profile.role.value,
         "empresa_id": str(profile.empresa_id) if profile.empresa_id else None,

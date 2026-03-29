@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database import get_db
-from app.auth import get_current_user, require_role
+from app.auth import get_current_user, get_supabase_user, require_role
 from app.models.user_profile import UserProfile
 from app.utils.enums import UserRoleEnum
 from pydantic import BaseModel
@@ -95,7 +95,7 @@ async def update_user_role(
 @router.post("/register-profile", response_model=UserProfileResponse, status_code=status.HTTP_201_CREATED)
 async def register_profile(
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_supabase_user),  # solo valida JWT, sin requerir perfil previo
 ):
     """
     Crea el perfil del usuario autenticado si no existe.
