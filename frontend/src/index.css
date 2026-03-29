@@ -129,11 +129,15 @@ h3 { font-size: 1.25rem; }
   padding: 2rem 1.5rem;
   border-right: 1px solid var(--glass-border);
   background: var(--color-bg-secondary);
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  width: 260px;
   height: 100vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
+  z-index: 100;
 }
 
 .main-content {
@@ -343,7 +347,11 @@ h3 { font-size: 1.25rem; }
   .dashboard-container {
     grid-template-columns: 220px 1fr;
   }
-  
+
+  .sidebar {
+    width: 220px;
+  }
+
   .main-content {
     padding: 2rem;
   }

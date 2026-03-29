@@ -231,7 +231,68 @@ async def run_migrations():
             """
         ),
 
-        # ── 10. Seed: cursos iniciales ───────────────────────────────────────
+        # ── 10. Seed: incidentes activos iniciales ───────────────────────────
+        (
+            "Seed incidentes activos iniciales",
+            """
+            INSERT INTO incidents (id, title, description, severity, status, category, reported_by, reported_at)
+            SELECT * FROM (VALUES
+                (
+                    gen_random_uuid(),
+                    'Acceso no autorizado a servidor de archivos',
+                    'Se detectó un intento de acceso desde una IP externa no registrada al servidor de archivos corporativo. El sistema bloqueó el acceso pero el evento quedó sin análisis forense.',
+                    'high'::severityenum,
+                    'open'::incidentstatusenum,
+                    'Control de Acceso',
+                    'Sistema de Monitoreo',
+                    NOW() - INTERVAL '2 days'
+                ),
+                (
+                    gen_random_uuid(),
+                    'Credenciales de usuario comprometidas',
+                    'Un usuario reportó que sus credenciales de correo fueron utilizadas desde una ubicación geográfica desconocida. Se sospecha phishing. El usuario fue bloqueado preventivamente.',
+                    'critical'::severityenum,
+                    'in_progress'::incidentstatusenum,
+                    'Gestión de Identidades',
+                    'Help Desk',
+                    NOW() - INTERVAL '5 days'
+                ),
+                (
+                    gen_random_uuid(),
+                    'Política de contraseñas no aplicada en sistemas legacy',
+                    'Auditoría interna detectó que 3 sistemas legacy no aplican la política de rotación de contraseñas cada 90 días definida en el Anexo A.5.17.',
+                    'medium'::severityenum,
+                    'open'::incidentstatusenum,
+                    'Cumplimiento',
+                    'Auditoría Interna',
+                    NOW() - INTERVAL '7 days'
+                ),
+                (
+                    gen_random_uuid(),
+                    'Backup sin cifrar en almacenamiento en nube',
+                    'Se identificó que los backups automáticos diarios se están almacenando en S3 sin cifrado en reposo, incumpliendo el control A.8.24 de ISO 27001:2022.',
+                    'high'::severityenum,
+                    'in_progress'::incidentstatusenum,
+                    'Protección de Datos',
+                    'Equipo de Infraestructura',
+                    NOW() - INTERVAL '10 days'
+                ),
+                (
+                    gen_random_uuid(),
+                    'Falta de registro de actividad en base de datos de producción',
+                    'Los logs de auditoría de la base de datos de producción estaban desactivados durante 48 horas por mantenimiento no comunicado, generando un gap en la trazabilidad.',
+                    'medium'::severityenum,
+                    'open'::incidentstatusenum,
+                    'Auditoría y Trazabilidad',
+                    'DBA',
+                    NOW() - INTERVAL '1 day'
+                )
+            ) AS v(id, title, description, severity, status, category, reported_by, reported_at)
+            WHERE NOT EXISTS (SELECT 1 FROM incidents LIMIT 1);
+            """
+        ),
+
+        # ── 11. Seed: cursos iniciales ──────────────────────────────────────
         (
             "Seed cursos iniciales",
             """
