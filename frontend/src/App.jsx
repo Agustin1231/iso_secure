@@ -1907,36 +1907,6 @@ function App() {
         </div>
       </motion.div>
 
-      {/* ── KPI cards ── */}
-      <div className="kpi-grid" style={{ marginBottom: '1.75rem' }}>
-        {kpis.map((kpi, index) => (
-          <KPICard key={index} title={kpi.name} value={kpi.value} unit={kpi.unit} status={kpi.status} description={kpi.description} />
-        ))}
-      </div>
-
-      {/* ── Chart row (admin/auditor/supervisor) ── */}
-      {['admin', 'auditor', 'supervisor'].includes(userProfile?.role) && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '1.75rem' }}>
-          <div className="glass-card" style={{ padding: '1.5rem' }}>
-            <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', margin: '0 0 1rem' }}>
-              <Activity size={18} color="var(--primary)" />
-              Evolución de Cumplimiento Global
-            </h3>
-            <Line data={dummyChartData} options={chartOptions} height={100} />
-          </div>
-          <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <h3 style={{ marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', margin: '0 0 0.75rem' }}>
-              <ShieldAlert size={18} color="var(--danger)" />
-              Dominio Más Crítico
-            </h3>
-            <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-              {summary?.risk_highest_domain || 'Sin datos'}
-            </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.4', margin: 0 }}>Área con mayor exposición al riesgo según la última evaluación</p>
-          </div>
-        </div>
-      )}
-
       {/* ── Module quick-access cards ── */}
       <div style={{ marginBottom: '1.75rem' }}>
         <h3 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 1rem', fontWeight: '600' }}>
@@ -1967,6 +1937,36 @@ function App() {
           ))}
         </div>
       </div>
+
+      {/* ── KPI cards ── */}
+      <div className="kpi-grid" style={{ marginBottom: '1.75rem' }}>
+        {kpis.map((kpi, index) => (
+          <KPICard key={index} title={kpi.name} value={kpi.value} unit={kpi.unit} status={kpi.status} description={kpi.description} />
+        ))}
+      </div>
+
+      {/* ── Chart row (admin/auditor/supervisor) ── */}
+      {['admin', 'auditor', 'supervisor'].includes(userProfile?.role) && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '1.75rem' }}>
+          <div className="glass-card" style={{ padding: '1.5rem' }}>
+            <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', margin: '0 0 1rem' }}>
+              <Activity size={18} color="var(--primary)" />
+              Evolución de Cumplimiento Global
+            </h3>
+            <Line data={dummyChartData} options={chartOptions} height={100} />
+          </div>
+          <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <h3 style={{ marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', margin: '0 0 0.75rem' }}>
+              <ShieldAlert size={18} color="var(--danger)" />
+              Dominio Más Crítico
+            </h3>
+            <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-main)', marginBottom: '0.5rem' }}>
+              {summary?.risk_highest_domain || 'Sin datos'}
+            </div>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.4', margin: 0 }}>Área con mayor exposición al riesgo según la última evaluación</p>
+          </div>
+        </div>
+      )}
 
       {/* ── Recent incidents (admin / auditor / analista) ── */}
       {['admin', 'auditor', 'analista'].includes(userProfile?.role) && (
