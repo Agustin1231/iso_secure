@@ -28,17 +28,19 @@ class DashboardService:
                 return "red"
 
     @staticmethod
-    async def get_summary(db: AsyncSession):
+    async def get_summary(db: AsyncSession, empresa_id: str = None):
         # SQLAlchemy AsyncSession no permite operaciones concurrentes en la misma sesión
         # Ejecutamos secuencialmente por seguridad
-        incident_stats = await IncidentService.get_stats(db, days=365)
-        control_stats = await ControlService.get_compliance_stats(db)
-        risk_stats = await RiskService.get_current_stats(db)
-        
+        incident_stats = await IncidentService.get_stats(db, days=365, empresa_id=empresa_id)
+        control_stats = await ControlService.get_compliance_stats(db, empresa_id=empresa_id)
+        risk_stats = await RiskService.get_current_stats(db, empresa_id=empresa_id)
+
         # Adicional: contar incidentes críticos activos para el dashboard
+        empresa_filter = (Incident.empresa_id == empresa_id,) if empresa_id else ()
         critical_active_stmt = select(func.count(Incident.id)).where(
-            Incident.severity == SeverityEnum.critical, 
-            Incident.status != IncidentStatusEnum.closed
+            Incident.severity == SeverityEnum.critical,
+            Incident.status != IncidentStatusEnum.closed,
+            *empresa_filter
         )
         critical_active = (await db.execute(critical_active_stmt)).scalar() if hasattr(Incident, 'severity') else 0
         
@@ -65,8 +67,8 @@ class DashboardService:
         }
 
     @staticmethod
-    async def get_kpis(db: AsyncSession):
-        summary = await DashboardService.get_summary(db)
+    async def get_kpis(db: AsyncSession, empresa_id: str = None):
+        summary = await DashboardService.get_summary(db, empresa_id=empresa_id)
         
         kpis = [
             {

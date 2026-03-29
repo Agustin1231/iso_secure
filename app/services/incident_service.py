@@ -8,9 +8,11 @@ from uuid import UUID
 
 class IncidentService:
     @staticmethod
-    async def get_all(db: AsyncSession, skip: int = 0, limit: int = 20, status: str = None, severity: str = None, category: str = None):
+    async def get_all(db: AsyncSession, skip: int = 0, limit: int = 20, status: str = None, severity: str = None, category: str = None, empresa_id: str = None):
         query = select(Incident).order_by(Incident.reported_at.desc())
-        
+
+        if empresa_id:
+            query = query.where(Incident.empresa_id == empresa_id)
         if status:
             query = query.where(Incident.status == status)
         if severity:
@@ -79,31 +81,30 @@ class IncidentService:
         return db_incident
 
     @staticmethod
-    async def get_stats(db: AsyncSession, days: int = 30):
+    async def get_stats(db: AsyncSession, days: int = 30, empresa_id: str = None):
         since_date = datetime.now(timezone.utc) - timedelta(days=days)
-        
+
+        empresa_filter = (Incident.empresa_id == empresa_id,) if empresa_id else ()
+
         # Base query for stats
-        base_query = select(Incident).where(Incident.reported_at >= since_date)
-        
+        base_query = select(Incident).where(Incident.reported_at >= since_date, *empresa_filter)
+
         # Total, and by status
         total_stmt = select(func.count()).select_from(base_query.subquery())
         total = (await db.execute(total_stmt)).scalar() or 0
-        
-        open_stmt = select(func.count()).where(and_(Incident.reported_at >= since_date, Incident.status == IncidentStatusEnum.open))
+
+        open_stmt = select(func.count()).where(and_(Incident.reported_at >= since_date, Incident.status == IncidentStatusEnum.open, *empresa_filter))
         open_count = (await db.execute(open_stmt)).scalar() or 0
-        
-        progress_stmt = select(func.count()).where(and_(Incident.reported_at >= since_date, Incident.status == IncidentStatusEnum.in_progress))
+
+        progress_stmt = select(func.count()).where(and_(Incident.reported_at >= since_date, Incident.status == IncidentStatusEnum.in_progress, *empresa_filter))
         in_progress = (await db.execute(progress_stmt)).scalar() or 0
-        
-        closed_stmt = select(func.count()).where(and_(Incident.reported_at >= since_date, Incident.status == IncidentStatusEnum.closed))
+
+        closed_stmt = select(func.count()).where(and_(Incident.reported_at >= since_date, Incident.status == IncidentStatusEnum.closed, *empresa_filter))
         closed = (await db.execute(closed_stmt)).scalar() or 0
-        
+
         # By severity
-        severity_result = await db.execute(
-            select(Incident.severity, func.count())
-            .where(Incident.reported_at >= since_date)
-            .group_by(Incident.severity)
-        )
+        severity_query = select(Incident.severity, func.count()).where(Incident.reported_at >= since_date, *empresa_filter).group_by(Incident.severity)
+        severity_result = await db.execute(severity_query)
         # Asegurar que las llaves sean strings para serialización JSON
         by_severity = {getattr(s, 'value', s): count for s, count in severity_result.all()}
         # Ensure all severities exist in dict
@@ -114,9 +115,10 @@ class IncidentService:
         avg_res_query = select(func.avg(
             func.extract('epoch', Incident.resolved_at - Incident.reported_at) / 3600
         )).where(and_(
-            Incident.reported_at >= since_date, 
-            Incident.status == IncidentStatusEnum.closed, 
-            Incident.resolved_at.isnot(None)
+            Incident.reported_at >= since_date,
+            Incident.status == IncidentStatusEnum.closed,
+            Incident.resolved_at.isnot(None),
+            *empresa_filter
         ))
         
         avg_resolution_hrs = (await db.execute(avg_res_query)).scalar()

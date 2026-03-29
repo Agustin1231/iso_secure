@@ -134,7 +134,7 @@ h3 { font-size: 1.25rem; }
   left: 0;
   width: 260px;
   height: 100vh;
-  overflow-y: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   z-index: 100;
@@ -561,11 +561,13 @@ h3 { font-size: 1.25rem; }
   }
   
   .sidebar {
-    position: fixed !important;
+    position: sticky !important;
     top: 0 !important;
     left: 0 !important;
-    width: 260px !important;
+    width: auto !important;
     height: 100vh !important;
+    align-self: start !important;
+    overflow: hidden !important;
   }
   
   .sidebar-overlay {

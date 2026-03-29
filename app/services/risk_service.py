@@ -37,10 +37,12 @@ class RiskService:
         return db_risk
 
     @staticmethod
-    async def get_history(db: AsyncSession, days: int = 90, domain: str = None, skip: int = 0, limit: int = 50):
+    async def get_history(db: AsyncSession, days: int = 90, domain: str = None, skip: int = 0, limit: int = 50, empresa_id: str = None):
         since_date = datetime.now(timezone.utc) - timedelta(days=days)
         query = select(RiskLevel).where(RiskLevel.recorded_at >= since_date).order_by(RiskLevel.recorded_at.desc())
-        
+
+        if empresa_id:
+            query = query.where(RiskLevel.empresa_id == empresa_id)
         if domain:
             query = query.where(RiskLevel.domain == domain)
             
@@ -53,10 +55,12 @@ class RiskService:
         return {"total": total, "items": items}
 
     @staticmethod
-    async def get_by_domain(db: AsyncSession):
+    async def get_by_domain(db: AsyncSession, empresa_id: str = None):
+        empresa_filter = (RiskLevel.empresa_id == empresa_id,) if empresa_id else ()
         # Subquery to get max recorded_at for each domain
         subq = (
             select(RiskLevel.domain, func.max(RiskLevel.recorded_at).label("max_recorded"))
+            .where(*empresa_filter)
             .group_by(RiskLevel.domain)
             .subquery()
         )
@@ -74,8 +78,8 @@ class RiskService:
         return {"domains": items, "total": len(items)}
 
     @staticmethod
-    async def get_current_stats(db: AsyncSession):
-        current_risks = await RiskService.get_by_domain(db)
+    async def get_current_stats(db: AsyncSession, empresa_id: str = None):
+        current_risks = await RiskService.get_by_domain(db, empresa_id=empresa_id)
         items = current_risks["domains"]
         
         if not items:

@@ -8,9 +8,11 @@ from uuid import UUID
 
 class ControlService:
     @staticmethod
-    async def get_all(db: AsyncSession, skip: int = 0, limit: int = 50, status: str = None, iso_domain: str = None):
+    async def get_all(db: AsyncSession, skip: int = 0, limit: int = 50, status: str = None, iso_domain: str = None, empresa_id: str = None):
         query = select(Control).order_by(Control.iso_domain.asc(), Control.iso_control_ref.asc())
-        
+
+        if empresa_id:
+            query = query.where(Control.empresa_id == empresa_id)
         if status:
             query = query.where(Control.status == status)
         if iso_domain:
@@ -73,9 +75,11 @@ class ControlService:
         return db_control
 
     @staticmethod
-    async def get_compliance_stats(db: AsyncSession):
+    async def get_compliance_stats(db: AsyncSession, empresa_id: str = None):
+        empresa_filter = (Control.empresa_id == empresa_id,) if empresa_id else ()
+
         # Overall counters
-        total = (await db.execute(select(func.count(Control.id)))).scalar() or 0
+        total = (await db.execute(select(func.count(Control.id)).where(*empresa_filter))).scalar() or 0
         if total == 0:
             return {
                 "total_controls": 0,
@@ -86,12 +90,12 @@ class ControlService:
                 "by_domain": {}
             }
 
-        compliant = (await db.execute(select(func.count(Control.id)).where(Control.status == ControlStatusEnum.compliant))).scalar() or 0
-        en_proceso = (await db.execute(select(func.count(Control.id)).where(Control.status == ControlStatusEnum.en_proceso))).scalar() or 0
-        non_compliant = (await db.execute(select(func.count(Control.id)).where(Control.status == ControlStatusEnum.non_compliant))).scalar() or 0
-        
+        compliant = (await db.execute(select(func.count(Control.id)).where(Control.status == ControlStatusEnum.compliant, *empresa_filter))).scalar() or 0
+        en_proceso = (await db.execute(select(func.count(Control.id)).where(Control.status == ControlStatusEnum.en_proceso, *empresa_filter))).scalar() or 0
+        non_compliant = (await db.execute(select(func.count(Control.id)).where(Control.status == ControlStatusEnum.non_compliant, *empresa_filter))).scalar() or 0
+
         global_compliance_pct = (compliant / total) * 100
-        
+
         # Stats by domain
         domain_result = await db.execute(
             select(
@@ -100,7 +104,7 @@ class ControlService:
                 func.count(Control.id).filter(Control.status == ControlStatusEnum.compliant).label("compliant"),
                 func.count(Control.id).filter(Control.status == ControlStatusEnum.en_proceso).label("en_proceso"),
                 func.count(Control.id).filter(Control.status == ControlStatusEnum.non_compliant).label("non_compliant")
-            ).group_by(Control.iso_domain)
+            ).where(*empresa_filter).group_by(Control.iso_domain)
         )
         
         by_domain = {}
