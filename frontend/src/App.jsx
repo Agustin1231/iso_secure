@@ -96,6 +96,37 @@ const viewTitles = {
   auditoria: 'Auditoría Interna',
 };
 
+// ─── Role access map ─────────────────────────────────────────────────────────
+const VIEW_ROLES = {
+  dashboard: ['admin', 'auditor', 'supervisor', 'analista'],
+  incidents: ['admin', 'auditor', 'analista'],
+  controls: ['admin', 'auditor', 'analista'],
+  risk: ['admin', 'auditor'],
+  history: ['admin', 'supervisor'],
+  empresas: ['admin', 'auditor'],
+  usuarios: ['admin'],
+  capacitaciones: ['admin', 'auditor', 'supervisor', 'analista'],
+  implementacion: ['admin', 'auditor'],
+  auditoria: ['admin', 'auditor'],
+};
+
+const AccessDenied = ({ userRole, viewId, onBack }) => (
+  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card animate-fade-in"
+    style={{ padding: '3rem 2rem', textAlign: 'center', maxWidth: '480px', margin: '4rem auto' }}>
+    <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(239,68,68,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
+      <ShieldAlert size={30} color="var(--danger)" />
+    </div>
+    <h2 style={{ margin: '0 0 0.5rem', fontSize: '1.3rem' }}>Acceso Restringido</h2>
+    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.6', margin: '0 0 1.5rem' }}>
+      Tu rol <strong style={{ color: 'var(--text-main)' }}>({userRole})</strong> no tiene permisos para acceder a esta sección.
+      Contacta al administrador si necesitas acceso.
+    </p>
+    <button onClick={onBack} style={{ padding: '0.65rem 1.5rem', background: 'var(--primary)', border: 'none', borderRadius: '8px', color: 'white', fontWeight: '600', cursor: 'pointer', fontSize: '0.9rem' }}>
+      ← Volver al Inicio
+    </button>
+  </motion.div>
+);
+
 // ─── LoginPage ────────────────────────────────────────────────────────────────
 const LoginPage = ({ onLogin }) => {
   const [mode, setMode] = useState('login'); // 'login' | 'register'
@@ -1802,115 +1833,196 @@ function App() {
     datasets: [{ label: 'Cumplimiento %', data: [65, 72, 68, 75, 82, 88], borderColor: '#00d2ff', backgroundColor: 'rgba(0, 210, 255, 0.1)', fill: true, tension: 0.4 }]
   };
 
+  // ── Role metadata ──────────────────────────────────────────────────────────
+  const ROLE_META = {
+    admin: {
+      label: 'Administrador', color: '#ef4444', bg: 'rgba(239,68,68,0.1)',
+      description: 'Acceso total al sistema — gestión de empresas, usuarios, controles y auditorías.',
+      modules: [
+        { id: 'capacitaciones', icon: <BookOpen size={22} />, label: 'Capacitaciones', accent: 'var(--primary)', desc: 'Gestiona y accede a todos los cursos de formación ISO 27001.' },
+        { id: 'implementacion', icon: <Wrench size={22} />, label: 'Implementación ISO', accent: 'var(--warning)', desc: 'Asigna dominios ISO a empresas según su actividad económica.' },
+        { id: 'auditoria', icon: <ClipboardCheck size={22} />, label: 'Auditoría', accent: 'var(--success)', desc: 'Supervisa el checklist de auditoría interna de cada empresa.' },
+        { id: 'empresas', icon: <Building2 size={22} />, label: 'Empresas', accent: '#a78bfa', desc: 'Registra y administra las empresas clientes del sistema.' },
+        { id: 'usuarios', icon: <Users size={22} />, label: 'Usuarios', accent: '#fb923c', desc: 'Asigna roles y empresas a los usuarios registrados.' },
+      ],
+    },
+    auditor: {
+      label: 'Auditor ISO 27001', color: '#00d2ff', bg: 'rgba(0,210,255,0.1)',
+      description: 'Evaluación de controles, planes de implementación y auditorías por empresa.',
+      modules: [
+        { id: 'capacitaciones', icon: <BookOpen size={22} />, label: 'Capacitaciones', accent: 'var(--primary)', desc: 'Consulta los cursos de formación y material de referencia.' },
+        { id: 'implementacion', icon: <Wrench size={22} />, label: 'Implementación ISO', accent: 'var(--warning)', desc: 'Revisa y actualiza el plan de implementación por empresa.' },
+        { id: 'auditoria', icon: <ClipboardCheck size={22} />, label: 'Auditoría', accent: 'var(--success)', desc: 'Completa el checklist de auditoría interna y registra hallazgos.' },
+        { id: 'empresas', icon: <Building2 size={22} />, label: 'Empresas', accent: '#a78bfa', desc: 'Consulta el directorio de empresas auditadas.' },
+      ],
+    },
+    supervisor: {
+      label: 'Supervisor SGSI', color: '#eab308', bg: 'rgba(234,179,8,0.1)',
+      description: 'Monitoreo del cumplimiento y seguimiento del historial de snapshots.',
+      modules: [
+        { id: 'capacitaciones', icon: <BookOpen size={22} />, label: 'Capacitaciones', accent: 'var(--primary)', desc: 'Accede a los cursos de formación ISO 27001 disponibles.' },
+        { id: 'history', icon: <History size={22} />, label: 'Historial', accent: '#a78bfa', desc: 'Revisa snapshots históricos del estado del SGSI.' },
+        { id: 'controls', icon: <ShieldCheck size={22} />, label: 'Controles ISO', accent: 'var(--success)', desc: 'Monitorea el cumplimiento de los controles del Anexo A.' },
+      ],
+    },
+    analista: {
+      label: 'Analista de Seguridad', color: '#22c55e', bg: 'rgba(34,197,94,0.1)',
+      description: 'Registro y respuesta a incidentes de seguridad y monitoreo de controles.',
+      modules: [
+        { id: 'capacitaciones', icon: <BookOpen size={22} />, label: 'Capacitaciones', accent: 'var(--primary)', desc: 'Accede a los cursos de formación ISO 27001 disponibles.' },
+        { id: 'incidents', icon: <ShieldAlert size={22} />, label: 'Incidentes', accent: 'var(--danger)', desc: 'Registra y gestiona incidentes de seguridad activos.' },
+        { id: 'controls', icon: <ShieldCheck size={22} />, label: 'Controles ISO', accent: 'var(--success)', desc: 'Consulta el estado de cumplimiento de los controles ISO.' },
+      ],
+    },
+  };
+
+  const roleMeta = ROLE_META[userProfile?.role] || ROLE_META.analista;
+
   const renderDashboard = () => (
     <div className="animate-fade-in">
-      <div className="kpi-grid">
+
+      {/* ── Role banner ── */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+        className="glass-card"
+        style={{ padding: '1.25rem 1.5rem', marginBottom: '1.75rem', display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap', borderLeft: `4px solid ${roleMeta.color}`, background: roleMeta.bg }}
+      >
+        <div style={{ width: 44, height: 44, borderRadius: '50%', background: `${roleMeta.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <ShieldCheck size={22} color={roleMeta.color} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.2rem' }}>
+            <span style={{ fontWeight: '800', fontSize: '1rem', color: 'var(--text-main)' }}>
+              Bienvenido, {userProfile?.email?.split('@')[0]}
+            </span>
+            <span style={{ fontSize: '0.72rem', fontWeight: '700', padding: '0.2rem 0.65rem', borderRadius: '20px', background: `${roleMeta.color}22`, color: roleMeta.color, letterSpacing: '0.03em', textTransform: 'uppercase' }}>
+              {roleMeta.label}
+            </span>
+          </div>
+          <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>{roleMeta.description}</p>
+        </div>
+        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'right', flexShrink: 0 }}>
+          <div>{new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
+          <div style={{ fontFamily: 'monospace', marginTop: '0.2rem' }}>ISO/IEC 27001:2022</div>
+        </div>
+      </motion.div>
+
+      {/* ── KPI cards ── */}
+      <div className="kpi-grid" style={{ marginBottom: '1.75rem' }}>
         {kpis.map((kpi, index) => (
           <KPICard key={index} title={kpi.name} value={kpi.value} unit={kpi.unit} status={kpi.status} description={kpi.description} />
         ))}
       </div>
-      <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-        <div className="glass-card" style={{ padding: '1.5rem' }}>
-          <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}>
-            <Activity size={18} color="var(--primary)" />
-            Evolución de Cumplimiento Global
-          </h3>
-          <Line data={dummyChartData} options={chartOptions} height={100} />
-        </div>
-        <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}>
-            <ShieldAlert size={18} color="var(--danger)" />
-            Dominio Más Crítico
-          </h3>
-          <div style={{ fontSize: '1.5rem', fontWeight: '700', fontFamily: 'var(--font-serif)', color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-            {summary?.risk_highest_domain || 'Sin datos'}
+
+      {/* ── Chart row (admin/auditor/supervisor) ── */}
+      {['admin', 'auditor', 'supervisor'].includes(userProfile?.role) && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '1.75rem' }}>
+          <div className="glass-card" style={{ padding: '1.5rem' }}>
+            <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', margin: '0 0 1rem' }}>
+              <Activity size={18} color="var(--primary)" />
+              Evolución de Cumplimiento Global
+            </h3>
+            <Line data={dummyChartData} options={chartOptions} height={100} />
           </div>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>Área con mayor exposición al riesgo según la última evaluación</p>
-        </div>
-      </div>
-      {/* Quick-access module cards */}
-      {['admin', 'auditor', 'supervisor', 'analista'].includes(userProfile?.role) && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            className="glass-card"
-            onClick={() => setView('capacitaciones')}
-            style={{ padding: '1.25rem', cursor: 'pointer', borderLeft: '3px solid var(--primary)', transition: 'transform 0.15s' }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-              <BookOpen size={20} color="var(--primary)" />
-              <span style={{ fontWeight: '700', fontSize: '0.95rem' }}>Capacitaciones</span>
+          <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <h3 style={{ marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', margin: '0 0 0.75rem' }}>
+              <ShieldAlert size={18} color="var(--danger)" />
+              Dominio Más Crítico
+            </h3>
+            <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-main)', marginBottom: '0.5rem' }}>
+              {summary?.risk_highest_domain || 'Sin datos'}
             </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0, lineHeight: '1.4' }}>Accede a los cursos de formación en ISO 27001</p>
-          </motion.div>
-
-          {['admin', 'auditor'].includes(userProfile?.role) && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-              className="glass-card"
-              onClick={() => setView('implementacion')}
-              style={{ padding: '1.25rem', cursor: 'pointer', borderLeft: '3px solid var(--warning)', transition: 'transform 0.15s' }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                <Wrench size={20} color="var(--warning)" />
-                <span style={{ fontWeight: '700', fontSize: '0.95rem' }}>Implementación ISO</span>
-              </div>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0, lineHeight: '1.4' }}>Recomendaciones de controles por actividad económica</p>
-            </motion.div>
-          )}
-
-          {['admin', 'auditor'].includes(userProfile?.role) && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-              className="glass-card"
-              onClick={() => setView('auditoria')}
-              style={{ padding: '1.25rem', cursor: 'pointer', borderLeft: '3px solid var(--success)', transition: 'transform 0.15s' }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                <ClipboardCheck size={20} color="var(--success)" />
-                <span style={{ fontWeight: '700', fontSize: '0.95rem' }}>Auditoría</span>
-              </div>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0, lineHeight: '1.4' }}>Checklist de auditoría interna por empresa</p>
-            </motion.div>
-          )}
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.4', margin: 0 }}>Área con mayor exposición al riesgo según la última evaluación</p>
+          </div>
         </div>
       )}
 
-      <div className="glass-card" style={{ padding: '1.5rem', overflow: 'hidden' }}>
-        <h3 style={{ marginBottom: '1rem' }}>Últimos Incidentes Detectados</h3>
-        <div className="table-responsive">
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '400px' }}>
-            <thead>
-              <tr style={{ textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                <th style={{ padding: '0.75rem' }}>ESTADO</th>
-                <th style={{ padding: '0.75rem' }}>TÍTULO</th>
-                <th style={{ padding: '0.75rem' }}>SEVERIDAD</th>
-                <th style={{ padding: '0.75rem' }}>FECHA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {summary?.active_incidents?.length > 0 ? (
-                summary.active_incidents.map(inc => (
-                  <tr key={inc.id} style={{ borderTop: '1px solid var(--glass-border)' }}>
-                    <td style={{ padding: '1rem' }}><span className="status-dot status-amber"></span> {inc.status}</td>
-                    <td style={{ padding: '1rem', color: 'var(--text-main)' }}>{inc.title}</td>
-                    <td style={{ padding: '1rem' }}><span style={{ color: inc.severity === 'critical' ? 'var(--danger)' : 'var(--warning)' }}>{inc.severity?.toUpperCase()}</span></td>
-                    <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>{new Date(inc.reported_at).toLocaleDateString()}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr><td colSpan="4" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No hay incidentes activos en este momento.</td></tr>
-              )}
-            </tbody>
-          </table>
+      {/* ── Module quick-access cards ── */}
+      <div style={{ marginBottom: '1.75rem' }}>
+        <h3 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 1rem', fontWeight: '600' }}>
+          Acceso Rápido — Módulos disponibles para tu rol
+        </h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1rem' }}>
+          {roleMeta.modules.map((mod, i) => (
+            <motion.div
+              key={mod.id}
+              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 * i }}
+              className="glass-card"
+              onClick={() => setView(mod.id)}
+              style={{ padding: '1.4rem', cursor: 'pointer', borderTop: `3px solid ${mod.accent}`, transition: 'transform 0.15s, box-shadow 0.15s' }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `0 8px 24px ${mod.accent}22`; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginBottom: '0.75rem' }}>
+                <div style={{ width: 40, height: 40, borderRadius: '10px', background: `${mod.accent}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: mod.accent }}>
+                  {mod.icon}
+                </div>
+                <span style={{ fontWeight: '700', fontSize: '1rem', color: 'var(--text-main)' }}>{mod.label}</span>
+              </div>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0, lineHeight: '1.5' }}>{mod.desc}</p>
+              <div style={{ marginTop: '1rem', fontSize: '0.78rem', color: mod.accent, fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                Ir al módulo →
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
+
+      {/* ── Recent incidents (admin / auditor / analista) ── */}
+      {['admin', 'auditor', 'analista'].includes(userProfile?.role) && (
+        <div className="glass-card" style={{ padding: '1.5rem', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}>
+              <ShieldAlert size={18} color="var(--warning)" />
+              Incidentes Activos
+            </h3>
+            <button onClick={() => setView('incidents')} style={{ fontSize: '0.8rem', color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600' }}>
+              Ver todos →
+            </button>
+          </div>
+          <div className="table-responsive">
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '400px' }}>
+              <thead>
+                <tr style={{ textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                  <th style={{ padding: '0.75rem' }}>ESTADO</th>
+                  <th style={{ padding: '0.75rem' }}>TÍTULO</th>
+                  <th style={{ padding: '0.75rem' }}>SEVERIDAD</th>
+                  <th style={{ padding: '0.75rem' }}>FECHA</th>
+                </tr>
+              </thead>
+              <tbody>
+                {summary?.active_incidents?.length > 0 ? (
+                  summary.active_incidents.map(inc => (
+                    <tr key={inc.id} style={{ borderTop: '1px solid var(--glass-border)' }}>
+                      <td style={{ padding: '1rem' }}><span className="status-dot status-amber"></span> {inc.status}</td>
+                      <td style={{ padding: '1rem', color: 'var(--text-main)' }}>{inc.title}</td>
+                      <td style={{ padding: '1rem' }}><span style={{ color: inc.severity === 'critical' ? 'var(--danger)' : 'var(--warning)' }}>{inc.severity?.toUpperCase()}</span></td>
+                      <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>{new Date(inc.reported_at).toLocaleDateString()}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr><td colSpan="4" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No hay incidentes activos en este momento.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── Compliance tip for supervisor/analista ── */}
+      {['supervisor', 'analista'].includes(userProfile?.role) && (
+        <div className="glass-card" style={{ padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+          <ShieldCheck size={20} color="var(--success)" style={{ flexShrink: 0, marginTop: '2px' }} />
+          <div>
+            <div style={{ fontWeight: '600', fontSize: '0.9rem', marginBottom: '0.3rem' }}>Cumplimiento actual del SGSI</div>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>
+              El nivel de cumplimiento refleja el estado de los controles ISO 27001 activos.
+              {userProfile?.role === 'supervisor' && ' Como supervisor, puedes revisar el historial completo de snapshots en el módulo Historial.'}
+              {userProfile?.role === 'analista' && ' Como analista, reporta incidentes en cuanto sean detectados para mantener la trazabilidad.'}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -1949,22 +2061,32 @@ function App() {
         onLogout={handleLogout}
       />
       <main className="main-content">
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h1 style={{ fontSize: '2.2rem', marginBottom: '0.5rem' }}>{viewTitles[view] || view}</h1>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Plataforma de Gestión ISO_SECURE</p>
+            <h1 style={{ fontSize: '2rem', marginBottom: '0.4rem', lineHeight: '1.2' }}>{viewTitles[view] || view}</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: '700', padding: '0.18rem 0.6rem', borderRadius: '20px', background: `${roleMeta.color}20`, color: roleMeta.color, letterSpacing: '0.03em', textTransform: 'uppercase' }}>
+                {roleMeta.label}
+              </span>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>ISO_SECURE · ISO/IEC 27001:2022</span>
+            </div>
           </div>
           <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <button className="glass-card" style={{ padding: '0.75rem', color: 'var(--text-main)', cursor: 'pointer' }} onClick={fetchData}>
+            <button className="glass-card" style={{ padding: '0.75rem', color: 'var(--text-main)', cursor: 'pointer' }} onClick={fetchData} title="Actualizar datos">
               <RefreshCcw size={20} className={loading ? 'animate-spin' : ''} />
             </button>
-            <button className="glass-card desktop-only" style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)', cursor: 'pointer' }} onClick={exportReport}>
-              <Download size={20} /><span>Exportar Reporte</span>
-            </button>
+            {['admin', 'auditor', 'supervisor'].includes(userProfile?.role) && (
+              <button className="glass-card desktop-only" style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)', cursor: 'pointer' }} onClick={exportReport}>
+                <Download size={20} /><span>Exportar Reporte</span>
+              </button>
+            )}
           </div>
         </header>
 
-        {loading && !summary && view === 'dashboard' ? (
+        {/* Role access guard */}
+        {VIEW_ROLES[view] && !VIEW_ROLES[view].includes(userProfile?.role) ? (
+          <AccessDenied userRole={userProfile?.role} viewId={view} onBack={() => setView('dashboard')} />
+        ) : loading && !summary && view === 'dashboard' ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '5rem' }}>
             <Activity className="animate-pulse" size={48} color="var(--primary)" />
           </div>
