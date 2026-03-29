@@ -58,6 +58,19 @@ async def update_empresa(
     return empresa
 
 
+@router.post("/{empresa_id}/generar-controles")
+async def generar_controles(
+    empresa_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_role(["admin"])),
+):
+    """Regenera los controles ISO de una empresa según su actividad económica (solo admin)"""
+    count = await EmpresaService.regenerate_controls(db, empresa_id)
+    if count == -1:
+        raise HTTPException(status_code=404, detail="Empresa no encontrada")
+    return {"empresa_id": str(empresa_id), "controles_generados": count}
+
+
 @router.delete("/{empresa_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_empresa(
     empresa_id: UUID,

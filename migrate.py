@@ -362,7 +362,7 @@ async def run_migrations():
                     gen_random_uuid(),
                     'Fundamentos de ISO/IEC 27001:2022',
                     'Introducción a la norma ISO 27001, su estructura y los requisitos clave del SGSI.',
-                    'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                    'https://www.youtube.com/embed/iZNUDnf7QgQ',
                     'La norma ISO/IEC 27001:2022 establece los requisitos para implementar, mantener y mejorar un Sistema de Gestión de Seguridad de la Información (SGSI). Este curso cubre la estructura de alto nivel (HLS), los 93 controles del Anexo A y el proceso de certificación.',
                     'Fundamentos',
                     'basico'::nivelcursoenum
@@ -371,7 +371,7 @@ async def run_migrations():
                     gen_random_uuid(),
                     'Gestión de Riesgos en Seguridad de la Información',
                     'Metodología para identificar, analizar y tratar riesgos de seguridad conforme a ISO 27001.',
-                    'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                    'https://www.youtube.com/embed/EOJO6rF776w',
                     'El proceso de gestión de riesgos es el corazón del SGSI. Aprenderás a construir el contexto organizacional, identificar activos de información, amenazas, vulnerabilidades y calcular el nivel de riesgo usando matrices de probabilidad × impacto.',
                     'Gestión de Riesgos',
                     'intermedio'::nivelcursoenum
@@ -380,7 +380,7 @@ async def run_migrations():
                     gen_random_uuid(),
                     'Controles de Seguridad — Anexo A (2022)',
                     'Revisión detallada de los 93 controles agrupados en 4 dominios del Anexo A actualizado.',
-                    'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                    'https://www.youtube.com/embed/W5jdv-VnVfM',
                     'ISO 27001:2022 reorganizó los controles en 4 categorías: Organizacionales (37), Personas (8), Físicos (14) y Tecnológicos (34). Estudiaremos cada uno con ejemplos prácticos de implementación y evidencias requeridas para auditoría.',
                     'Controles',
                     'intermedio'::nivelcursoenum
@@ -389,13 +389,109 @@ async def run_migrations():
                     gen_random_uuid(),
                     'Auditoría Interna del SGSI',
                     'Cómo planificar y ejecutar auditorías internas conforme al requisito 9.2 de ISO 27001.',
-                    'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                    'https://www.youtube.com/embed/SATi2IrDPXw',
                     'Las auditorías internas verifican la conformidad y eficacia del SGSI. Este módulo avanzado cubre la planificación del programa de auditoría, técnicas de recopilación de evidencia, redacción de hallazgos y seguimiento de no conformidades.',
                     'Auditoría',
                     'avanzado'::nivelcursoenum
                 )
             ) AS v(id, titulo, descripcion, video_url, material_texto, categoria, nivel)
             WHERE NOT EXISTS (SELECT 1 FROM cursos LIMIT 1);
+            """
+        ),
+
+        # ── 15. Generar controles ISO para empresas existentes sin controles ──
+        (
+            "Generar controles ISO para empresas existentes",
+            """
+            DO $$
+            DECLARE
+                emp RECORD;
+                sector TEXT;
+            BEGIN
+                FOR emp IN SELECT id, actividad_economica FROM empresas LOOP
+                    IF NOT EXISTS (SELECT 1 FROM controls WHERE empresa_id = emp.id LIMIT 1) THEN
+                        -- Detectar sector
+                        sector := 'general';
+                        IF emp.actividad_economica ILIKE '%financiero%' OR emp.actividad_economica ILIKE '%banca%' OR emp.actividad_economica ILIKE '%banco%' OR emp.actividad_economica ILIKE '%seguros%' OR emp.actividad_economica ILIKE '%fintech%' THEN
+                            sector := 'financiero';
+                        ELSIF emp.actividad_economica ILIKE '%salud%' OR emp.actividad_economica ILIKE '%clinica%' OR emp.actividad_economica ILIKE '%hospital%' OR emp.actividad_economica ILIKE '%farmac%' THEN
+                            sector := 'salud';
+                        ELSIF emp.actividad_economica ILIKE '%tecnolog%' OR emp.actividad_economica ILIKE '%software%' OR emp.actividad_economica ILIKE '% it %' OR emp.actividad_economica ILIKE '%sistemas%' THEN
+                            sector := 'tecnologia';
+                        ELSIF emp.actividad_economica ILIKE '%educac%' OR emp.actividad_economica ILIKE '%universid%' OR emp.actividad_economica ILIKE '%colegio%' OR emp.actividad_economica ILIKE '%escuela%' THEN
+                            sector := 'educacion';
+                        ELSIF emp.actividad_economica ILIKE '%comercio%' OR emp.actividad_economica ILIKE '%retail%' OR emp.actividad_economica ILIKE '%ecommerce%' OR emp.actividad_economica ILIKE '%supermercado%' THEN
+                            sector := 'comercio';
+                        ELSIF emp.actividad_economica ILIKE '%gobierno%' OR emp.actividad_economica ILIKE '%estatal%' OR emp.actividad_economica ILIKE '%municipal%' OR emp.actividad_economica ILIKE '%publico%' THEN
+                            sector := 'gobierno';
+                        ELSIF emp.actividad_economica ILIKE '%manufactur%' OR emp.actividad_economica ILIKE '%industri%' OR emp.actividad_economica ILIKE '%produccion%' THEN
+                            sector := 'manufactura';
+                        END IF;
+
+                        -- Controles base para todos los sectores
+                        INSERT INTO controls (id, empresa_id, iso_domain, iso_control_ref, name, description, status, compliance_pct)
+                        VALUES
+                            (gen_random_uuid(), emp.id, 'A.5', '5.1',  'Políticas de seguridad de la información', 'Se deben definir, aprobar y comunicar políticas de seguridad de la información alineadas con los requisitos del negocio.', 'non_compliant'::controlstatusenum, 0),
+                            (gen_random_uuid(), emp.id, 'A.5', '5.2',  'Roles y responsabilidades de seguridad', 'Los roles y responsabilidades de seguridad deben estar definidos y asignados conforme a las políticas establecidas.', 'non_compliant'::controlstatusenum, 0),
+                            (gen_random_uuid(), emp.id, 'A.6', '6.3',  'Concienciación, educación y capacitación en seguridad', 'El personal debe recibir formación y actualizaciones periódicas sobre políticas y procedimientos de seguridad.', 'non_compliant'::controlstatusenum, 0),
+                            (gen_random_uuid(), emp.id, 'A.8', '8.5',  'Autenticación segura', 'Las tecnologías y procedimientos de autenticación segura deben implementarse basándose en restricciones de acceso a la información.', 'non_compliant'::controlstatusenum, 0),
+                            (gen_random_uuid(), emp.id, 'A.8', '8.7',  'Protección contra malware', 'La protección contra malware debe implementarse y apoyarse con una concienciación adecuada del usuario.', 'non_compliant'::controlstatusenum, 0),
+                            (gen_random_uuid(), emp.id, 'A.8', '8.20', 'Seguridad en redes', 'Las redes y dispositivos de red deben asegurarse, gestionarse y controlarse para proteger la información.', 'non_compliant'::controlstatusenum, 0),
+                            (gen_random_uuid(), emp.id, 'A.8', '8.24', 'Uso de criptografía', 'Se deben definir e implementar reglas sobre el uso de criptografía, incluida la gestión de claves criptográficas.', 'non_compliant'::controlstatusenum, 0);
+
+                        -- Controles adicionales por sector
+                        IF sector = 'financiero' THEN
+                            INSERT INTO controls (id, empresa_id, iso_domain, iso_control_ref, name, description, status, compliance_pct) VALUES
+                                (gen_random_uuid(), emp.id, 'A.5', '5.14', 'Transferencia de información', 'Se deben establecer reglas y controles para proteger la información durante su transferencia.', 'non_compliant'::controlstatusenum, 0),
+                                (gen_random_uuid(), emp.id, 'A.8', '8.2',  'Derechos de acceso privilegiado', 'La asignación y uso de derechos de acceso privilegiado debe restringirse y controlarse.', 'non_compliant'::controlstatusenum, 0),
+                                (gen_random_uuid(), emp.id, 'A.8', '8.16', 'Monitoreo de actividades', 'Las redes y sistemas deben monitorearse para detectar comportamientos anómalos.', 'non_compliant'::controlstatusenum, 0);
+                        ELSIF sector = 'salud' THEN
+                            INSERT INTO controls (id, empresa_id, iso_domain, iso_control_ref, name, description, status, compliance_pct) VALUES
+                                (gen_random_uuid(), emp.id, 'A.5', '5.34', 'Privacidad y protección de datos personales', 'Los requisitos de privacidad y protección de datos personales deben identificarse y cumplirse.', 'non_compliant'::controlstatusenum, 0),
+                                (gen_random_uuid(), emp.id, 'A.8', '8.11', 'Enmascaramiento de datos', 'El enmascaramiento de datos debe utilizarse conforme a la política de control de acceso.', 'non_compliant'::controlstatusenum, 0),
+                                (gen_random_uuid(), emp.id, 'A.8', '8.2',  'Derechos de acceso privilegiado', 'El acceso a historiales clínicos debe estar restringido a personal autorizado.', 'non_compliant'::controlstatusenum, 0);
+                        ELSIF sector = 'tecnologia' THEN
+                            INSERT INTO controls (id, empresa_id, iso_domain, iso_control_ref, name, description, status, compliance_pct) VALUES
+                                (gen_random_uuid(), emp.id, 'A.8', '8.8',  'Gestión de vulnerabilidades técnicas', 'La información sobre vulnerabilidades técnicas debe obtenerse oportunamente y gestionarse.', 'non_compliant'::controlstatusenum, 0),
+                                (gen_random_uuid(), emp.id, 'A.8', '8.25', 'Ciclo de vida de desarrollo seguro', 'Se deben establecer y aplicar reglas para el desarrollo seguro de software y sistemas.', 'non_compliant'::controlstatusenum, 0),
+                                (gen_random_uuid(), emp.id, 'A.8', '8.29', 'Pruebas de seguridad en desarrollo', 'Los procesos de pruebas de seguridad deben definirse e implementarse en el SDLC.', 'non_compliant'::controlstatusenum, 0);
+                        ELSIF sector = 'gobierno' THEN
+                            INSERT INTO controls (id, empresa_id, iso_domain, iso_control_ref, name, description, status, compliance_pct) VALUES
+                                (gen_random_uuid(), emp.id, 'A.5', '5.7',  'Inteligencia sobre amenazas', 'Se debe recopilar y analizar información sobre amenazas relevantes.', 'non_compliant'::controlstatusenum, 0),
+                                (gen_random_uuid(), emp.id, 'A.5', '5.30', 'Preparación TIC para continuidad del negocio', 'La preparación de las TIC debe planificarse para garantizar disponibilidad.', 'non_compliant'::controlstatusenum, 0),
+                                (gen_random_uuid(), emp.id, 'A.7', '7.1',  'Perímetros de seguridad física', 'Se deben definir y usar perímetros de seguridad para proteger áreas con información sensible.', 'non_compliant'::controlstatusenum, 0),
+                                (gen_random_uuid(), emp.id, 'A.5', '5.34', 'Privacidad y protección de datos personales', 'Los requisitos de privacidad y protección de datos ciudadanos deben cumplirse.', 'non_compliant'::controlstatusenum, 0);
+                        ELSIF sector = 'manufactura' THEN
+                            INSERT INTO controls (id, empresa_id, iso_domain, iso_control_ref, name, description, status, compliance_pct) VALUES
+                                (gen_random_uuid(), emp.id, 'A.7', '7.1',  'Perímetros de seguridad física', 'Se deben definir perímetros de seguridad para proteger plantas y equipos industriales.', 'non_compliant'::controlstatusenum, 0),
+                                (gen_random_uuid(), emp.id, 'A.7', '7.4',  'Monitoreo de seguridad física', 'Las instalaciones industriales deben monitorearse para detectar accesos no autorizados.', 'non_compliant'::controlstatusenum, 0),
+                                (gen_random_uuid(), emp.id, 'A.5', '5.30', 'Preparación TIC para continuidad del negocio', 'La continuidad de líneas de producción debe garantizarse con planes TIC robustos.', 'non_compliant'::controlstatusenum, 0);
+                        END IF;
+
+                        RAISE NOTICE 'Controles generados para empresa % (sector: %)', emp.id, sector;
+                    ELSE
+                        RAISE NOTICE 'Empresa % ya tiene controles, omitiendo.', emp.id;
+                    END IF;
+                END LOOP;
+            END $$;
+            """
+        ),
+
+        # ── 16. Actualizar video_url de cursos existentes ────────────────────
+        (
+            "Actualizar video_url de cursos con URLs correctas",
+            """
+            UPDATE cursos SET video_url = 'https://www.youtube.com/embed/iZNUDnf7QgQ'
+            WHERE titulo = 'Fundamentos de ISO/IEC 27001:2022';
+
+            UPDATE cursos SET video_url = 'https://www.youtube.com/embed/EOJO6rF776w'
+            WHERE titulo = 'Gestión de Riesgos en Seguridad de la Información';
+
+            UPDATE cursos SET video_url = 'https://www.youtube.com/embed/W5jdv-VnVfM'
+            WHERE titulo = 'Controles de Seguridad — Anexo A (2022)';
+
+            UPDATE cursos SET video_url = 'https://www.youtube.com/embed/SATi2IrDPXw'
+            WHERE titulo = 'Auditoría Interna del SGSI';
             """
         ),
     ]
