@@ -292,7 +292,67 @@ async def run_migrations():
             """
         ),
 
-        # ── 11. Seed: cursos iniciales ──────────────────────────────────────
+        # ── 11. empresa_id en incidents ─────────────────────────────────────
+        (
+            "Agregar empresa_id a tabla incidents",
+            """
+            DO $$ BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name = 'incidents' AND column_name = 'empresa_id'
+                ) THEN
+                    ALTER TABLE incidents
+                        ADD COLUMN empresa_id UUID REFERENCES empresas(id) ON DELETE SET NULL;
+                    CREATE INDEX IF NOT EXISTS ix_incidents_empresa_id ON incidents(empresa_id);
+                    RAISE NOTICE 'Columna empresa_id agregada a incidents.';
+                ELSE
+                    RAISE NOTICE 'empresa_id ya existe en incidents, omitiendo.';
+                END IF;
+            END $$;
+            """
+        ),
+
+        # ── 12. empresa_id en controls ───────────────────────────────────────
+        (
+            "Agregar empresa_id a tabla controls",
+            """
+            DO $$ BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name = 'controls' AND column_name = 'empresa_id'
+                ) THEN
+                    ALTER TABLE controls
+                        ADD COLUMN empresa_id UUID REFERENCES empresas(id) ON DELETE SET NULL;
+                    CREATE INDEX IF NOT EXISTS ix_controls_empresa_id ON controls(empresa_id);
+                    RAISE NOTICE 'Columna empresa_id agregada a controls.';
+                ELSE
+                    RAISE NOTICE 'empresa_id ya existe en controls, omitiendo.';
+                END IF;
+            END $$;
+            """
+        ),
+
+        # ── 13. empresa_id en risk_levels ────────────────────────────────────
+        (
+            "Agregar empresa_id a tabla risk_levels",
+            """
+            DO $$ BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name = 'risk_levels' AND column_name = 'empresa_id'
+                ) THEN
+                    ALTER TABLE risk_levels
+                        ADD COLUMN empresa_id UUID REFERENCES empresas(id) ON DELETE SET NULL;
+                    CREATE INDEX IF NOT EXISTS ix_risk_levels_empresa_id ON risk_levels(empresa_id);
+                    RAISE NOTICE 'Columna empresa_id agregada a risk_levels.';
+                ELSE
+                    RAISE NOTICE 'empresa_id ya existe en risk_levels, omitiendo.';
+                END IF;
+            END $$;
+            """
+        ),
+
+        # ── 14. Seed: cursos iniciales ──────────────────────────────────────
         (
             "Seed cursos iniciales",
             """
