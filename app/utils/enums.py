@@ -27,3 +27,18 @@ class UserRoleEnum(str, enum.Enum):
     auditor = "auditor"
     supervisor = "supervisor"
     analista = "analista"
+
+class NivelCursoEnum(str, enum.Enum):
+    basico = "basico"
+    intermedio = "intermedio"
+    avanzado = "avanzado"
+
+class ProgresoEnum(str, enum.Enum):
+    pendiente = "pendiente"
+    en_proceso = "en_proceso"
+    completado = "completado"
+
+class AuditoriaStatusEnum(str, enum.Enum):
+    pendiente = "pendiente"
+    en_proceso = "en_proceso"
+    completado = "completado"

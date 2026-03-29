@@ -135,6 +135,148 @@ async def run_migrations():
             );
             """
         ),
+
+        # ── 6. Tipos para capacitaciones ────────────────────────────────────
+        (
+            "Crear tipo nivelcursoenum",
+            """
+            DO $$ BEGIN
+                IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'nivelcursoenum') THEN
+                    CREATE TYPE nivelcursoenum AS ENUM ('basico', 'intermedio', 'avanzado');
+                    RAISE NOTICE 'Tipo nivelcursoenum creado.';
+                ELSE
+                    RAISE NOTICE 'Tipo nivelcursoenum ya existe, omitiendo.';
+                END IF;
+            END $$;
+            """
+        ),
+        (
+            "Crear tipo progresoenum",
+            """
+            DO $$ BEGIN
+                IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'progresoenum') THEN
+                    CREATE TYPE progresoenum AS ENUM ('pendiente', 'en_proceso', 'completado');
+                    RAISE NOTICE 'Tipo progresoenum creado.';
+                ELSE
+                    RAISE NOTICE 'Tipo progresoenum ya existe, omitiendo.';
+                END IF;
+            END $$;
+            """
+        ),
+        (
+            "Crear tipo auditoriastatusenum",
+            """
+            DO $$ BEGIN
+                IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'auditoriastatusenum') THEN
+                    CREATE TYPE auditoriastatusenum AS ENUM ('pendiente', 'en_proceso', 'completado');
+                    RAISE NOTICE 'Tipo auditoriastatusenum creado.';
+                ELSE
+                    RAISE NOTICE 'Tipo auditoriastatusenum ya existe, omitiendo.';
+                END IF;
+            END $$;
+            """
+        ),
+
+        # ── 7. Tabla cursos ──────────────────────────────────────────────────
+        (
+            "Crear tabla cursos",
+            """
+            CREATE TABLE IF NOT EXISTS cursos (
+                id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                titulo           VARCHAR(200) NOT NULL,
+                descripcion      TEXT,
+                video_url        VARCHAR(500),
+                material_texto   TEXT,
+                categoria        VARCHAR(100),
+                nivel            nivelcursoenum NOT NULL DEFAULT 'basico',
+                created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            """
+        ),
+
+        # ── 8. Tabla curso_progreso ──────────────────────────────────────────
+        (
+            "Crear tabla curso_progreso",
+            """
+            CREATE TABLE IF NOT EXISTS curso_progreso (
+                id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                curso_id    UUID NOT NULL REFERENCES cursos(id) ON DELETE CASCADE,
+                user_id     UUID NOT NULL,
+                status      progresoenum NOT NULL DEFAULT 'pendiente',
+                created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE (curso_id, user_id)
+            );
+            """
+        ),
+
+        # ── 9. Tabla auditoria_items ─────────────────────────────────────────
+        (
+            "Crear tabla auditoria_items",
+            """
+            CREATE TABLE IF NOT EXISTS auditoria_items (
+                id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                empresa_id        UUID NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
+                iso_control_ref   VARCHAR(20),
+                control_name      VARCHAR(200) NOT NULL,
+                activity_desc     TEXT,
+                status            auditoriastatusenum NOT NULL DEFAULT 'pendiente',
+                notas             TEXT,
+                auditor_id        UUID,
+                fecha_evaluacion  DATE,
+                created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            """
+        ),
+
+        # ── 10. Seed: cursos iniciales ───────────────────────────────────────
+        (
+            "Seed cursos iniciales",
+            """
+            INSERT INTO cursos (id, titulo, descripcion, video_url, material_texto, categoria, nivel)
+            SELECT * FROM (VALUES
+                (
+                    gen_random_uuid(),
+                    'Fundamentos de ISO/IEC 27001:2022',
+                    'Introducción a la norma ISO 27001, su estructura y los requisitos clave del SGSI.',
+                    'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                    'La norma ISO/IEC 27001:2022 establece los requisitos para implementar, mantener y mejorar un Sistema de Gestión de Seguridad de la Información (SGSI). Este curso cubre la estructura de alto nivel (HLS), los 93 controles del Anexo A y el proceso de certificación.',
+                    'Fundamentos',
+                    'basico'::nivelcursoenum
+                ),
+                (
+                    gen_random_uuid(),
+                    'Gestión de Riesgos en Seguridad de la Información',
+                    'Metodología para identificar, analizar y tratar riesgos de seguridad conforme a ISO 27001.',
+                    'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                    'El proceso de gestión de riesgos es el corazón del SGSI. Aprenderás a construir el contexto organizacional, identificar activos de información, amenazas, vulnerabilidades y calcular el nivel de riesgo usando matrices de probabilidad × impacto.',
+                    'Gestión de Riesgos',
+                    'intermedio'::nivelcursoenum
+                ),
+                (
+                    gen_random_uuid(),
+                    'Controles de Seguridad — Anexo A (2022)',
+                    'Revisión detallada de los 93 controles agrupados en 4 dominios del Anexo A actualizado.',
+                    'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                    'ISO 27001:2022 reorganizó los controles en 4 categorías: Organizacionales (37), Personas (8), Físicos (14) y Tecnológicos (34). Estudiaremos cada uno con ejemplos prácticos de implementación y evidencias requeridas para auditoría.',
+                    'Controles',
+                    'intermedio'::nivelcursoenum
+                ),
+                (
+                    gen_random_uuid(),
+                    'Auditoría Interna del SGSI',
+                    'Cómo planificar y ejecutar auditorías internas conforme al requisito 9.2 de ISO 27001.',
+                    'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                    'Las auditorías internas verifican la conformidad y eficacia del SGSI. Este módulo avanzado cubre la planificación del programa de auditoría, técnicas de recopilación de evidencia, redacción de hallazgos y seguimiento de no conformidades.',
+                    'Auditoría',
+                    'avanzado'::nivelcursoenum
+                )
+            ) AS v(id, titulo, descripcion, video_url, material_texto, categoria, nivel)
+            WHERE NOT EXISTS (SELECT 1 FROM cursos LIMIT 1);
+            """
+        ),
     ]
 
     all_ok = True

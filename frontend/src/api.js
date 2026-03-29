@@ -56,4 +56,26 @@ export const authApi = {
   updateUserRole: (userId, data) => api.put(`/auth/users/${userId}/role`, data).then(res => res.data),
 };
 
+export const capacitacionApi = {
+  getAll: () => api.get('/capacitaciones/').then(res => res.data),
+  getById: (id) => api.get(`/capacitaciones/${id}`).then(res => res.data),
+  create: (data) => api.post('/capacitaciones/', data).then(res => res.data),
+  update: (id, data) => api.put(`/capacitaciones/${id}`, data).then(res => res.data),
+  delete: (id) => api.delete(`/capacitaciones/${id}`),
+  updateProgreso: (id, status) => api.patch(`/capacitaciones/${id}/progreso`, { status }).then(res => res.data),
+};
+
+export const implementacionApi = {
+  getByEmpresa: (empresaId) => api.get(`/implementacion/${empresaId}`).then(res => res.data),
+};
+
+export const auditoriaApi = {
+  getByEmpresa: (empresaId) => api.get(`/auditoria/empresa/${empresaId}`).then(res => res.data),
+  getResumen: (empresaId) => api.get(`/auditoria/empresa/${empresaId}/resumen`).then(res => res.data),
+  generarItems: (empresaId) => api.post(`/auditoria/empresa/${empresaId}/generar`).then(res => res.data),
+  create: (data) => api.post('/auditoria/', data).then(res => res.data),
+  update: (id, data) => api.put(`/auditoria/${id}`, data).then(res => res.data),
+  delete: (id) => api.delete(`/auditoria/${id}`),
+};
+
 export default api;

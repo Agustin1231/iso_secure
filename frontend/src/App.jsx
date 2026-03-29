@@ -21,6 +21,13 @@ import {
   Users,
   Eye,
   EyeOff,
+  BookOpen,
+  Wrench,
+  ClipboardCheck,
+  CheckCircle2,
+  Circle,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -37,7 +44,7 @@ import {
 import { Line } from 'react-chartjs-2';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
-import { authApi, empresaApi } from './api.js';
+import { authApi, empresaApi, capacitacionApi, implementacionApi, auditoriaApi } from './api.js';
 
 // Supabase config (anon key is public by design)
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://rhvzjqvyimaavkdjxcvj.supabase.co';
@@ -71,6 +78,9 @@ const ALL_NAV_ITEMS = [
   { id: 'history', icon: <History size={20} />, label: 'Historial', roles: ['admin', 'supervisor'] },
   { id: 'empresas', icon: <Building2 size={20} />, label: 'Empresas', roles: ['admin', 'auditor'] },
   { id: 'usuarios', icon: <Users size={20} />, label: 'Usuarios', roles: ['admin'] },
+  { id: 'capacitaciones', icon: <BookOpen size={20} />, label: 'Capacitaciones', roles: ['admin', 'auditor', 'supervisor', 'analista'] },
+  { id: 'implementacion', icon: <Wrench size={20} />, label: 'Implementación ISO', roles: ['admin', 'auditor'] },
+  { id: 'auditoria', icon: <ClipboardCheck size={20} />, label: 'Auditoría', roles: ['admin', 'auditor'] },
 ];
 
 const viewTitles = {
@@ -81,6 +91,9 @@ const viewTitles = {
   history: 'Historial de Snapshots',
   empresas: 'Registro de Empresas',
   usuarios: 'Gestión de Usuarios',
+  capacitaciones: 'Capacitaciones SGSI',
+  implementacion: 'Implementación ISO 27001',
+  auditoria: 'Auditoría Interna',
 };
 
 // ─── LoginPage ────────────────────────────────────────────────────────────────
@@ -1120,6 +1133,462 @@ const UsersView = ({ users, empresas, loading, onRefresh }) => {
   );
 };
 
+// ─── CapacitacionesView ───────────────────────────────────────────────────────
+const NIVEL_LABELS = { basico: 'Básico', intermedio: 'Intermedio', avanzado: 'Avanzado' };
+const NIVEL_COLORS = { basico: 'var(--success)', intermedio: 'var(--warning)', avanzado: 'var(--danger)' };
+const PROGRESO_LABELS = { pendiente: 'Pendiente', en_proceso: 'En Proceso', completado: 'Completado' };
+const PROGRESO_COLORS = { pendiente: 'var(--text-muted)', en_proceso: 'var(--warning)', completado: 'var(--success)' };
+
+const CapacitacionesView = ({ cursos, loading, onRefresh, userRole }) => {
+  const [selected, setSelected] = useState(null);
+  const [updatingId, setUpdatingId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({ titulo: '', descripcion: '', video_url: '', material_texto: '', categoria: '', nivel: 'basico' });
+  const [saving, setSaving] = useState(false);
+
+  const filtered = cursos.filter(c =>
+    c.titulo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.categoria?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleProgresoChange = async (curso, newStatus) => {
+    setUpdatingId(curso.id);
+    try {
+      await capacitacionApi.updateProgreso(curso.id, newStatus);
+      onRefresh();
+    } catch { alert('Error al actualizar progreso.'); }
+    finally { setUpdatingId(null); }
+  };
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await capacitacionApi.create(formData);
+      setShowForm(false);
+      setFormData({ titulo: '', descripcion: '', video_url: '', material_texto: '', categoria: '', nivel: 'basico' });
+      onRefresh();
+    } catch { alert('Error al crear el curso.'); }
+    finally { setSaving(false); }
+  };
+
+  const completed = cursos.filter(c => c.progreso === 'completado').length;
+  const inProgress = cursos.filter(c => c.progreso === 'en_proceso').length;
+
+  return (
+    <div className="animate-fade-in">
+      <div className="kpi-grid" style={{ marginBottom: '2rem' }}>
+        <KPICard title="Total Cursos" value={cursos.length} unit="" status="primary" description="Cursos disponibles en la plataforma" />
+        <KPICard title="Completados" value={completed} unit="" status="green" description="Cursos finalizados por ti" />
+        <KPICard title="En Proceso" value={inProgress} unit="" status="amber" description="Cursos iniciados" />
+      </div>
+
+      {selected ? (
+        <div className="glass-card animate-fade-in" style={{ padding: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem', background: `${NIVEL_COLORS[selected.nivel]}22`, color: NIVEL_COLORS[selected.nivel], borderRadius: '4px', fontWeight: '600' }}>{NIVEL_LABELS[selected.nivel]}</span>
+                {selected.categoria && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'var(--glass)', padding: '0.25rem 0.6rem', borderRadius: '4px' }}>{selected.categoria}</span>}
+              </div>
+              <h2 style={{ margin: 0, fontSize: '1.5rem' }}>{selected.titulo}</h2>
+            </div>
+            <button onClick={() => setSelected(null)} style={{ padding: '0.5rem 1rem', background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'var(--text-main)', cursor: 'pointer', fontSize: '0.85rem' }}>← Volver</button>
+          </div>
+
+          {selected.video_url && (
+            <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, borderRadius: '12px', overflow: 'hidden', marginBottom: '1.5rem', background: 'black' }}>
+              <iframe
+                src={selected.video_url}
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                title={selected.titulo}
+              />
+            </div>
+          )}
+
+          {selected.descripcion && (
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h4 style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Descripción</h4>
+              <p style={{ lineHeight: '1.7', color: 'var(--text-main)' }}>{selected.descripcion}</p>
+            </div>
+          )}
+
+          {selected.material_texto && (
+            <div style={{ marginBottom: '1.5rem', padding: '1.25rem', background: 'var(--color-bg-elevated)', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+              <h4 style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', marginBottom: '0.75rem' }}>Material del Curso</h4>
+              <p style={{ lineHeight: '1.8', color: 'var(--text-main)', fontSize: '0.95rem', whiteSpace: 'pre-wrap' }}>{selected.material_texto}</p>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', paddingTop: '1rem', borderTop: '1px solid var(--glass-border)' }}>
+            <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Tu progreso:</span>
+            <span style={{ fontSize: '0.9rem', fontWeight: '600', color: PROGRESO_COLORS[selected.progreso] }}>● {PROGRESO_LABELS[selected.progreso]}</span>
+            <div style={{ display: 'flex', gap: '0.5rem', marginLeft: 'auto' }}>
+              {['pendiente', 'en_proceso', 'completado'].map(s => (
+                <button
+                  key={s}
+                  onClick={() => handleProgresoChange(selected, s)}
+                  disabled={updatingId === selected.id || selected.progreso === s}
+                  style={{ padding: '0.5rem 1rem', background: selected.progreso === s ? PROGRESO_COLORS[s] : 'var(--glass)', border: `1px solid ${selected.progreso === s ? PROGRESO_COLORS[s] : 'var(--glass-border)'}`, borderRadius: '6px', color: selected.progreso === s ? 'white' : 'var(--text-main)', fontSize: '0.8rem', cursor: selected.progreso === s ? 'default' : 'pointer', fontWeight: selected.progreso === s ? '600' : '400', opacity: updatingId === selected.id ? 0.6 : 1 }}
+                >
+                  {PROGRESO_LABELS[s]}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="glass-card" style={{ overflow: 'hidden' }}>
+          <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: 0 }}>
+              <BookOpen size={20} color="var(--primary)" />
+              Catálogo de Cursos
+            </h3>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--color-bg-elevated)', borderRadius: '8px', padding: '0.5rem 1rem', border: '1px solid var(--glass-border)' }}>
+                <Search size={16} color="var(--text-muted)" />
+                <input type="text" placeholder="Buscar curso..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ background: 'none', border: 'none', color: 'var(--text-main)', outline: 'none', width: '160px', fontSize: '0.9rem' }} />
+              </div>
+              {userRole === 'admin' && (
+                <button onClick={() => setShowForm(!showForm)} className="glass-card" style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.85rem', border: '1px solid var(--primary)' }}>
+                  <Plus size={16} />{showForm ? 'Cancelar' : 'Nuevo Curso'}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {showForm && userRole === 'admin' && (
+            <form onSubmit={handleCreate} style={{ padding: '1.5rem', borderBottom: '1px solid var(--glass-border)', background: 'var(--color-bg-elevated)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+                {[{ key: 'titulo', label: 'Título *', required: true }, { key: 'categoria', label: 'Categoría' }, { key: 'video_url', label: 'URL Video (YouTube embed)' }].map(({ key, label, required }) => (
+                  <div key={key}>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>{label}</label>
+                    <input required={required} value={formData[key]} onChange={(e) => setFormData({ ...formData, [key]: e.target.value })} style={{ width: '100%', padding: '0.6rem 0.75rem', background: 'var(--color-bg-card)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' }} />
+                  </div>
+                ))}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>Nivel</label>
+                  <select value={formData.nivel} onChange={(e) => setFormData({ ...formData, nivel: e.target.value })} style={{ width: '100%', padding: '0.6rem 0.75rem', background: 'var(--color-bg-card)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '0.9rem', outline: 'none' }}>
+                    <option value="basico">Básico</option>
+                    <option value="intermedio">Intermedio</option>
+                    <option value="avanzado">Avanzado</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ marginTop: '0.75rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>Descripción</label>
+                <textarea value={formData.descripcion} onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })} rows={2} style={{ width: '100%', padding: '0.6rem 0.75rem', background: 'var(--color-bg-card)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '0.9rem', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+              </div>
+              <div style={{ marginTop: '0.75rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>Material del curso</label>
+                <textarea value={formData.material_texto} onChange={(e) => setFormData({ ...formData, material_texto: e.target.value })} rows={3} style={{ width: '100%', padding: '0.6rem 0.75rem', background: 'var(--color-bg-card)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '0.9rem', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+              </div>
+              <div style={{ marginTop: '1rem', display: 'flex', gap: '0.75rem' }}>
+                <button type="submit" disabled={saving} style={{ padding: '0.6rem 1.5rem', background: 'var(--primary)', border: 'none', borderRadius: '6px', color: 'white', fontWeight: '600', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>{saving ? 'Guardando...' : 'Crear Curso'}</button>
+                <button type="button" onClick={() => setShowForm(false)} style={{ padding: '0.6rem 1.5rem', background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'var(--text-main)', cursor: 'pointer' }}>Cancelar</button>
+              </div>
+            </form>
+          )}
+
+          <div style={{ padding: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.25rem' }}>
+            {filtered.map((curso) => (
+              <div key={curso.id} className="glass-card" style={{ padding: '1.25rem', cursor: 'pointer', border: `1px solid ${curso.progreso === 'completado' ? 'rgba(34,197,94,0.3)' : 'var(--glass-border)'}`, transition: 'transform 0.15s, border-color 0.15s' }}
+                onClick={() => setSelected(curso)}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                  <span style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', background: `${NIVEL_COLORS[curso.nivel]}22`, color: NIVEL_COLORS[curso.nivel], borderRadius: '4px', fontWeight: '600' }}>{NIVEL_LABELS[curso.nivel]}</span>
+                  <span style={{ fontSize: '0.72rem', fontWeight: '600', color: PROGRESO_COLORS[curso.progreso] }}>● {PROGRESO_LABELS[curso.progreso]}</span>
+                </div>
+                <h4 style={{ margin: '0 0 0.5rem', fontSize: '1rem', lineHeight: '1.3' }}>{curso.titulo}</h4>
+                {curso.descripcion && <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.5', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{curso.descripcion}</p>}
+                {curso.categoria && <div style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><BookOpen size={12} />{curso.categoria}</div>}
+              </div>
+            ))}
+            {filtered.length === 0 && !loading && (
+              <div style={{ gridColumn: '1/-1', padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>No hay cursos disponibles.</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── ImplementacionView ───────────────────────────────────────────────────────
+const ImplementacionView = ({ empresas, loading }) => {
+  const [selectedEmpresa, setSelectedEmpresa] = useState('');
+  const [recomendaciones, setRecomendaciones] = useState(null);
+  const [fetching, setFetching] = useState(false);
+  const [expanded, setExpanded] = useState({});
+
+  const handleFetch = async () => {
+    if (!selectedEmpresa) return;
+    setFetching(true);
+    try {
+      const data = await implementacionApi.getByEmpresa(selectedEmpresa);
+      setRecomendaciones(data);
+      setExpanded({});
+    } catch { alert('Error al obtener recomendaciones.'); }
+    finally { setFetching(false); }
+  };
+
+  const toggleExpand = (idx) => setExpanded(prev => ({ ...prev, [idx]: !prev[idx] }));
+
+  return (
+    <div className="animate-fade-in">
+      <div className="glass-card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', margin: '0 0 1rem' }}>
+          <Wrench size={20} color="var(--primary)" />
+          Recomendaciones ISO 27001 por Empresa
+        </h3>
+        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem', margin: '0 0 1rem' }}>
+          Selecciona una empresa para ver los dominios ISO 27001:2022 recomendados según su actividad económica.
+        </p>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Empresa</label>
+            <select value={selectedEmpresa} onChange={(e) => { setSelectedEmpresa(e.target.value); setRecomendaciones(null); }} style={{ width: '100%', padding: '0.65rem 0.75rem', background: 'var(--color-bg-elevated)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '0.9rem', outline: 'none' }}>
+              <option value="">Seleccionar empresa...</option>
+              {empresas.map(e => <option key={e.id} value={e.id}>{e.nombre} — {e.actividad_economica}</option>)}
+            </select>
+          </div>
+          <button onClick={handleFetch} disabled={!selectedEmpresa || fetching} style={{ padding: '0.65rem 1.5rem', background: 'var(--primary)', border: 'none', borderRadius: '6px', color: 'white', fontWeight: '600', cursor: !selectedEmpresa || fetching ? 'not-allowed' : 'pointer', opacity: !selectedEmpresa || fetching ? 0.6 : 1 }}>
+            {fetching ? 'Consultando...' : 'Ver Recomendaciones'}
+          </button>
+        </div>
+      </div>
+
+      {recomendaciones && (
+        <div className="animate-fade-in">
+          <div className="glass-card" style={{ padding: '1.25rem 1.5rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Empresa</div>
+              <div style={{ fontWeight: '700', fontSize: '1.05rem' }}>{recomendaciones.empresa_nombre}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Actividad</div>
+              <div style={{ fontWeight: '600' }}>{recomendaciones.actividad_economica}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Sector detectado</div>
+              <span style={{ fontSize: '0.8rem', padding: '0.25rem 0.75rem', background: 'rgba(0,210,255,0.12)', color: 'var(--primary)', borderRadius: '20px', fontWeight: '600', textTransform: 'capitalize' }}>{recomendaciones.sector_detectado}</span>
+            </div>
+            <div style={{ marginLeft: 'auto' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Controles recomendados</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--primary)' }}>{recomendaciones.total_recomendaciones}</div>
+            </div>
+          </div>
+
+          {recomendaciones.recomendaciones.map((rec, idx) => (
+            <div key={idx} className="glass-card" style={{ marginBottom: '0.75rem', overflow: 'hidden' }}>
+              <div
+                style={{ padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', gap: '1rem' }}
+                onClick={() => toggleExpand(idx)}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', padding: '0.25rem 0.6rem', background: 'rgba(0,210,255,0.12)', color: 'var(--primary)', borderRadius: '4px', fontWeight: '700', whiteSpace: 'nowrap' }}>{rec.dominio}</span>
+                  <div>
+                    <div style={{ fontWeight: '600', fontSize: '0.95rem' }}>{rec.nombre}</div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Controles {rec.ref}</div>
+                  </div>
+                </div>
+                {expanded[idx] ? <ChevronUp size={18} color="var(--text-muted)" /> : <ChevronDown size={18} color="var(--text-muted)" />}
+              </div>
+              {expanded[idx] && (
+                <div style={{ padding: '0 1.5rem 1rem', borderTop: '1px solid var(--glass-border)' }}>
+                  <div style={{ paddingTop: '0.75rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                    <ShieldCheck size={16} color="var(--success)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-main)', lineHeight: '1.6' }}>{rec.justificacion}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── AuditoriaView ────────────────────────────────────────────────────────────
+const AuditoriaView = ({ empresas, loading }) => {
+  const [selectedEmpresa, setSelectedEmpresa] = useState('');
+  const [items, setItems] = useState([]);
+  const [resumen, setResumen] = useState(null);
+  const [fetching, setFetching] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editData, setEditData] = useState({});
+  const [saving, setSaving] = useState(false);
+
+  const fetchAuditoria = async (empresaId) => {
+    setFetching(true);
+    try {
+      const [itemsData, resumenData] = await Promise.all([
+        auditoriaApi.getByEmpresa(empresaId),
+        auditoriaApi.getResumen(empresaId),
+      ]);
+      setItems(itemsData);
+      setResumen(resumenData);
+    } catch { alert('Error al cargar la auditoría.'); }
+    finally { setFetching(false); }
+  };
+
+  const handleEmpresaChange = (id) => {
+    setSelectedEmpresa(id);
+    setItems([]);
+    setResumen(null);
+    if (id) fetchAuditoria(id);
+  };
+
+  const handleGenerate = async () => {
+    if (!selectedEmpresa) return;
+    setGenerating(true);
+    try {
+      await auditoriaApi.generarItems(selectedEmpresa);
+      await fetchAuditoria(selectedEmpresa);
+    } catch { alert('Error al generar items.'); }
+    finally { setGenerating(false); }
+  };
+
+  const startEdit = (item) => {
+    setEditingId(item.id);
+    setEditData({ status: item.status, notas: item.notas || '', fecha_evaluacion: item.fecha_evaluacion || '' });
+  };
+
+  const cancelEdit = () => { setEditingId(null); setEditData({}); };
+
+  const saveEdit = async (itemId) => {
+    setSaving(true);
+    try {
+      await auditoriaApi.update(itemId, editData);
+      setEditingId(null);
+      await fetchAuditoria(selectedEmpresa);
+    } catch { alert('Error al guardar.'); }
+    finally { setSaving(false); }
+  };
+
+  const getStatusColor = (s) => ({ pendiente: 'var(--text-muted)', en_proceso: 'var(--warning)', completado: 'var(--success)' }[s] || 'var(--text-muted)');
+  const getStatusIcon = (s) => s === 'completado' ? <CheckCircle2 size={16} color="var(--success)" /> : <Circle size={16} color={getStatusColor(s)} />;
+
+  return (
+    <div className="animate-fade-in">
+      <div className="glass-card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '0 0 1rem' }}>
+          <ClipboardCheck size={20} color="var(--primary)" />
+          Checklist de Auditoría Interna ISO 27001
+        </h3>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>Empresa a auditar</label>
+            <select value={selectedEmpresa} onChange={(e) => handleEmpresaChange(e.target.value)} style={{ width: '100%', padding: '0.65rem 0.75rem', background: 'var(--color-bg-elevated)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '0.9rem', outline: 'none' }}>
+              <option value="">Seleccionar empresa...</option>
+              {empresas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+            </select>
+          </div>
+          {selectedEmpresa && (
+            <button onClick={handleGenerate} disabled={generating} style={{ padding: '0.65rem 1.25rem', background: 'var(--glass)', border: '1px solid var(--primary)', borderRadius: '6px', color: 'var(--primary)', fontWeight: '600', cursor: generating ? 'not-allowed' : 'pointer', fontSize: '0.85rem', opacity: generating ? 0.6 : 1 }}>
+              {generating ? 'Generando...' : '+ Generar desde Controles'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {resumen && (
+        <div className="kpi-grid" style={{ marginBottom: '1.5rem' }}>
+          <KPICard title="Total Items" value={resumen.total} unit="" status="primary" description="Items de auditoría en esta empresa" />
+          <KPICard title="Completados" value={resumen.by_status.completado} unit="" status="green" description="Controles evaluados" />
+          <KPICard title="En Proceso" value={resumen.by_status.en_proceso} unit="" status="amber" description="Bajo revisión activa" />
+          <KPICard title="Completitud" value={resumen.completion_pct} unit="%" status={resumen.completion_pct > 80 ? 'green' : resumen.completion_pct > 40 ? 'amber' : 'red'} description="Porcentaje de avance de auditoría" />
+        </div>
+      )}
+
+      {selectedEmpresa && (
+        <div className="glass-card" style={{ overflow: 'hidden' }}>
+          <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--glass-border)' }}>
+            <h4 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <ClipboardCheck size={18} color="var(--primary)" />
+              Items de Auditoría
+              {fetching && <Activity size={16} color="var(--text-muted)" className="animate-spin" />}
+            </h4>
+          </div>
+          <div className="table-responsive">
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
+              <thead>
+                <tr style={{ background: 'var(--glass)', textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                  <th style={{ padding: '0.9rem 1rem' }}>REF</th>
+                  <th style={{ padding: '0.9rem 1rem' }}>CONTROL</th>
+                  <th style={{ padding: '0.9rem 1.25rem' }}>ESTADO</th>
+                  <th style={{ padding: '0.9rem 1.25rem' }}>NOTAS</th>
+                  <th style={{ padding: '0.9rem 1.25rem' }}>FECHA</th>
+                  <th style={{ padding: '0.9rem 1.25rem' }}>ACCIONES</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => (
+                  <tr key={item.id} style={{ borderTop: '1px solid var(--glass-border)', background: editingId === item.id ? 'rgba(0,210,255,0.03)' : 'transparent' }} className="table-row-hover">
+                    <td style={{ padding: '1rem', fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{item.iso_control_ref || '—'}</td>
+                    <td style={{ padding: '1rem' }}>
+                      <div style={{ fontWeight: '600', fontSize: '0.9rem', marginBottom: '0.2rem' }}>{item.control_name}</div>
+                      {item.activity_desc && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', maxWidth: '260px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.activity_desc}</div>}
+                    </td>
+                    <td style={{ padding: '1rem' }}>
+                      {editingId === item.id ? (
+                        <select value={editData.status} onChange={(e) => setEditData({ ...editData, status: e.target.value })} style={{ padding: '0.4rem 0.6rem', background: 'var(--color-bg-elevated)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '0.82rem', outline: 'none' }}>
+                          <option value="pendiente">Pendiente</option>
+                          <option value="en_proceso">En Proceso</option>
+                          <option value="completado">Completado</option>
+                        </select>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          {getStatusIcon(item.status)}
+                          <span style={{ fontSize: '0.85rem', color: getStatusColor(item.status) }}>{PROGRESO_LABELS[item.status]}</span>
+                        </div>
+                      )}
+                    </td>
+                    <td style={{ padding: '1rem' }}>
+                      {editingId === item.id ? (
+                        <input value={editData.notas} onChange={(e) => setEditData({ ...editData, notas: e.target.value })} placeholder="Observaciones..." style={{ width: '100%', padding: '0.4rem 0.6rem', background: 'var(--color-bg-elevated)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '0.82rem', outline: 'none', boxSizing: 'border-box' }} />
+                      ) : (
+                        <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{item.notas || '—'}</span>
+                      )}
+                    </td>
+                    <td style={{ padding: '1rem' }}>
+                      {editingId === item.id ? (
+                        <input type="date" value={editData.fecha_evaluacion} onChange={(e) => setEditData({ ...editData, fecha_evaluacion: e.target.value })} style={{ padding: '0.4rem 0.6rem', background: 'var(--color-bg-elevated)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '0.82rem', outline: 'none' }} />
+                      ) : (
+                        <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{item.fecha_evaluacion ? new Date(item.fecha_evaluacion).toLocaleDateString() : '—'}</span>
+                      )}
+                    </td>
+                    <td style={{ padding: '1rem' }}>
+                      {editingId === item.id ? (
+                        <div style={{ display: 'flex', gap: '0.4rem' }}>
+                          <button onClick={() => saveEdit(item.id)} disabled={saving} style={{ padding: '0.35rem 0.75rem', background: 'var(--primary)', border: 'none', borderRadius: '5px', color: 'white', fontSize: '0.78rem', fontWeight: '600', cursor: 'pointer' }}>Guardar</button>
+                          <button onClick={cancelEdit} style={{ padding: '0.35rem 0.6rem', background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: '5px', color: 'var(--text-muted)', fontSize: '0.78rem', cursor: 'pointer' }}>✕</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => startEdit(item)} style={{ padding: '0.35rem 0.75rem', background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: '5px', color: 'var(--text-main)', fontSize: '0.78rem', cursor: 'pointer' }}>Editar</button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {items.length === 0 && !fetching && (
+                  <tr><td colSpan="6" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>No hay items de auditoría. Usa "Generar desde Controles" para crearlos automáticamente.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── Main App Component ───────────────────────────────────────────────────────
 function App() {
   // Auth state
@@ -1145,6 +1614,9 @@ function App() {
   const [snapshots, setSnapshots] = useState([]);
   const [empresas, setEmpresas] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
+  const [cursos, setCursos] = useState([]);
+  const [auditoriaEmpresas, setAuditoriaEmpresas] = useState([]);
+  const [implementacionEmpresas, setImplementacionEmpresas] = useState([]);
 
   // Inject token in every api request
   useEffect(() => {
@@ -1251,6 +1723,15 @@ function App() {
         ]);
         setUsuarios(usersData.items || []);
         setEmpresas(empresasData.items || []);
+      } else if (view === 'capacitaciones') {
+        const data = await capacitacionApi.getAll();
+        setCursos(data);
+      } else if (view === 'implementacion') {
+        const data = await api.get('/empresas/').then(r => r.data);
+        setImplementacionEmpresas(data.items || []);
+      } else if (view === 'auditoria') {
+        const data = await api.get('/empresas/').then(r => r.data);
+        setAuditoriaEmpresas(data.items || []);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -1299,6 +1780,60 @@ function App() {
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>Área con mayor exposición al riesgo según la última evaluación</p>
         </div>
       </div>
+      {/* Quick-access module cards */}
+      {['admin', 'auditor', 'supervisor', 'analista'].includes(userProfile?.role) && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+            className="glass-card"
+            onClick={() => setView('capacitaciones')}
+            style={{ padding: '1.25rem', cursor: 'pointer', borderLeft: '3px solid var(--primary)', transition: 'transform 0.15s' }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+              <BookOpen size={20} color="var(--primary)" />
+              <span style={{ fontWeight: '700', fontSize: '0.95rem' }}>Capacitaciones</span>
+            </div>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0, lineHeight: '1.4' }}>Accede a los cursos de formación en ISO 27001</p>
+          </motion.div>
+
+          {['admin', 'auditor'].includes(userProfile?.role) && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+              className="glass-card"
+              onClick={() => setView('implementacion')}
+              style={{ padding: '1.25rem', cursor: 'pointer', borderLeft: '3px solid var(--warning)', transition: 'transform 0.15s' }}
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                <Wrench size={20} color="var(--warning)" />
+                <span style={{ fontWeight: '700', fontSize: '0.95rem' }}>Implementación ISO</span>
+              </div>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0, lineHeight: '1.4' }}>Recomendaciones de controles por actividad económica</p>
+            </motion.div>
+          )}
+
+          {['admin', 'auditor'].includes(userProfile?.role) && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+              className="glass-card"
+              onClick={() => setView('auditoria')}
+              style={{ padding: '1.25rem', cursor: 'pointer', borderLeft: '3px solid var(--success)', transition: 'transform 0.15s' }}
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                <ClipboardCheck size={20} color="var(--success)" />
+                <span style={{ fontWeight: '700', fontSize: '0.95rem' }}>Auditoría</span>
+              </div>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0, lineHeight: '1.4' }}>Checklist de auditoría interna por empresa</p>
+            </motion.div>
+          )}
+        </div>
+      )}
+
       <div className="glass-card" style={{ padding: '1.5rem', overflow: 'hidden' }}>
         <h3 style={{ marginBottom: '1rem' }}>Últimos Incidentes Detectados</h3>
         <div className="table-responsive">
@@ -1395,6 +1930,9 @@ function App() {
               {view === 'history' && <HistoryView snapshots={snapshots} loading={loading} />}
               {view === 'empresas' && <EmpresasView empresas={empresas} loading={loading} userRole={userProfile?.role} onRefresh={fetchData} />}
               {view === 'usuarios' && <UsersView users={usuarios} empresas={empresas} loading={loading} onRefresh={fetchData} />}
+              {view === 'capacitaciones' && <CapacitacionesView cursos={cursos} loading={loading} onRefresh={fetchData} userRole={userProfile?.role} />}
+              {view === 'implementacion' && <ImplementacionView empresas={implementacionEmpresas} loading={loading} />}
+              {view === 'auditoria' && <AuditoriaView empresas={auditoriaEmpresas} loading={loading} />}
             </motion.div>
           </AnimatePresence>
         )}

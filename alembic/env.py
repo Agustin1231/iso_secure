@@ -20,6 +20,9 @@ from app.models.risk import RiskLevel
 from app.models.snapshot import KpiSnapshot
 from app.models.empresa import Empresa
 from app.models.user_profile import UserProfile
+from app.models.curso import Curso
+from app.models.curso_progreso import CursoProgreso
+from app.models.auditoria_item import AuditoriaItem
 
 load_dotenv()
 
