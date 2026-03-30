@@ -45,6 +45,7 @@ import { Line } from 'react-chartjs-2';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { authApi, empresaApi, capacitacionApi, implementacionApi, auditoriaApi } from './api.js';
+import ChatWidget from './ChatWidget.jsx';
 
 // Supabase config (anon key is public by design)
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://rhvzjqvyimaavkdjxcvj.supabase.co';
@@ -2107,6 +2108,7 @@ function App() {
           </AnimatePresence>
         )}
       </main>
+      <ChatWidget userEmail={userProfile?.email} userRole={userProfile?.role} />
     </div>
   );
 }
