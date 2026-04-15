@@ -1681,6 +1681,7 @@ function App() {
   const [theme, setTheme] = useState('light');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [anexosOpen, setAnexosOpen] = useState(false);
 
   // Data state
   const [summary, setSummary] = useState(null);
@@ -1823,6 +1824,15 @@ function App() {
   useEffect(() => {
     if (authToken && userProfile) fetchData();
   }, [view, authToken, userProfile]);
+
+  useEffect(() => {
+    if (!anexosOpen) return;
+    const handler = (e) => {
+      if (!e.target.closest('[data-anexos-dropdown]')) setAnexosOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [anexosOpen]);
 
   const chartOptions = {
     responsive: true,
@@ -2072,7 +2082,54 @@ function App() {
               <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>ISO_SECURE · ISO/IEC 27001:2022</span>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            {view === 'dashboard' && (
+              <div data-anexos-dropdown style={{ position: 'relative' }}>
+                <button
+                  className="glass-card"
+                  style={{ padding: '0.75rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600' }}
+                  onClick={() => setAnexosOpen(o => !o)}
+                  title="Descargar Anexos"
+                >
+                  <Download size={18} />
+                  <span>Descargar Anexos</span>
+                  <ChevronDown size={15} style={{ transition: 'transform 0.2s', transform: anexosOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                </button>
+                {anexosOpen && (
+                  <div style={{
+                    position: 'absolute', top: 'calc(100% + 6px)', right: 0, minWidth: '280px',
+                    background: 'var(--card-bg)', border: '1px solid var(--border)',
+                    borderRadius: '10px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', zIndex: 999,
+                    overflow: 'hidden'
+                  }}>
+                    {[
+                      { label: 'Anexo A – ISO 27001', file: '/Anexo-A-ISO-27001.xlsx' },
+                      { label: 'Declaración de Aplicabilidad', file: '/Declaracion-de-aplicabilidad.xlsx' },
+                      { label: 'Lista Maestra de Documentos SGSI', file: '/Lista-Maestra-Documentos-SGSI.xlsx' },
+                    ].map((item, idx) => (
+                      <a
+                        key={idx}
+                        href={item.file}
+                        download
+                        onClick={() => setAnexosOpen(false)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '0.75rem',
+                          padding: '0.75rem 1rem', color: 'var(--text-main)',
+                          textDecoration: 'none', fontSize: '0.85rem', fontWeight: '500',
+                          borderBottom: idx < 2 ? '1px solid var(--border)' : 'none',
+                          transition: 'background 0.15s'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--hover-bg, rgba(0,0,0,0.05))'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <Download size={15} style={{ flexShrink: 0, opacity: 0.7 }} />
+                        {item.label}
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             <button className="glass-card" style={{ padding: '0.75rem', color: 'var(--text-main)', cursor: 'pointer' }} onClick={fetchData} title="Actualizar datos">
               <RefreshCcw size={20} className={loading ? 'animate-spin' : ''} />
             </button>
