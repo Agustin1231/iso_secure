@@ -22,6 +22,7 @@ import {
   Eye,
   EyeOff,
   BookOpen,
+  Video,
   Wrench,
   ClipboardCheck,
   CheckCircle2,
@@ -394,6 +395,15 @@ const Sidebar = ({ currentView, setView, theme, toggleTheme, isOpen, onClose, us
       </nav>
 
       <div style={{ marginTop: 'auto', paddingTop: '2rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <a
+          href="/manual.html"
+          target="_blank"
+          className="nav-link"
+          style={{ width: '100%', textDecoration: 'none' }}
+        >
+          <Video size={20} />
+          <span>Manual de Usuario</span>
+        </a>
         <a
           href="/docs.html"
           target="_blank"
