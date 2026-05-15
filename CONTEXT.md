@@ -20,10 +20,11 @@
 | 5 | Documentacion `docs.html` actualizada a v2.0 | ✅ Pusheado |
 | 6 | Manual de usuario con videos por modulo + anexos XLSX | ✅ Pusheado |
 | 7 | **Documentacion de arquitectura completa** — HTML interactivo con 7 secciones: arquitectura general, backend, frontend, stack tecnologico, despliegue, autenticacion/RBAC, modelo de datos ER | ✅ Pusheado |
+| 8 | **Modelamiento de amenazas STRIDE** — HTML interactivo con 9 secciones: metodologia, alcance, DFD, analisis STRIDE, arboles de amenazas, catalogo (24 amenazas), matriz de riesgo, mitigaciones, conclusiones | ✅ Pusheado |
 
 ### Ultimo commit pusheado
 ```
-451509a fix(manual): poster en t=2s para saltar frame inicial negro
+750b9fc docs: agregar documentacion de arquitectura completa del sistema
 ```
 
 ---
@@ -167,6 +168,13 @@ Frontend: `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` en `/frontend/.env` (o 
 - Archivo: `frontend/public/arquitectura.html` — HTML interactivo con navegacion fija
 - 7 secciones: Arquitectura General, Backend, Frontend, Stack Tecnologico, Despliegue, Autenticacion/RBAC, Modelo de Datos ER
 - Incluye: diagramas de capas, flujos de auth (login + request protegido), matriz RBAC completa, relaciones entre entidades, 8 enums, pipeline de deploy
+
+### Modelamiento de amenazas STRIDE (Fase 8)
+- Archivo: `frontend/public/threat-modeling.html` — HTML interactivo con navegacion fija
+- 9 secciones: Metodologia, Alcance y DFD, Diagrama de Flujo de Datos, Analisis STRIDE, Arboles de Amenazas, Catalogo de Amenazas, Matriz de Riesgo, Mitigaciones, Conclusiones
+- 24 amenazas identificadas: S-01 a S-04, T-01 a T-04, R-01 a R-03, I-01 a I-05, D-01 a D-04, E-01 a E-04
+- 8 amenazas criticas, 3 arboles de amenazas (brecha cross-tenant, falsificar metricas, obtener acceso admin)
+- Hoja de ruta de seguridad priorizada: inmediato (5), corto plazo (5), mediano plazo (5)
 
 ### Deuda tecnica conocida
 - `dummyChartData` en dashboard → reemplazar con datos reales de `/snapshots`

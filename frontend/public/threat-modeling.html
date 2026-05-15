@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISO SECURE — Modelamiento de Amenazas STRIDE</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #111827;
+    --bg3: #1a1f35;
+    --border: #2a3050;
+    --text: #f0f4ff;
+    --text2: #8892b0;
+    --blue: #4f8ff7;
+    --green: #10b981;
+    --orange: #f59e0b;
+    --red: #ef4444;
+    --purple: #a78bfa;
+    --cyan: #22d3ee;
+    --pink: #f472b6;
+    --yellow: #facc15;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior: smooth; }
+  body { font-family:'Inter',-apple-system,sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
+
+  /* NAV */
+  .nav { position:fixed; top:0; left:0; right:0; z-index:100; background:rgba(10,14,26,0.88); backdrop-filter:blur(20px); border-bottom:1px solid var(--border); padding:0 20px; }
+  .nav-inner { max-width:1300px; margin:0 auto; display:flex; align-items:center; height:56px; gap:6px; overflow-x:auto; }
+  .nav-logo { font-weight:800; font-size:14px; color:var(--red); white-space:nowrap; margin-right:12px; flex-shrink:0; }
+  .nav-link { color:var(--text2); text-decoration:none; font-size:10px; font-weight:600; padding:5px 10px; border-radius:6px; white-space:nowrap; transition:all 0.2s; flex-shrink:0; }
+  .nav-link:hover { background:rgba(239,68,68,0.1); color:var(--red); }
+
+  /* HERO */
+  .hero { padding:100px 40px 50px; text-align:center; background:radial-gradient(ellipse at top,rgba(239,68,68,0.06) 0%,transparent 60%); }
+  .hero-badge { display:inline-block; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); padding:5px 14px; border-radius:20px; font-size:11px; font-weight:600; color:var(--red); letter-spacing:1px; text-transform:uppercase; margin-bottom:16px; }
+  .hero h1 { font-size:42px; font-weight:900; background:linear-gradient(135deg,#fff 0%,#f87171 50%,#ef4444 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:10px; line-height:1.1; }
+  .hero p { font-size:16px; color:var(--text2); max-width:750px; margin:0 auto 24px; }
+
+  /* SECTIONS */
+  .section { max-width:1300px; margin:0 auto; padding:50px 40px; }
+  .section-num { font-size:11px; font-weight:700; color:var(--red); letter-spacing:2px; text-transform:uppercase; margin-bottom:6px; }
+  .section-title { font-size:32px; font-weight:800; margin-bottom:6px; line-height:1.2; }
+  .section-desc { font-size:14px; color:var(--text2); max-width:750px; margin-bottom:30px; }
+  .divider { height:1px; background:linear-gradient(90deg,transparent,var(--border),transparent); margin:0 40px; }
+
+  /* CARDS */
+  .card { background:var(--bg3); border:1px solid var(--border); border-radius:14px; padding:22px; position:relative; overflow:hidden; }
+  .card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+  .card-red::before { background:linear-gradient(90deg,#ef4444,#f87171); }
+  .card-orange::before { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+  .card-blue::before { background:linear-gradient(90deg,#4f8ff7,#22d3ee); }
+  .card-green::before { background:linear-gradient(90deg,#10b981,#34d399); }
+  .card-purple::before { background:linear-gradient(90deg,#a78bfa,#c4b5fd); }
+  .card-cyan::before { background:linear-gradient(90deg,#22d3ee,#67e8f9); }
+  .card-pink::before { background:linear-gradient(90deg,#f472b6,#f9a8d4); }
+  .card-yellow::before { background:linear-gradient(90deg,#facc15,#fde68a); }
+  .card-title { font-size:16px; font-weight:700; margin-bottom:4px; display:flex; align-items:center; gap:8px; }
+  .card-sub { font-size:11px; color:var(--text2); margin-bottom:12px; }
+
+  .badge { display:inline-block; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); padding:2px 9px; border-radius:5px; font-size:10px; font-weight:500; margin:2px; }
+  .badge-red { background:rgba(239,68,68,0.12); color:#fca5a5; border-color:rgba(239,68,68,0.25); }
+  .badge-orange { background:rgba(245,158,11,0.12); color:#fcd34d; border-color:rgba(245,158,11,0.25); }
+  .badge-green { background:rgba(16,185,129,0.12); color:#6ee7b7; border-color:rgba(16,185,129,0.25); }
+  .badge-blue { background:rgba(79,143,247,0.12); color:#93bbfc; border-color:rgba(79,143,247,0.25); }
+  .badge-purple { background:rgba(167,139,250,0.12); color:#c4b5fd; border-color:rgba(167,139,250,0.25); }
+  .badge-yellow { background:rgba(250,204,21,0.12); color:#fde68a; border-color:rgba(250,204,21,0.25); }
+  .badge-cyan { background:rgba(34,211,238,0.12); color:#67e8f9; border-color:rgba(34,211,238,0.25); }
+
+  /* GRIDS */
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+  .grid-6 { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; }
+
+  /* LAYER */
+  .layer { display:flex; align-items:center; gap:10px; margin:20px 0 12px; }
+  .layer-tag { background:rgba(255,255,255,0.04); border:1px solid var(--border); padding:4px 14px; border-radius:20px; font-size:11px; font-weight:700; letter-spacing:1px; white-space:nowrap; }
+  .layer-line { flex:1; height:1px; background:var(--border); }
+
+  /* DFD */
+  .dfd-container { background:var(--bg2); border:2px solid var(--border); border-radius:16px; padding:30px; position:relative; overflow:hidden; }
+  .trust-boundary { border:2px dashed; border-radius:14px; padding:20px; margin:10px 0; position:relative; }
+  .tb-label { position:absolute; top:-11px; left:20px; background:var(--bg2); padding:0 10px; font-size:11px; font-weight:700; letter-spacing:1px; }
+  .tb-red { border-color:rgba(239,68,68,0.4); }
+  .tb-red .tb-label { color:#f87171; }
+  .tb-blue { border-color:rgba(79,143,247,0.4); }
+  .tb-blue .tb-label { color:#93bbfc; }
+  .tb-green { border-color:rgba(16,185,129,0.4); }
+  .tb-green .tb-label { color:#6ee7b7; }
+  .tb-purple { border-color:rgba(167,139,250,0.4); }
+  .tb-purple .tb-label { color:#c4b5fd; }
+
+  .dfd-node { border-radius:10px; padding:12px 16px; text-align:center; min-width:130px; display:inline-block; }
+  .dfd-process { background:rgba(79,143,247,0.12); border:1.5px solid rgba(79,143,247,0.35); }
+  .dfd-store { background:rgba(16,185,129,0.12); border:1.5px solid rgba(16,185,129,0.35); }
+  .dfd-external { background:rgba(239,68,68,0.12); border:1.5px solid rgba(239,68,68,0.35); }
+  .dfd-node-title { font-size:12px; font-weight:700; }
+  .dfd-node-sub { font-size:9px; color:var(--text2); }
+  .dfd-row { display:flex; justify-content:center; gap:16px; flex-wrap:wrap; margin:8px 0; }
+  .dfd-arrow { display:flex; justify-content:center; margin:6px 0; }
+  .dfd-arrow-v { width:2px; height:24px; background:linear-gradient(to bottom,var(--border),var(--text2)); position:relative; margin:0 auto; }
+  .dfd-arrow-v::after { content:''; position:absolute; bottom:-4px; left:50%; transform:translateX(-50%); border-left:5px solid transparent; border-right:5px solid transparent; border-top:7px solid var(--text2); }
+  .dfd-flow-label { font-size:9px; color:var(--text2); text-align:center; margin:2px 0; }
+
+  /* STRIDE TABLE */
+  .stride-table { width:100%; border-collapse:collapse; font-size:11px; }
+  .stride-table th { background:rgba(255,255,255,0.04); padding:10px; text-align:left; border:1px solid var(--border); font-weight:600; }
+  .stride-table td { padding:10px; border:1px solid var(--border); vertical-align:top; }
+  .stride-table tr:nth-child(even) { background:rgba(255,255,255,0.015); }
+
+  /* THREAT TREE */
+  .tree { padding:0; margin:0; }
+  .tree-root { list-style:none; padding:0; }
+  .tree-node { position:relative; padding:8px 0 8px 28px; border-left:2px solid var(--border); }
+  .tree-node:last-child { border-left-color:transparent; }
+  .tree-node::before { content:''; position:absolute; left:-1px; top:16px; width:20px; height:2px; background:var(--border); }
+  .tree-node-content { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:10px 14px; display:inline-block; max-width:100%; }
+  .tree-node-title { font-size:12px; font-weight:700; }
+  .tree-node-desc { font-size:10px; color:var(--text2); margin-top:2px; }
+  .tree-root > .tree-node { border-left:none; padding-left:0; }
+  .tree-root > .tree-node::before { display:none; }
+  .tree-root > .tree-node > .tree-node-content { background:rgba(239,68,68,0.1); border-color:rgba(239,68,68,0.3); }
+  .tree-children { list-style:none; padding-left:20px; }
+
+  /* RISK MATRIX */
+  .risk-matrix { border-collapse:collapse; text-align:center; font-size:11px; width:100%; max-width:500px; margin:0 auto; }
+  .risk-matrix th, .risk-matrix td { padding:10px; border:1px solid var(--border); }
+  .risk-matrix th { background:rgba(255,255,255,0.04); font-weight:600; }
+  .rm-critical { background:rgba(239,68,68,0.2); color:#fca5a5; font-weight:700; }
+  .rm-high { background:rgba(245,158,11,0.2); color:#fcd34d; font-weight:700; }
+  .rm-medium { background:rgba(250,204,21,0.15); color:#fde68a; }
+  .rm-low { background:rgba(16,185,129,0.1); color:#6ee7b7; }
+
+  /* NARRATIVE */
+  .narrative { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:20px; margin:12px 0; font-size:13px; line-height:1.8; }
+  .narrative p { margin-bottom:12px; }
+  .narrative p:last-child { margin-bottom:0; }
+  .narrative strong { color:var(--text); }
+  .highlight { color:var(--red); font-weight:600; }
+  .mitigation { color:var(--green); font-weight:600; }
+
+  /* STRIDE LETTER */
+  .stride-letter { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:8px; font-size:16px; font-weight:800; flex-shrink:0; }
+  .sl-s { background:rgba(239,68,68,0.15); color:#f87171; border:1.5px solid rgba(239,68,68,0.3); }
+  .sl-t { background:rgba(245,158,11,0.15); color:#fbbf24; border:1.5px solid rgba(245,158,11,0.3); }
+  .sl-r { background:rgba(167,139,250,0.15); color:#c4b5fd; border:1.5px solid rgba(167,139,250,0.3); }
+  .sl-i { background:rgba(79,143,247,0.15); color:#93bbfc; border:1.5px solid rgba(79,143,247,0.3); }
+  .sl-d { background:rgba(34,211,238,0.15); color:#67e8f9; border:1.5px solid rgba(34,211,238,0.3); }
+  .sl-e { background:rgba(244,114,182,0.15); color:#f9a8d4; border:1.5px solid rgba(244,114,182,0.3); }
+
+  /* LIST */
+  .threat-list { list-style:none; padding:0; }
+  .threat-list li { display:flex; gap:10px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:12px; align-items:flex-start; }
+  .threat-list li:last-child { border:none; }
+  .t-id { font-weight:700; color:var(--red); min-width:50px; flex-shrink:0; font-size:11px; }
+  .t-info { flex:1; }
+  .t-title { font-weight:600; margin-bottom:2px; }
+  .t-desc { color:var(--text2); font-size:11px; }
+  .t-risk { flex-shrink:0; text-align:center; min-width:60px; }
+  .risk-critical { background:rgba(239,68,68,0.15); color:#fca5a5; padding:3px 10px; border-radius:6px; font-size:10px; font-weight:700; border:1px solid rgba(239,68,68,0.3); }
+  .risk-high { background:rgba(245,158,11,0.15); color:#fcd34d; padding:3px 10px; border-radius:6px; font-size:10px; font-weight:700; border:1px solid rgba(245,158,11,0.3); }
+  .risk-medium { background:rgba(250,204,21,0.1); color:#fde68a; padding:3px 10px; border-radius:6px; font-size:10px; font-weight:700; border:1px solid rgba(250,204,21,0.25); }
+  .risk-low { background:rgba(16,185,129,0.1); color:#6ee7b7; padding:3px 10px; border-radius:6px; font-size:10px; font-weight:700; border:1px solid rgba(16,185,129,0.25); }
+
+  .counter-row { display:flex; justify-content:center; gap:30px; flex-wrap:wrap; margin:20px 0; }
+  .counter { text-align:center; }
+  .counter-num { font-size:36px; font-weight:800; }
+  .counter-label { font-size:10px; color:var(--text2); text-transform:uppercase; letter-spacing:1px; }
+
+  .footer { text-align:center; padding:40px; color:var(--text2); font-size:11px; border-top:1px solid var(--border); margin-top:30px; }
+  .footer strong { color:var(--text); }
+
+  @media(max-width:900px) {
+    .grid-2,.grid-3,.grid-6 { grid-template-columns:1fr; }
+    .hero h1 { font-size:28px; }
+    .section { padding:30px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+    <span class="nav-logo">STRIDE THREAT MODEL</span>
+    <a href="#methodology" class="nav-link">Metodologia</a>
+    <a href="#scope" class="nav-link">Alcance</a>
+    <a href="#dfd" class="nav-link">DFD</a>
+    <a href="#stride" class="nav-link">Analisis STRIDE</a>
+    <a href="#trees" class="nav-link">Arboles de Amenazas</a>
+    <a href="#catalog" class="nav-link">Catalogo</a>
+    <a href="#matrix" class="nav-link">Matriz de Riesgo</a>
+    <a href="#mitigations" class="nav-link">Mitigaciones</a>
+    <a href="#conclusions" class="nav-link">Conclusiones</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">Microsoft Threat Modeling &mdash; STRIDE</div>
+  <h1>Modelamiento de Amenazas</h1>
+  <p>Analisis sistematico de amenazas del sistema ISO SECURE utilizando la metodologia STRIDE de Microsoft para identificar, clasificar y mitigar riesgos de seguridad en cada componente de la arquitectura.</p>
+  <div class="counter-row">
+    <div class="counter"><div class="counter-num" style="color:var(--red);">6</div><div class="counter-label">Categorias STRIDE</div></div>
+    <div class="counter"><div class="counter-num" style="color:var(--orange);">24</div><div class="counter-label">Amenazas Identificadas</div></div>
+    <div class="counter"><div class="counter-num" style="color:var(--blue);">5</div><div class="counter-label">Limites de Confianza</div></div>
+    <div class="counter"><div class="counter-num" style="color:var(--green);">30</div><div class="counter-label">Mitigaciones</div></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===================== SECTION 1: METODOLOGIA ===================== -->
+<section class="section" id="methodology">
+  <div class="section-num">01</div>
+  <h2 class="section-title">Metodologia STRIDE</h2>
+  <p class="section-desc">El modelo STRIDE fue desarrollado por Microsoft como un marco sistematico para identificar amenazas de seguridad en sistemas de software. Cada letra representa una categoria de amenaza que viola una propiedad de seguridad especifica.</p>
+
+  <div class="grid-6">
+    <div class="card card-red" style="text-align:center;">
+      <div class="stride-letter sl-s" style="margin:0 auto 8px;">S</div>
+      <div class="card-title" style="justify-content:center; font-size:13px;">Spoofing</div>
+      <div class="card-sub">Suplantacion de identidad</div>
+      <div style="font-size:10px; color:var(--text2);">Viola: <strong style="color:var(--text);">Autenticacion</strong></div>
+    </div>
+    <div class="card card-orange" style="text-align:center;">
+      <div class="stride-letter sl-t" style="margin:0 auto 8px;">T</div>
+      <div class="card-title" style="justify-content:center; font-size:13px;">Tampering</div>
+      <div class="card-sub">Manipulacion de datos</div>
+      <div style="font-size:10px; color:var(--text2);">Viola: <strong style="color:var(--text);">Integridad</strong></div>
+    </div>
+    <div class="card card-purple" style="text-align:center;">
+      <div class="stride-letter sl-r" style="margin:0 auto 8px;">R</div>
+      <div class="card-title" style="justify-content:center; font-size:13px;">Repudiation</div>
+      <div class="card-sub">Negacion de acciones</div>
+      <div style="font-size:10px; color:var(--text2);">Viola: <strong style="color:var(--text);">No repudio</strong></div>
+    </div>
+    <div class="card card-blue" style="text-align:center;">
+      <div class="stride-letter sl-i" style="margin:0 auto 8px;">I</div>
+      <div class="card-title" style="justify-content:center; font-size:13px;">Info Disclosure</div>
+      <div class="card-sub">Divulgacion de informacion</div>
+      <div style="font-size:10px; color:var(--text2);">Viola: <strong style="color:var(--text);">Confidencialidad</strong></div>
+    </div>
+    <div class="card card-cyan" style="text-align:center;">
+      <div class="stride-letter sl-d" style="margin:0 auto 8px;">D</div>
+      <div class="card-title" style="justify-content:center; font-size:13px;">Denial of Service</div>
+      <div class="card-sub">Denegacion de servicio</div>
+      <div style="font-size:10px; color:var(--text2);">Viola: <strong style="color:var(--text);">Disponibilidad</strong></div>
+    </div>
+    <div class="card card-pink" style="text-align:center;">
+      <div class="stride-letter sl-e" style="margin:0 auto 8px;">E</div>
+      <div class="card-title" style="justify-content:center; font-size:13px;">Elev. of Privilege</div>
+      <div class="card-sub">Escalamiento de privilegios</div>
+      <div style="font-size:10px; color:var(--text2);">Viola: <strong style="color:var(--text);">Autorizacion</strong></div>
+    </div>
+  </div>
+
+  <div class="narrative" style="margin-top:20px;">
+    <p>El proceso de modelamiento de amenazas de Microsoft sigue cuatro pasos fundamentales: <strong>(1)</strong> Diagramar el sistema e identificar los flujos de datos, <strong>(2)</strong> Identificar los limites de confianza donde los datos cruzan entre zonas de diferente nivel de privilegio, <strong>(3)</strong> Aplicar el modelo STRIDE a cada componente y flujo de datos para enumerar amenazas potenciales, y <strong>(4)</strong> Definir mitigaciones para cada amenaza identificada.</p>
+    <p>Para ISO SECURE, este analisis es especialmente critico dado que el sistema maneja <span class="highlight">datos sensibles de cumplimiento ISO 27001</span>, incluyendo evaluaciones de riesgo, incidentes de seguridad, informacion de auditorias internas y datos de multiples organizaciones bajo un modelo multi-tenant.</p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===================== SECTION 2: ALCANCE ===================== -->
+<section class="section" id="scope">
+  <div class="section-num">02</div>
+  <h2 class="section-title">Alcance del Analisis</h2>
+  <p class="section-desc">Componentes del sistema ISO SECURE sujetos al modelamiento de amenazas.</p>
+
+  <div class="grid-3">
+    <div class="card card-blue">
+      <div class="card-title">&#x1F310; Frontend (React SPA)</div>
+      <div class="card-sub">Superficie de ataque del cliente</div>
+      <ul class="threat-list" style="font-size:11px;">
+        <li style="padding:4px 0;border:none;display:block;">&#x2022; Navegador web del usuario</li>
+        <li style="padding:4px 0;border:none;display:block;">&#x2022; Formularios de login/registro</li>
+        <li style="padding:4px 0;border:none;display:block;">&#x2022; Almacenamiento de JWT en memoria</li>
+        <li style="padding:4px 0;border:none;display:block;">&#x2022; Comunicacion Axios con API</li>
+        <li style="padding:4px 0;border:none;display:block;">&#x2022; Widget de chat ISORA (SSE)</li>
+      </ul>
+    </div>
+    <div class="card card-orange">
+      <div class="card-title">&#x1F680; Backend (FastAPI)</div>
+      <div class="card-sub">Nucleo de procesamiento</div>
+      <ul class="threat-list" style="font-size:11px;">
+        <li style="padding:4px 0;border:none;display:block;">&#x2022; 39 endpoints REST API</li>
+        <li style="padding:4px 0;border:none;display:block;">&#x2022; Middleware CORS</li>
+        <li style="padding:4px 0;border:none;display:block;">&#x2022; Validacion JWT via Supabase</li>
+        <li style="padding:4px 0;border:none;display:block;">&#x2022; RBAC (4 roles)</li>
+        <li style="padding:4px 0;border:none;display:block;">&#x2022; Logica de negocio multi-tenant</li>
+      </ul>
+    </div>
+    <div class="card card-green">
+      <div class="card-title">&#x1F5C4; Datos y Servicios Externos</div>
+      <div class="card-sub">Persistencia y autenticacion</div>
+      <ul class="threat-list" style="font-size:11px;">
+        <li style="padding:4px 0;border:none;display:block;">&#x2022; PostgreSQL (Supabase Cloud)</li>
+        <li style="padding:4px 0;border:none;display:block;">&#x2022; Supabase Auth (JWT provider)</li>
+        <li style="padding:4px 0;border:none;display:block;">&#x2022; ISORA AI Service (SSE)</li>
+        <li style="padding:4px 0;border:none;display:block;">&#x2022; YouTube CDN (videos)</li>
+        <li style="padding:4px 0;border:none;display:block;">&#x2022; Docker network (bridge)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="narrative" style="margin-top:16px;">
+    <p><strong>Activos criticos identificados:</strong> Los activos de mayor valor en ISO SECURE incluyen: (a) los <span class="highlight">datos de incidentes de seguridad</span> que contienen detalles sobre vulnerabilidades y brechas, (b) las <span class="highlight">evaluaciones de riesgo</span> con scores de probabilidad e impacto por dominio, (c) los <span class="highlight">registros de auditoria interna</span> con hallazgos de cumplimiento, (d) la <span class="highlight">informacion de empresas</span> (NIT, representante legal, datos de contacto), y (e) los <span class="highlight">perfiles de usuario</span> con roles y permisos asignados. Un compromiso de cualquiera de estos activos podria resultar en danos reputacionales, incumplimiento regulatorio o exposicion de informacion sensible de multiples organizaciones clientes.</p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===================== SECTION 3: DFD ===================== -->
+<section class="section" id="dfd">
+  <div class="section-num">03</div>
+  <h2 class="section-title">Diagrama de Flujo de Datos (DFD)</h2>
+  <p class="section-desc">Representacion de los flujos de datos entre componentes con limites de confianza identificados.</p>
+
+  <div class="dfd-container">
+    <!-- Trust Boundary 0: Internet -->
+    <div class="trust-boundary tb-red">
+      <div class="tb-label">&#x1F534; LIMITE DE CONFIANZA 1 &mdash; Internet (No confiable)</div>
+      <div class="dfd-row">
+        <div class="dfd-node dfd-external">
+          <div class="dfd-node-title">&#x1F464; Usuario</div>
+          <div class="dfd-node-sub">Navegador Web / Movil</div>
+        </div>
+        <div class="dfd-node dfd-external">
+          <div class="dfd-node-title">&#x1F916; Atacante</div>
+          <div class="dfd-node-sub">Amenaza externa</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dfd-arrow"><div class="dfd-arrow-v"></div></div>
+    <div class="dfd-flow-label">HTTPS :3000 &mdash; HTML/CSS/JS + API Requests (Bearer JWT)</div>
+
+    <!-- Trust Boundary 1: DMZ / Docker -->
+    <div class="trust-boundary tb-blue">
+      <div class="tb-label">&#x1F535; LIMITE DE CONFIANZA 2 &mdash; Docker Network (DMZ)</div>
+
+      <div class="dfd-row">
+        <div class="dfd-node dfd-process" style="min-width:220px;">
+          <div class="dfd-node-title">&#x269B;&#xFE0F; Frontend (Nginx)</div>
+          <div class="dfd-node-sub">React SPA &middot; Static Files &middot; :3000 &rarr; :80</div>
+        </div>
+      </div>
+
+      <div class="dfd-arrow"><div class="dfd-arrow-v"></div></div>
+      <div class="dfd-flow-label">REST API /api/v1/* &mdash; JSON + Authorization: Bearer &lt;JWT&gt;</div>
+
+      <!-- Trust Boundary 2: Backend -->
+      <div class="trust-boundary tb-green" style="margin-top:10px;">
+        <div class="tb-label">&#x1F7E2; LIMITE DE CONFIANZA 3 &mdash; Backend Application</div>
+
+        <div class="dfd-row">
+          <div class="dfd-node dfd-process">
+            <div class="dfd-node-title">&#x1F512; Auth Middleware</div>
+            <div class="dfd-node-sub">JWT Validation + RBAC</div>
+          </div>
+          <div class="dfd-node dfd-process">
+            <div class="dfd-node-title">&#x1F680; FastAPI App</div>
+            <div class="dfd-node-sub">9 Routers &middot; 39 Endpoints</div>
+          </div>
+          <div class="dfd-node dfd-process">
+            <div class="dfd-node-title">&#x2699;&#xFE0F; Services Layer</div>
+            <div class="dfd-node-sub">Business Logic &middot; Multi-tenant</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dfd-arrow"><div class="dfd-arrow-v"></div></div>
+    <div class="dfd-flow-label">asyncpg (SQL) &mdash; Connection Pool &middot; HTTPX (Auth validation)</div>
+
+    <!-- Trust Boundary 3: External Services -->
+    <div class="trust-boundary tb-purple">
+      <div class="tb-label">&#x1F7E3; LIMITE DE CONFIANZA 4 &mdash; Servicios Externos (Supabase Cloud)</div>
+      <div class="dfd-row">
+        <div class="dfd-node dfd-store">
+          <div class="dfd-node-title">&#x1F5C4; PostgreSQL</div>
+          <div class="dfd-node-sub">9 Tablas &middot; Multi-tenant</div>
+        </div>
+        <div class="dfd-node dfd-store">
+          <div class="dfd-node-title">&#x1F510; Supabase Auth</div>
+          <div class="dfd-node-sub">JWT Provider &middot; /auth/v1/user</div>
+        </div>
+        <div class="dfd-node dfd-external">
+          <div class="dfd-node-title">&#x1F916; ISORA AI</div>
+          <div class="dfd-node-sub">SSE Streaming</div>
+        </div>
+        <div class="dfd-node dfd-external">
+          <div class="dfd-node-title">&#x1F3A5; YouTube</div>
+          <div class="dfd-node-sub">Video CDN</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="narrative" style="margin-top:16px;">
+    <p><strong>Limites de confianza identificados:</strong> Se identifican <span class="highlight">4 limites de confianza</span> principales en el sistema. El primer limite separa la zona no confiable (Internet/usuarios) del contenedor Docker. El segundo limite aisla la red Docker interna (bridge network) donde residen los contenedores de frontend y backend. El tercer limite protege la capa de aplicacion backend donde se ejecuta la logica de negocio, la validacion JWT y el control de acceso RBAC. El cuarto limite corresponde a los servicios externos gestionados por Supabase (base de datos PostgreSQL y servicio de autenticacion).</p>
+    <p>Los <strong>flujos de datos criticos</strong> que cruzan estos limites incluyen: (1) credenciales de usuario en el login, (2) tokens JWT en cada request API, (3) datos de incidentes/riesgos/controles en operaciones CRUD, (4) queries SQL hacia la base de datos con datos multi-tenant, y (5) validaciones de token contra el servicio Auth de Supabase.</p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===================== SECTION 4: STRIDE ANALYSIS ===================== -->
+<section class="section" id="stride">
+  <div class="section-num">04</div>
+  <h2 class="section-title">Analisis STRIDE por Componente</h2>
+  <p class="section-desc">Aplicacion sistematica del modelo STRIDE a cada componente y flujo de datos del sistema.</p>
+
+  <!-- S - SPOOFING -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#f87171;"><span class="stride-letter sl-s" style="width:22px;height:22px;font-size:12px;border-radius:5px;">S</span> &nbsp;SPOOFING &mdash; Suplantacion de Identidad</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="card card-red">
+    <div class="card-title">Amenazas de Suplantacion</div>
+    <div class="card-sub">Propiedad violada: Autenticacion &mdash; Un atacante se hace pasar por un usuario o componente legitimo</div>
+    <ul class="threat-list">
+      <li>
+        <span class="t-id">S-01</span>
+        <div class="t-info"><div class="t-title">Robo de JWT y reutilizacion de sesion</div><div class="t-desc">Un atacante intercepta o roba un token JWT valido (via XSS, red no cifrada o malware) y lo reutiliza para autenticarse como el usuario victima. Los tokens JWT son stateless, por lo que el backend no puede invalidarlos una vez emitidos.</div></div>
+        <div class="t-risk"><span class="risk-critical">CRITICO</span></div>
+      </li>
+      <li>
+        <span class="t-id">S-02</span>
+        <div class="t-info"><div class="t-title">Suplantacion de Supabase Auth Service</div><div class="t-desc">Un atacante realiza un ataque Man-in-the-Middle entre el backend y el servicio Supabase Auth (/auth/v1/user), respondiendo con un usuario falso validado. Esto permitiria autenticacion fraudulenta.</div></div>
+        <div class="t-risk"><span class="risk-high">ALTO</span></div>
+      </li>
+      <li>
+        <span class="t-id">S-03</span>
+        <div class="t-info"><div class="t-title">Registro de usuario con email corporativo falso</div><div class="t-desc">Un atacante se registra con un email que no le pertenece para ganar acceso al sistema. Al no existir verificacion de dominio corporativo, podria registrarse con emails genericos y solicitar asignacion a una empresa.</div></div>
+        <div class="t-risk"><span class="risk-high">ALTO</span></div>
+      </li>
+      <li>
+        <span class="t-id">S-04</span>
+        <div class="t-info"><div class="t-title">Falsificacion de origen en CORS abierto</div><div class="t-desc">La configuracion CORS actual permite todos los origenes (allow_origins=["*"]), lo que permite a cualquier dominio malicioso realizar peticiones autenticadas al API si el usuario tiene una sesion activa.</div></div>
+        <div class="t-risk"><span class="risk-critical">CRITICO</span></div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- T - TAMPERING -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#fbbf24;"><span class="stride-letter sl-t" style="width:22px;height:22px;font-size:12px;border-radius:5px;">T</span> &nbsp;TAMPERING &mdash; Manipulacion de Datos</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="card card-orange">
+    <div class="card-title">Amenazas de Manipulacion</div>
+    <div class="card-sub">Propiedad violada: Integridad &mdash; Modificacion no autorizada de datos en transito o en reposo</div>
+    <ul class="threat-list">
+      <li>
+        <span class="t-id">T-01</span>
+        <div class="t-info"><div class="t-title">Manipulacion de datos de cumplimiento ISO</div><div class="t-desc">Un usuario con rol de analista podria manipular el porcentaje de cumplimiento (compliance_pct) de los controles ISO asignados a su empresa, reportando valores artificialmente altos para aparentar un nivel de cumplimiento mayor al real.</div></div>
+        <div class="t-risk"><span class="risk-high">ALTO</span></div>
+      </li>
+      <li>
+        <span class="t-id">T-02</span>
+        <div class="t-info"><div class="t-title">Inyeccion SQL via parametros de query</div><div class="t-desc">Aunque SQLAlchemy proporciona proteccion contra inyeccion SQL mediante consultas parametrizadas, si existiera alguna query construida con concatenacion directa de strings, un atacante podria inyectar SQL malicioso para modificar o extraer datos.</div></div>
+        <div class="t-risk"><span class="risk-medium">MEDIO</span></div>
+      </li>
+      <li>
+        <span class="t-id">T-03</span>
+        <div class="t-info"><div class="t-title">Alteracion de severidad de incidentes</div><div class="t-desc">Un usuario autorizado podria cambiar la severidad de incidentes criticos a niveles bajos para ocultar problemas graves de seguridad, afectando los KPIs del dashboard y la toma de decisiones de la alta direccion.</div></div>
+        <div class="t-risk"><span class="risk-high">ALTO</span></div>
+      </li>
+      <li>
+        <span class="t-id">T-04</span>
+        <div class="t-info"><div class="t-title">Manipulacion de empresa_id en requests</div><div class="t-desc">Un atacante podria intentar enviar un empresa_id diferente al propio en las peticiones API para crear, modificar o eliminar datos pertenecientes a otra organizacion, violando el aislamiento multi-tenant.</div></div>
+        <div class="t-risk"><span class="risk-critical">CRITICO</span></div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- R - REPUDIATION -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#c4b5fd;"><span class="stride-letter sl-r" style="width:22px;height:22px;font-size:12px;border-radius:5px;">R</span> &nbsp;REPUDIATION &mdash; Negacion de Acciones</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="card card-purple">
+    <div class="card-title">Amenazas de Repudio</div>
+    <div class="card-sub">Propiedad violada: No repudio &mdash; Un actor niega haber realizado una accion sin posibilidad de demostrar lo contrario</div>
+    <ul class="threat-list">
+      <li>
+        <span class="t-id">R-01</span>
+        <div class="t-info"><div class="t-title">Ausencia de logs de auditoria de acciones</div><div class="t-desc">El sistema no cuenta con un sistema de logging de acciones de usuario (audit trail). Un administrador podria modificar roles, eliminar datos o alterar evaluaciones de riesgo sin dejar rastro auditable, imposibilitando la trazabilidad.</div></div>
+        <div class="t-risk"><span class="risk-critical">CRITICO</span></div>
+      </li>
+      <li>
+        <span class="t-id">R-02</span>
+        <div class="t-info"><div class="t-title">Negacion de creacion/modificacion de incidentes</div><div class="t-desc">Sin registros de quien creo o modifico un incidente (mas alla de reported_by que es un campo de texto libre), un usuario podria negar haber reportado un incidente critico o haber cambiado su estado de abierto a cerrado prematuramente.</div></div>
+        <div class="t-risk"><span class="risk-high">ALTO</span></div>
+      </li>
+      <li>
+        <span class="t-id">R-03</span>
+        <div class="t-info"><div class="t-title">Manipulacion de snapshots historicos sin trazabilidad</div><div class="t-desc">Los KPI snapshots registran metricas historicas, pero no hay registro de quien los creo ni si fueron modificados posteriormente. Un actor podria alterar datos historicos para falsificar tendencias de mejora.</div></div>
+        <div class="t-risk"><span class="risk-high">ALTO</span></div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- I - INFORMATION DISCLOSURE -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#93bbfc;"><span class="stride-letter sl-i" style="width:22px;height:22px;font-size:12px;border-radius:5px;">I</span> &nbsp;INFORMATION DISCLOSURE &mdash; Divulgacion de Informacion</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="card card-blue">
+    <div class="card-title">Amenazas de Divulgacion</div>
+    <div class="card-sub">Propiedad violada: Confidencialidad &mdash; Exposicion de informacion a entidades no autorizadas</div>
+    <ul class="threat-list">
+      <li>
+        <span class="t-id">I-01</span>
+        <div class="t-info"><div class="t-title">Fuga de datos multi-tenant entre empresas</div><div class="t-desc">Si el filtro _empresa_filter() falla o no se aplica correctamente en algun endpoint, un usuario de la Empresa A podria acceder a datos de incidentes, controles o riesgos de la Empresa B, violando el aislamiento de datos.</div></div>
+        <div class="t-risk"><span class="risk-critical">CRITICO</span></div>
+      </li>
+      <li>
+        <span class="t-id">I-02</span>
+        <div class="t-info"><div class="t-title">Exposicion de datos sensibles en respuestas API</div><div class="t-desc">Los endpoints de /dashboard/export y /dashboard/summary consolidan KPIs de todo el sistema. Si un usuario con permisos limitados accede a estos endpoints sin filtrado adecuado, podria obtener informacion agregada de todas las organizaciones.</div></div>
+        <div class="t-risk"><span class="risk-high">ALTO</span></div>
+      </li>
+      <li>
+        <span class="t-id">I-03</span>
+        <div class="t-info"><div class="t-title">Documentacion Swagger expuesta en produccion</div><div class="t-desc">Los endpoints /docs (Swagger) y /redoc estan habilitados sin restriccion. En produccion, esto expone la estructura completa del API, schemas de datos, parametros y respuestas a cualquier atacante, facilitando el reconocimiento.</div></div>
+        <div class="t-risk"><span class="risk-medium">MEDIO</span></div>
+      </li>
+      <li>
+        <span class="t-id">I-04</span>
+        <div class="t-info"><div class="t-title">Exposicion de credenciales en variables de entorno</div><div class="t-desc">Las claves de Supabase (SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY) y el DATABASE_URL se almacenan en variables de entorno. Si el contenedor Docker es comprometido o los archivos .env se exponen, todas las credenciales quedan al descubierto.</div></div>
+        <div class="t-risk"><span class="risk-high">ALTO</span></div>
+      </li>
+      <li>
+        <span class="t-id">I-05</span>
+        <div class="t-info"><div class="t-title">Informacion de empresas (NIT, contacto) sin cifrado</div><div class="t-desc">Datos sensibles como el NIT, representante legal, telefono y email de las empresas se almacenan en texto plano en la base de datos. Una brecha en la base de datos expondria directamente esta informacion.</div></div>
+        <div class="t-risk"><span class="risk-high">ALTO</span></div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- D - DENIAL OF SERVICE -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#67e8f9;"><span class="stride-letter sl-d" style="width:22px;height:22px;font-size:12px;border-radius:5px;">D</span> &nbsp;DENIAL OF SERVICE &mdash; Denegacion de Servicio</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="card card-cyan">
+    <div class="card-title">Amenazas de Disponibilidad</div>
+    <div class="card-sub">Propiedad violada: Disponibilidad &mdash; El sistema se vuelve inaccesible para usuarios legitimos</div>
+    <ul class="threat-list">
+      <li>
+        <span class="t-id">D-01</span>
+        <div class="t-info"><div class="t-title">Ausencia de rate limiting en endpoints API</div><div class="t-desc">No existe limitacion de tasa de peticiones (rate limiting) en ningun endpoint. Un atacante podria enviar miles de peticiones por segundo a endpoints costosos como /dashboard/summary (que ejecuta multiples queries agregadas) saturando el backend y la base de datos.</div></div>
+        <div class="t-risk"><span class="risk-critical">CRITICO</span></div>
+      </li>
+      <li>
+        <span class="t-id">D-02</span>
+        <div class="t-info"><div class="t-title">Agotamiento de conexiones de base de datos</div><div class="t-desc">Sin un pool de conexiones correctamente limitado, un ataque de fuerza bruta o multiples sesiones simultaneas podrian agotar las conexiones disponibles de asyncpg al PostgreSQL de Supabase, dejando al sistema sin acceso a datos.</div></div>
+        <div class="t-risk"><span class="risk-high">ALTO</span></div>
+      </li>
+      <li>
+        <span class="t-id">D-03</span>
+        <div class="t-info"><div class="t-title">Ataque de fuerza bruta al login</div><div class="t-desc">Sin limite de intentos fallidos de login, un atacante podria ejecutar ataques de fuerza bruta contra cuentas de usuario, generando carga excesiva en Supabase Auth y potencialmente bloqueando cuentas legitimas.</div></div>
+        <div class="t-risk"><span class="risk-high">ALTO</span></div>
+      </li>
+      <li>
+        <span class="t-id">D-04</span>
+        <div class="t-info"><div class="t-title">Dependencia de servicio unico (Supabase)</div><div class="t-desc">Toda la autenticacion y persistencia depende de Supabase Cloud. Si Supabase experimenta una caida, el sistema completo queda inoperativo sin mecanismo de fallback o cache local.</div></div>
+        <div class="t-risk"><span class="risk-medium">MEDIO</span></div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- E - ELEVATION OF PRIVILEGE -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#f9a8d4;"><span class="stride-letter sl-e" style="width:22px;height:22px;font-size:12px;border-radius:5px;">E</span> &nbsp;ELEVATION OF PRIVILEGE &mdash; Escalamiento de Privilegios</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="card card-pink">
+    <div class="card-title">Amenazas de Escalamiento</div>
+    <div class="card-sub">Propiedad violada: Autorizacion &mdash; Un usuario obtiene permisos superiores a los asignados</div>
+    <ul class="threat-list">
+      <li>
+        <span class="t-id">E-01</span>
+        <div class="t-info"><div class="t-title">Auto-asignacion de rol admin via API</div><div class="t-desc">Si el endpoint PUT /auth/users/{user_id}/role no valida correctamente que solo un admin puede invocar el cambio de rol, un usuario con rol de analista podria enviar una peticion directa al API para asignarse el rol de administrador.</div></div>
+        <div class="t-risk"><span class="risk-critical">CRITICO</span></div>
+      </li>
+      <li>
+        <span class="t-id">E-02</span>
+        <div class="t-info"><div class="t-title">Bypass de RBAC por manipulacion de frontend</div><div class="t-desc">El control de acceso VIEW_ROLES se implementa en el frontend (App.jsx). Un atacante podria modificar el JavaScript en el navegador para saltarse las restricciones de vista y acceder a funcionalidades de administrador directamente.</div></div>
+        <div class="t-risk"><span class="risk-high">ALTO</span></div>
+      </li>
+      <li>
+        <span class="t-id">E-03</span>
+        <div class="t-info"><div class="t-title">Registro con rol elevado por defecto</div><div class="t-desc">El endpoint POST /auth/register-profile asigna el rol 'analista' por defecto. Si un atacante descubre como manipular el payload de registro para incluir un rol diferente (admin/auditor), podria obtener acceso privilegiado inmediato.</div></div>
+        <div class="t-risk"><span class="risk-high">ALTO</span></div>
+      </li>
+      <li>
+        <span class="t-id">E-04</span>
+        <div class="t-info"><div class="t-title">Acceso cross-tenant via IDOR</div><div class="t-desc">Un usuario podria manipular IDs en las URLs (Insecure Direct Object Reference) para acceder a recursos de otras empresas. Por ejemplo, cambiando el empresa_id en una peticion GET /empresas/{id} para ver datos de otra organizacion.</div></div>
+        <div class="t-risk"><span class="risk-critical">CRITICO</span></div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===================== SECTION 5: THREAT TREES ===================== -->
+<section class="section" id="trees">
+  <div class="section-num">05</div>
+  <h2 class="section-title">Arboles de Amenazas</h2>
+  <p class="section-desc">Representacion jerarquica de las rutas de ataque mas criticas identificadas en el sistema.</p>
+
+  <!-- Tree 1: Comprometer datos multi-tenant -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#f87171;">&#x1F332; Arbol 1 &mdash; Comprometer datos de otra empresa</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="card card-red">
+    <div class="tree">
+      <ul class="tree-root">
+        <li class="tree-node">
+          <div class="tree-node-content">
+            <div class="tree-node-title">&#x1F6A8; OBJETIVO: Acceder a datos de otra organizacion (Cross-tenant breach)</div>
+            <div class="tree-node-desc">Impacto: Exposicion de incidentes, riesgos, controles y datos de auditoria de empresa ajena</div>
+          </div>
+          <ul class="tree-children">
+            <li class="tree-node">
+              <div class="tree-node-content">
+                <div class="tree-node-title"><span class="badge badge-red">E-04</span> IDOR en endpoint /empresas/{id}</div>
+                <div class="tree-node-desc">Cambiar el ID en la URL para acceder a datos de otra empresa</div>
+              </div>
+              <ul class="tree-children">
+                <li class="tree-node">
+                  <div class="tree-node-content">
+                    <div class="tree-node-title">Enumerar IDs de empresa via requests secuenciales</div>
+                    <div class="tree-node-desc">Si los IDs son enteros autoincrement, es trivial iterar 1, 2, 3...</div>
+                  </div>
+                </li>
+              </ul>
+            </li>
+            <li class="tree-node">
+              <div class="tree-node-content">
+                <div class="tree-node-title"><span class="badge badge-red">T-04</span> Manipular empresa_id en payload de request</div>
+                <div class="tree-node-desc">Enviar un empresa_id diferente al asignado en POST/PUT</div>
+              </div>
+              <ul class="tree-children">
+                <li class="tree-node">
+                  <div class="tree-node-content">
+                    <div class="tree-node-title">Backend no valida que empresa_id == user.empresa_id</div>
+                    <div class="tree-node-desc">Si el filtro _empresa_filter() no se aplica al crear registros</div>
+                  </div>
+                </li>
+              </ul>
+            </li>
+            <li class="tree-node">
+              <div class="tree-node-content">
+                <div class="tree-node-title"><span class="badge badge-red">I-01</span> Falla en filtro multi-tenant del dashboard</div>
+                <div class="tree-node-desc">/dashboard/summary retorna KPIs agregados sin filtrar por empresa</div>
+              </div>
+              <ul class="tree-children">
+                <li class="tree-node">
+                  <div class="tree-node-content">
+                    <div class="tree-node-title">asyncio.gather() en dashboard_service agrega datos globales</div>
+                    <div class="tree-node-desc">Las queries de incidentes, controles y riesgos no filtran por empresa_id</div>
+                  </div>
+                </li>
+              </ul>
+            </li>
+            <li class="tree-node">
+              <div class="tree-node-content">
+                <div class="tree-node-title"><span class="badge badge-red">E-01</span> Escalar a rol admin y ver todos los datos</div>
+                <div class="tree-node-desc">Admin/auditor ven datos de todas las empresas por diseno</div>
+              </div>
+              <ul class="tree-children">
+                <li class="tree-node">
+                  <div class="tree-node-content">
+                    <div class="tree-node-title">Auto-asignar rol admin via PUT /auth/users/{id}/role</div>
+                  </div>
+                </li>
+                <li class="tree-node">
+                  <div class="tree-node-content">
+                    <div class="tree-node-title">Manipular payload de registro para obtener rol elevado</div>
+                  </div>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Tree 2: Falsificar metricas -->
+  <div class="layer" style="margin-top:24px;">
+    <span class="layer-tag" style="color:#fbbf24;">&#x1F332; Arbol 2 &mdash; Falsificar metricas de cumplimiento</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="card card-orange">
+    <div class="tree">
+      <ul class="tree-root">
+        <li class="tree-node">
+          <div class="tree-node-content">
+            <div class="tree-node-title">&#x1F4CA; OBJETIVO: Falsificar KPIs de cumplimiento ISO para aparentar conformidad</div>
+            <div class="tree-node-desc">Impacto: Decisions erroneas de la direccion, aprobacion de auditorias falsas, incumplimiento real</div>
+          </div>
+          <ul class="tree-children">
+            <li class="tree-node">
+              <div class="tree-node-content">
+                <div class="tree-node-title"><span class="badge badge-orange">T-01</span> Inflar compliance_pct de controles</div>
+                <div class="tree-node-desc">PUT /controls/{id} con compliance_pct=100 sin justificacion</div>
+              </div>
+              <ul class="tree-children">
+                <li class="tree-node">
+                  <div class="tree-node-content">
+                    <div class="tree-node-title">No hay validacion de evidencia para cambios de cumplimiento</div>
+                  </div>
+                </li>
+                <li class="tree-node">
+                  <div class="tree-node-content">
+                    <div class="tree-node-title"><span class="badge badge-purple">R-01</span> Sin audit trail del cambio</div>
+                  </div>
+                </li>
+              </ul>
+            </li>
+            <li class="tree-node">
+              <div class="tree-node-content">
+                <div class="tree-node-title"><span class="badge badge-orange">T-03</span> Reducir severidad de incidentes criticos</div>
+                <div class="tree-node-desc">Cambiar severity=critical a severity=low para mejorar estadisticas</div>
+              </div>
+            </li>
+            <li class="tree-node">
+              <div class="tree-node-content">
+                <div class="tree-node-title">Cerrar incidentes prematuramente sin resolucion real</div>
+                <div class="tree-node-desc">PUT /incidents/{id}/status con status=closed para mejorar resolution_rate</div>
+              </div>
+            </li>
+            <li class="tree-node">
+              <div class="tree-node-content">
+                <div class="tree-node-title"><span class="badge badge-purple">R-03</span> Manipular snapshots historicos</div>
+                <div class="tree-node-desc">POST /snapshots con datos fabricados para mostrar tendencia positiva</div>
+              </div>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Tree 3: Tomar control del sistema -->
+  <div class="layer" style="margin-top:24px;">
+    <span class="layer-tag" style="color:#f9a8d4;">&#x1F332; Arbol 3 &mdash; Obtener acceso administrativo completo</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="card card-pink">
+    <div class="tree">
+      <ul class="tree-root">
+        <li class="tree-node">
+          <div class="tree-node-content">
+            <div class="tree-node-title">&#x1F451; OBJETIVO: Obtener privilegios de administrador en el sistema</div>
+            <div class="tree-node-desc">Impacto: Control total sobre todas las empresas, usuarios, datos y configuracion</div>
+          </div>
+          <ul class="tree-children">
+            <li class="tree-node">
+              <div class="tree-node-content">
+                <div class="tree-node-title"><span class="badge badge-red">S-01</span> Robar JWT de un admin activo</div>
+              </div>
+              <ul class="tree-children">
+                <li class="tree-node">
+                  <div class="tree-node-content">
+                    <div class="tree-node-title">XSS en campo de texto (title, description, notas)</div>
+                    <div class="tree-node-desc">Inyectar script que envie el JWT al atacante</div>
+                  </div>
+                </li>
+                <li class="tree-node">
+                  <div class="tree-node-content">
+                    <div class="tree-node-title"><span class="badge badge-red">S-04</span> CSRF via CORS abierto</div>
+                    <div class="tree-node-desc">Sitio malicioso hace requests al API con sesion de admin</div>
+                  </div>
+                </li>
+              </ul>
+            </li>
+            <li class="tree-node">
+              <div class="tree-node-content">
+                <div class="tree-node-title"><span class="badge badge-red">E-01</span> Escalar privilegios directamente</div>
+              </div>
+              <ul class="tree-children">
+                <li class="tree-node">
+                  <div class="tree-node-content">
+                    <div class="tree-node-title">PUT /auth/users/{self}/role con body {"role": "admin"}</div>
+                    <div class="tree-node-desc">Si require_role no esta correctamente aplicado al endpoint</div>
+                  </div>
+                </li>
+                <li class="tree-node">
+                  <div class="tree-node-content">
+                    <div class="tree-node-title"><span class="badge badge-red">E-03</span> Manipular registro para obtener rol admin</div>
+                    <div class="tree-node-desc">POST /auth/register-profile con {"role": "admin"} en el body</div>
+                  </div>
+                </li>
+              </ul>
+            </li>
+            <li class="tree-node">
+              <div class="tree-node-content">
+                <div class="tree-node-title"><span class="badge badge-blue">I-04</span> Obtener credenciales de infraestructura</div>
+              </div>
+              <ul class="tree-children">
+                <li class="tree-node">
+                  <div class="tree-node-content">
+                    <div class="tree-node-title">Acceder al container Docker y leer variables de entorno</div>
+                    <div class="tree-node-desc">DATABASE_URL + SUPABASE_SERVICE_ROLE_KEY = acceso total</div>
+                  </div>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===================== SECTION 6: CATALOG ===================== -->
+<section class="section" id="catalog">
+  <div class="section-num">06</div>
+  <h2 class="section-title">Catalogo Consolidado de Amenazas</h2>
+  <p class="section-desc">Resumen de las 24 amenazas identificadas ordenadas por nivel de riesgo.</p>
+
+  <table class="stride-table">
+    <thead>
+      <tr>
+        <th style="width:50px;">ID</th>
+        <th style="width:50px;">STRIDE</th>
+        <th>Amenaza</th>
+        <th style="width:140px;">Componente</th>
+        <th style="width:80px;">Riesgo</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>S-04</td><td><span class="stride-letter sl-s" style="width:20px;height:20px;font-size:10px;border-radius:4px;">S</span></td><td>CORS abierto permite requests desde cualquier origen</td><td>Backend / CORS</td><td><span class="risk-critical">CRITICO</span></td></tr>
+      <tr><td>S-01</td><td><span class="stride-letter sl-s" style="width:20px;height:20px;font-size:10px;border-radius:4px;">S</span></td><td>Robo de JWT y reutilizacion de sesion</td><td>Auth / Frontend</td><td><span class="risk-critical">CRITICO</span></td></tr>
+      <tr><td>T-04</td><td><span class="stride-letter sl-t" style="width:20px;height:20px;font-size:10px;border-radius:4px;">T</span></td><td>Manipulacion de empresa_id en requests (cross-tenant)</td><td>Backend / API</td><td><span class="risk-critical">CRITICO</span></td></tr>
+      <tr><td>R-01</td><td><span class="stride-letter sl-r" style="width:20px;height:20px;font-size:10px;border-radius:4px;">R</span></td><td>Sin audit trail de acciones de usuario</td><td>Backend / Logging</td><td><span class="risk-critical">CRITICO</span></td></tr>
+      <tr><td>I-01</td><td><span class="stride-letter sl-i" style="width:20px;height:20px;font-size:10px;border-radius:4px;">I</span></td><td>Fuga multi-tenant entre empresas</td><td>Services / DB</td><td><span class="risk-critical">CRITICO</span></td></tr>
+      <tr><td>D-01</td><td><span class="stride-letter sl-d" style="width:20px;height:20px;font-size:10px;border-radius:4px;">D</span></td><td>Sin rate limiting en endpoints</td><td>Backend / API</td><td><span class="risk-critical">CRITICO</span></td></tr>
+      <tr><td>E-01</td><td><span class="stride-letter sl-e" style="width:20px;height:20px;font-size:10px;border-radius:4px;">E</span></td><td>Auto-asignacion de rol admin via API</td><td>Auth Router</td><td><span class="risk-critical">CRITICO</span></td></tr>
+      <tr><td>E-04</td><td><span class="stride-letter sl-e" style="width:20px;height:20px;font-size:10px;border-radius:4px;">E</span></td><td>Acceso cross-tenant via IDOR</td><td>Routers / API</td><td><span class="risk-critical">CRITICO</span></td></tr>
+      <tr><td>S-02</td><td><span class="stride-letter sl-s" style="width:20px;height:20px;font-size:10px;border-radius:4px;">S</span></td><td>Suplantacion de Supabase Auth (MitM)</td><td>Auth / HTTPX</td><td><span class="risk-high">ALTO</span></td></tr>
+      <tr><td>S-03</td><td><span class="stride-letter sl-s" style="width:20px;height:20px;font-size:10px;border-radius:4px;">S</span></td><td>Registro con email falso sin verificacion</td><td>Auth Router</td><td><span class="risk-high">ALTO</span></td></tr>
+      <tr><td>T-01</td><td><span class="stride-letter sl-t" style="width:20px;height:20px;font-size:10px;border-radius:4px;">T</span></td><td>Manipulacion de compliance_pct sin evidencia</td><td>Controls Router</td><td><span class="risk-high">ALTO</span></td></tr>
+      <tr><td>T-03</td><td><span class="stride-letter sl-t" style="width:20px;height:20px;font-size:10px;border-radius:4px;">T</span></td><td>Alteracion de severidad de incidentes</td><td>Incidents Router</td><td><span class="risk-high">ALTO</span></td></tr>
+      <tr><td>R-02</td><td><span class="stride-letter sl-r" style="width:20px;height:20px;font-size:10px;border-radius:4px;">R</span></td><td>Negacion de creacion/modificacion de incidentes</td><td>Incidents Service</td><td><span class="risk-high">ALTO</span></td></tr>
+      <tr><td>R-03</td><td><span class="stride-letter sl-r" style="width:20px;height:20px;font-size:10px;border-radius:4px;">R</span></td><td>Manipulacion de snapshots sin trazabilidad</td><td>Snapshots Service</td><td><span class="risk-high">ALTO</span></td></tr>
+      <tr><td>I-02</td><td><span class="stride-letter sl-i" style="width:20px;height:20px;font-size:10px;border-radius:4px;">I</span></td><td>Datos sensibles en /dashboard/export sin filtrar</td><td>Dashboard Router</td><td><span class="risk-high">ALTO</span></td></tr>
+      <tr><td>I-04</td><td><span class="stride-letter sl-i" style="width:20px;height:20px;font-size:10px;border-radius:4px;">I</span></td><td>Credenciales en variables de entorno expuestas</td><td>Docker / Infra</td><td><span class="risk-high">ALTO</span></td></tr>
+      <tr><td>I-05</td><td><span class="stride-letter sl-i" style="width:20px;height:20px;font-size:10px;border-radius:4px;">I</span></td><td>Datos PII de empresas sin cifrado en DB</td><td>Database / Models</td><td><span class="risk-high">ALTO</span></td></tr>
+      <tr><td>D-02</td><td><span class="stride-letter sl-d" style="width:20px;height:20px;font-size:10px;border-radius:4px;">D</span></td><td>Agotamiento de pool de conexiones DB</td><td>Database / asyncpg</td><td><span class="risk-high">ALTO</span></td></tr>
+      <tr><td>D-03</td><td><span class="stride-letter sl-d" style="width:20px;height:20px;font-size:10px;border-radius:4px;">D</span></td><td>Fuerza bruta al login sin limite</td><td>Auth / Supabase</td><td><span class="risk-high">ALTO</span></td></tr>
+      <tr><td>E-02</td><td><span class="stride-letter sl-e" style="width:20px;height:20px;font-size:10px;border-radius:4px;">E</span></td><td>Bypass de RBAC por manipulacion frontend</td><td>Frontend / App.jsx</td><td><span class="risk-high">ALTO</span></td></tr>
+      <tr><td>E-03</td><td><span class="stride-letter sl-e" style="width:20px;height:20px;font-size:10px;border-radius:4px;">E</span></td><td>Registro con rol elevado manipulando payload</td><td>Auth Router</td><td><span class="risk-high">ALTO</span></td></tr>
+      <tr><td>T-02</td><td><span class="stride-letter sl-t" style="width:20px;height:20px;font-size:10px;border-radius:4px;">T</span></td><td>Inyeccion SQL (mitigada parcialmente por ORM)</td><td>Services / SQLAlchemy</td><td><span class="risk-medium">MEDIO</span></td></tr>
+      <tr><td>I-03</td><td><span class="stride-letter sl-i" style="width:20px;height:20px;font-size:10px;border-radius:4px;">I</span></td><td>Swagger/ReDoc expuestos en produccion</td><td>Backend / main.py</td><td><span class="risk-medium">MEDIO</span></td></tr>
+      <tr><td>D-04</td><td><span class="stride-letter sl-d" style="width:20px;height:20px;font-size:10px;border-radius:4px;">D</span></td><td>Single point of failure (Supabase)</td><td>Infraestructura</td><td><span class="risk-medium">MEDIO</span></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===================== SECTION 7: RISK MATRIX ===================== -->
+<section class="section" id="matrix">
+  <div class="section-num">07</div>
+  <h2 class="section-title">Matriz de Riesgo</h2>
+  <p class="section-desc">Clasificacion de amenazas segun probabilidad de explotacion e impacto en el sistema.</p>
+
+  <table class="risk-matrix">
+    <thead>
+      <tr>
+        <th>Probabilidad &#x2193; / Impacto &#x2192;</th>
+        <th>Bajo</th>
+        <th>Medio</th>
+        <th>Alto</th>
+        <th>Critico</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th>Muy Alta</th>
+        <td class="rm-medium">—</td>
+        <td class="rm-high">D-01</td>
+        <td class="rm-critical">S-04, E-02</td>
+        <td class="rm-critical">S-01, R-01</td>
+      </tr>
+      <tr>
+        <th>Alta</th>
+        <td class="rm-low">—</td>
+        <td class="rm-medium">I-03</td>
+        <td class="rm-high">T-01, T-03, D-03</td>
+        <td class="rm-critical">T-04, I-01, E-01, E-04</td>
+      </tr>
+      <tr>
+        <th>Media</th>
+        <td class="rm-low">D-04</td>
+        <td class="rm-medium">T-02</td>
+        <td class="rm-high">S-03, R-02, R-03, I-02, E-03</td>
+        <td class="rm-high">I-04, I-05</td>
+      </tr>
+      <tr>
+        <th>Baja</th>
+        <td class="rm-low">—</td>
+        <td class="rm-low">—</td>
+        <td class="rm-medium">S-02, D-02</td>
+        <td class="rm-high">—</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="counter-row" style="margin-top:24px;">
+    <div class="counter"><div class="counter-num" style="color:#ef4444;">8</div><div class="counter-label">Criticas</div></div>
+    <div class="counter"><div class="counter-num" style="color:#f59e0b;">13</div><div class="counter-label">Altas</div></div>
+    <div class="counter"><div class="counter-num" style="color:#facc15;">3</div><div class="counter-label">Medias</div></div>
+    <div class="counter"><div class="counter-num" style="color:#10b981;">0</div><div class="counter-label">Bajas</div></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===================== SECTION 8: MITIGATIONS ===================== -->
+<section class="section" id="mitigations">
+  <div class="section-num">08</div>
+  <h2 class="section-title">Mitigaciones Propuestas</h2>
+  <p class="section-desc">Contramedidas para cada categoria STRIDE, indicando estado actual (implementadas vs. pendientes).</p>
+
+  <!-- S Mitigations -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#f87171;">&#x1F6E1;&#xFE0F; Mitigaciones — Spoofing</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="grid-2">
+    <div class="card card-green">
+      <div class="card-title" style="font-size:13px;color:#6ee7b7;">&#x2705; Implementadas</div>
+      <ul class="threat-list" style="font-size:11px;">
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>JWT Stateless</strong> &mdash; Tokens validados via Supabase REST en cada request</li>
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>Bearer Token</strong> &mdash; Inyeccion automatica via Axios interceptor</li>
+        <li style="padding:5px 0;display:block;"><strong>Password Hashing</strong> &mdash; Gestionado por Supabase Auth (bcrypt)</li>
+      </ul>
+    </div>
+    <div class="card card-red">
+      <div class="card-title" style="font-size:13px;color:#fca5a5;">&#x26A0;&#xFE0F; Pendientes</div>
+      <ul class="threat-list" style="font-size:11px;">
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>Restringir CORS</strong> &mdash; Configurar allow_origins con dominios especificos en lugar de ["*"]</li>
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>Token Refresh</strong> &mdash; Implementar rotacion de refresh tokens con TTL corto</li>
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>MFA</strong> &mdash; Habilitar autenticacion multi-factor via Supabase</li>
+        <li style="padding:5px 0;display:block;"><strong>Verificacion de email</strong> &mdash; Confirmar dominio corporativo antes de activar cuenta</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- T Mitigations -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#fbbf24;">&#x1F6E1;&#xFE0F; Mitigaciones — Tampering</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="grid-2">
+    <div class="card card-green">
+      <div class="card-title" style="font-size:13px;color:#6ee7b7;">&#x2705; Implementadas</div>
+      <ul class="threat-list" style="font-size:11px;">
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>SQLAlchemy ORM</strong> &mdash; Queries parametrizadas previenen SQL injection</li>
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>Pydantic v2</strong> &mdash; Validacion estricta de tipos en request/response</li>
+        <li style="padding:5px 0;display:block;"><strong>Multi-tenant filter</strong> &mdash; _empresa_filter() en routers filtra por empresa_id</li>
+      </ul>
+    </div>
+    <div class="card card-red">
+      <div class="card-title" style="font-size:13px;color:#fca5a5;">&#x26A0;&#xFE0F; Pendientes</div>
+      <ul class="threat-list" style="font-size:11px;">
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>Validacion server-side de empresa_id</strong> &mdash; Verificar que empresa_id del payload coincida con el del usuario autenticado</li>
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>Firma digital de snapshots</strong> &mdash; Hash de integridad para detectar manipulacion de datos historicos</li>
+        <li style="padding:5px 0;display:block;"><strong>Validacion de rangos</strong> &mdash; Restricciones de negocio para cambios de compliance_pct (no mas de +20% por actualizacion)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- R Mitigations -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#c4b5fd;">&#x1F6E1;&#xFE0F; Mitigaciones — Repudiation</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="grid-2">
+    <div class="card card-green">
+      <div class="card-title" style="font-size:13px;color:#6ee7b7;">&#x2705; Implementadas</div>
+      <ul class="threat-list" style="font-size:11px;">
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>Timestamps automaticos</strong> &mdash; created_at/updated_at en todos los modelos</li>
+        <li style="padding:5px 0;display:block;"><strong>reported_by</strong> &mdash; Campo que registra quien reporto un incidente</li>
+      </ul>
+    </div>
+    <div class="card card-red">
+      <div class="card-title" style="font-size:13px;color:#fca5a5;">&#x26A0;&#xFE0F; Pendientes</div>
+      <ul class="threat-list" style="font-size:11px;">
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>Audit Log completo</strong> &mdash; Tabla de auditoria que registre: quien, que, cuando, desde donde (IP)</li>
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>Logging estructurado</strong> &mdash; Implementar logging con formato JSON para analisis SIEM</li>
+        <li style="padding:5px 0;display:block;"><strong>Historial de cambios</strong> &mdash; Versionado de registros criticos (controles, riesgos, incidentes)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- I Mitigations -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#93bbfc;">&#x1F6E1;&#xFE0F; Mitigaciones — Information Disclosure</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="grid-2">
+    <div class="card card-green">
+      <div class="card-title" style="font-size:13px;color:#6ee7b7;">&#x2705; Implementadas</div>
+      <ul class="threat-list" style="font-size:11px;">
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>RBAC</strong> &mdash; 4 roles con permisos diferenciados por vista y endpoint</li>
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>Multi-tenant filtering</strong> &mdash; Datos filtrados por empresa_id segun rol</li>
+        <li style="padding:5px 0;display:block;"><strong>HTTPS</strong> &mdash; Comunicacion cifrada entre cliente y servidor</li>
+      </ul>
+    </div>
+    <div class="card card-red">
+      <div class="card-title" style="font-size:13px;color:#fca5a5;">&#x26A0;&#xFE0F; Pendientes</div>
+      <ul class="threat-list" style="font-size:11px;">
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>Desactivar Swagger en produccion</strong> &mdash; Condicionar /docs y /redoc a DEBUG=true</li>
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>Cifrado at-rest</strong> &mdash; Cifrar campos PII (NIT, email, telefono) en la base de datos</li>
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>Secrets Manager</strong> &mdash; Migrar credenciales de .env a un vault (HashiCorp, AWS Secrets Manager)</li>
+        <li style="padding:5px 0;display:block;"><strong>Headers de seguridad</strong> &mdash; Agregar X-Content-Type-Options, X-Frame-Options, CSP, HSTS</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- D Mitigations -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#67e8f9;">&#x1F6E1;&#xFE0F; Mitigaciones — Denial of Service</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="grid-2">
+    <div class="card card-green">
+      <div class="card-title" style="font-size:13px;color:#6ee7b7;">&#x2705; Implementadas</div>
+      <ul class="threat-list" style="font-size:11px;">
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>asyncpg Connection Pool</strong> &mdash; Pool de conexiones gestionado por SQLAlchemy async</li>
+        <li style="padding:5px 0;display:block;"><strong>Paginacion</strong> &mdash; Endpoints de listado limitan resultados con skip/limit</li>
+      </ul>
+    </div>
+    <div class="card card-red">
+      <div class="card-title" style="font-size:13px;color:#fca5a5;">&#x26A0;&#xFE0F; Pendientes</div>
+      <ul class="threat-list" style="font-size:11px;">
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>Rate Limiting</strong> &mdash; Implementar slowapi o middleware custom (ej: 100 req/min por IP)</li>
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>Login throttling</strong> &mdash; Bloquear IP tras 5 intentos fallidos en 5 minutos</li>
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>Health monitoring</strong> &mdash; Alertas cuando Supabase o el backend no responden</li>
+        <li style="padding:5px 0;display:block;"><strong>Cache layer</strong> &mdash; Redis/memcached para endpoints de lectura frecuente (dashboard/summary)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- E Mitigations -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#f9a8d4;">&#x1F6E1;&#xFE0F; Mitigaciones — Elevation of Privilege</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="grid-2">
+    <div class="card card-green">
+      <div class="card-title" style="font-size:13px;color:#6ee7b7;">&#x2705; Implementadas</div>
+      <ul class="threat-list" style="font-size:11px;">
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>require_role()</strong> &mdash; Dependency injection que valida roles en endpoints protegidos</li>
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>Rol por defecto</strong> &mdash; Nuevos usuarios se registran como 'analista' (minimo privilegio)</li>
+        <li style="padding:5px 0;display:block;"><strong>RBAC backend</strong> &mdash; Autorizacion verificada en el servidor, no solo en frontend</li>
+      </ul>
+    </div>
+    <div class="card card-red">
+      <div class="card-title" style="font-size:13px;color:#fca5a5;">&#x26A0;&#xFE0F; Pendientes</div>
+      <ul class="threat-list" style="font-size:11px;">
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>Ignorar role en registro</strong> &mdash; Endpoint register-profile debe ignorar cualquier campo 'role' del body</li>
+        <li style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:block;"><strong>Ownership validation</strong> &mdash; Validar que el user_id del request corresponda al recurso accedido</li>
+        <li style="padding:5px 0;display:block;"><strong>Principio de minimo privilegio</strong> &mdash; Revisar todos los endpoints para asegurar que require_role sea lo mas restrictivo posible</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===================== SECTION 9: CONCLUSIONS ===================== -->
+<section class="section" id="conclusions">
+  <div class="section-num">09</div>
+  <h2 class="section-title">Conclusiones y Recomendaciones</h2>
+  <p class="section-desc">Hallazgos principales y hoja de ruta de seguridad basada en el analisis STRIDE.</p>
+
+  <div class="narrative">
+    <p>El modelamiento de amenazas STRIDE aplicado al sistema ISO SECURE ha permitido identificar un total de <span class="highlight">24 amenazas</span> distribuidas en las 6 categorias del modelo. De estas, <span class="highlight">8 fueron clasificadas como criticas</span> y <span class="highlight">13 como altas</span>, lo que refleja areas de mejora significativas en la postura de seguridad del sistema.</p>
+
+    <p><strong>Hallazgo principal:</strong> Las amenazas mas criticas se concentran en tres areas: <span class="highlight">(1) aislamiento multi-tenant</span> &mdash; la separacion de datos entre organizaciones depende enteramente del helper _empresa_filter() en los routers, y cualquier omision expone datos entre empresas; <span class="highlight">(2) gestion de identidad y acceso</span> &mdash; la configuracion CORS abierta y la ausencia de MFA amplian significativamente la superficie de ataque; y <span class="highlight">(3) trazabilidad</span> &mdash; la falta de un audit trail completo imposibilita la investigacion forense y permite el repudio de acciones criticas.</p>
+
+    <p><strong>Contramedidas existentes:</strong> El sistema ya implementa <span class="mitigation">medidas positivas</span> como autenticacion JWT via Supabase, RBAC con 4 roles diferenciados, validacion de datos con Pydantic v2, queries parametrizadas via SQLAlchemy (prevencion de SQL injection), filtrado multi-tenant en routers, cifrado en transito (HTTPS) y principio de minimo privilegio en el registro de usuarios.</p>
+
+    <p><strong>Hoja de ruta de seguridad priorizada:</strong></p>
+    <p><span class="highlight">Prioridad 1 (Inmediata):</span> Restringir CORS a dominios especificos, implementar rate limiting, validar empresa_id server-side en todos los endpoints de escritura, e ignorar el campo 'role' en el registro de usuarios.</p>
+    <p><span class="highlight">Prioridad 2 (Corto plazo):</span> Implementar audit log completo, desactivar Swagger en produccion, agregar headers de seguridad HTTP, y configurar login throttling.</p>
+    <p><span class="highlight">Prioridad 3 (Mediano plazo):</span> Habilitar MFA, cifrar PII at-rest, migrar secretos a un vault, implementar versionado de registros criticos, y agregar monitoreo y alertas de seguridad.</p>
+  </div>
+
+  <!-- Priority Matrix -->
+  <div class="grid-3" style="margin-top:16px;">
+    <div class="card card-red">
+      <div class="card-title" style="font-size:14px;">&#x1F534; Prioridad 1 &mdash; Inmediata</div>
+      <div class="card-sub">Riesgo critico &middot; Impacto alto &middot; Esfuerzo bajo-medio</div>
+      <ul class="threat-list" style="font-size:11px;">
+        <li style="padding:4px 0;display:block;">1. Restringir CORS origins</li>
+        <li style="padding:4px 0;display:block;">2. Rate limiting (slowapi)</li>
+        <li style="padding:4px 0;display:block;">3. Validar empresa_id server-side</li>
+        <li style="padding:4px 0;display:block;">4. Ignorar 'role' en register</li>
+        <li style="padding:4px 0;display:block;">5. IDOR protection en endpoints</li>
+      </ul>
+    </div>
+    <div class="card card-orange">
+      <div class="card-title" style="font-size:14px;">&#x1F7E0; Prioridad 2 &mdash; Corto plazo</div>
+      <div class="card-sub">Riesgo alto &middot; Impacto medio-alto &middot; Esfuerzo medio</div>
+      <ul class="threat-list" style="font-size:11px;">
+        <li style="padding:4px 0;display:block;">6. Audit log (tabla + middleware)</li>
+        <li style="padding:4px 0;display:block;">7. Swagger solo en DEBUG</li>
+        <li style="padding:4px 0;display:block;">8. Security headers (HSTS, CSP)</li>
+        <li style="padding:4px 0;display:block;">9. Login throttling</li>
+        <li style="padding:4px 0;display:block;">10. Verificacion de email</li>
+      </ul>
+    </div>
+    <div class="card card-yellow">
+      <div class="card-title" style="font-size:14px;">&#x1F7E1; Prioridad 3 &mdash; Mediano plazo</div>
+      <div class="card-sub">Mejora continua &middot; Esfuerzo alto &middot; Valor estrategico</div>
+      <ul class="threat-list" style="font-size:11px;">
+        <li style="padding:4px 0;display:block;">11. MFA con Supabase</li>
+        <li style="padding:4px 0;display:block;">12. Cifrado at-rest para PII</li>
+        <li style="padding:4px 0;display:block;">13. Secrets Manager (vault)</li>
+        <li style="padding:4px 0;display:block;">14. Versionado de registros</li>
+        <li style="padding:4px 0;display:block;">15. Monitoreo + alertas SIEM</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <strong>ISO SECURE</strong> &mdash; Modelamiento de Amenazas STRIDE<br>
+  Metodologia: Microsoft Threat Modeling &middot; Framework: STRIDE<br>
+  <span style="color:var(--red);">Universidad de San Buenaventura</span> &mdash; Ingenieria de Sistemas
+</footer>
+
+</body>
+</html>

@@ -8,6 +8,8 @@ Plataforma web completa para la gestion de seguridad de la informacion (SGSI) co
 
 La documentacion visual completa de la arquitectura esta disponible en [`/frontend/public/arquitectura.html`](frontend/public/arquitectura.html).
 
+El modelamiento de amenazas STRIDE (Microsoft Threat Modeling) esta disponible en [`/frontend/public/threat-modeling.html`](frontend/public/threat-modeling.html) — incluye DFD, 24 amenazas identificadas, arboles de amenazas, matriz de riesgo y hoja de ruta de mitigaciones.
+
 ### Stack Tecnologico
 
 | Capa | Tecnologia | Version |
