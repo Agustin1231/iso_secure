@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISO SECURE — Metodolog&iacute;a de Modelamiento de Amenazas PASTA</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #111827;
+    --bg3: #1a1f35;
+    --border: #2a3050;
+    --text: #f0f4ff;
+    --text2: #8892b0;
+    --blue: #4f8ff7;
+    --green: #10b981;
+    --orange: #f59e0b;
+    --red: #ef4444;
+    --purple: #a78bfa;
+    --cyan: #22d3ee;
+    --pink: #f472b6;
+    --yellow: #facc15;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior: smooth; }
+  body { font-family:'Inter',-apple-system,sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
+
+  /* NAV */
+  .nav { position:fixed; top:0; left:0; right:0; z-index:100; background:rgba(10,14,26,0.88); backdrop-filter:blur(20px); border-bottom:1px solid var(--border); padding:0 20px; }
+  .nav-inner { max-width:1300px; margin:0 auto; display:flex; align-items:center; height:56px; gap:6px; overflow-x:auto; }
+  .nav-logo { font-weight:800; font-size:14px; color:var(--orange); white-space:nowrap; margin-right:12px; flex-shrink:0; }
+  .nav-link { color:var(--text2); text-decoration:none; font-size:10px; font-weight:600; padding:5px 10px; border-radius:6px; white-space:nowrap; transition:all 0.2s; flex-shrink:0; }
+  .nav-link:hover { background:rgba(245,158,11,0.1); color:var(--orange); }
+
+  /* HERO */
+  .hero { padding:100px 40px 50px; text-align:center; background:radial-gradient(ellipse at top,rgba(245,158,11,0.06) 0%,transparent 60%); }
+  .hero-badge { display:inline-block; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3); padding:5px 14px; border-radius:20px; font-size:11px; font-weight:600; color:var(--orange); letter-spacing:1px; text-transform:uppercase; margin-bottom:16px; }
+  .hero h1 { font-size:42px; font-weight:900; background:linear-gradient(135deg,#fff 0%,#fbbf24 50%,#f59e0b 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:10px; line-height:1.1; }
+  .hero p { font-size:16px; color:var(--text2); max-width:750px; margin:0 auto 24px; }
+
+  /* SECTIONS */
+  .section { max-width:1300px; margin:0 auto; padding:50px 40px; }
+  .section-num { font-size:11px; font-weight:700; color:var(--orange); letter-spacing:2px; text-transform:uppercase; margin-bottom:6px; }
+  .section-title { font-size:32px; font-weight:800; margin-bottom:6px; line-height:1.2; }
+  .section-desc { font-size:14px; color:var(--text2); max-width:750px; margin-bottom:30px; }
+  .divider { height:1px; background:linear-gradient(90deg,transparent,var(--border),transparent); margin:0 40px; }
+
+  /* CARDS */
+  .card { background:var(--bg3); border:1px solid var(--border); border-radius:14px; padding:22px; position:relative; overflow:hidden; }
+  .card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+  .card-red::before { background:linear-gradient(90deg,#ef4444,#f87171); }
+  .card-orange::before { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+  .card-blue::before { background:linear-gradient(90deg,#4f8ff7,#22d3ee); }
+  .card-green::before { background:linear-gradient(90deg,#10b981,#34d399); }
+  .card-purple::before { background:linear-gradient(90deg,#a78bfa,#c4b5fd); }
+  .card-cyan::before { background:linear-gradient(90deg,#22d3ee,#67e8f9); }
+  .card-pink::before { background:linear-gradient(90deg,#f472b6,#f9a8d4); }
+  .card-yellow::before { background:linear-gradient(90deg,#facc15,#fde68a); }
+  .card-title { font-size:16px; font-weight:700; margin-bottom:4px; display:flex; align-items:center; gap:8px; }
+  .card-sub { font-size:11px; color:var(--text2); margin-bottom:12px; }
+
+  .badge { display:inline-block; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); padding:2px 9px; border-radius:5px; font-size:10px; font-weight:500; margin:2px; }
+  .badge-red { background:rgba(239,68,68,0.12); color:#fca5a5; border-color:rgba(239,68,68,0.25); }
+  .badge-orange { background:rgba(245,158,11,0.12); color:#fcd34d; border-color:rgba(245,158,11,0.25); }
+  .badge-green { background:rgba(16,185,129,0.12); color:#6ee7b7; border-color:rgba(16,185,129,0.25); }
+  .badge-blue { background:rgba(79,143,247,0.12); color:#93bbfc; border-color:rgba(79,143,247,0.25); }
+  .badge-purple { background:rgba(167,139,250,0.12); color:#c4b5fd; border-color:rgba(167,139,250,0.25); }
+  .badge-yellow { background:rgba(250,204,21,0.12); color:#fde68a; border-color:rgba(250,204,21,0.25); }
+  .badge-cyan { background:rgba(34,211,238,0.12); color:#67e8f9; border-color:rgba(34,211,238,0.25); }
+
+  /* GRIDS */
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+  .grid-4 { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:16px; }
+  .grid-7 { display:grid; grid-template-columns:repeat(7,1fr); gap:10px; }
+
+  /* TABLES */
+  .data-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .data-table th { background:rgba(255,255,255,0.04); padding:10px 12px; text-align:left; border:1px solid var(--border); font-weight:600; font-size:11px; }
+  .data-table td { padding:10px 12px; border:1px solid var(--border); vertical-align:top; }
+  .data-table tr:nth-child(even) { background:rgba(255,255,255,0.015); }
+
+  /* STAGE INDICATOR */
+  .stage-num { display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:10px; font-size:18px; font-weight:800; flex-shrink:0; }
+  .sn-1 { background:rgba(239,68,68,0.15); color:#f87171; border:1.5px solid rgba(239,68,68,0.3); }
+  .sn-2 { background:rgba(245,158,11,0.15); color:#fbbf24; border:1.5px solid rgba(245,158,11,0.3); }
+  .sn-3 { background:rgba(250,204,21,0.15); color:#fde68a; border:1.5px solid rgba(250,204,21,0.3); }
+  .sn-4 { background:rgba(16,185,129,0.15); color:#6ee7b7; border:1.5px solid rgba(16,185,129,0.3); }
+  .sn-5 { background:rgba(79,143,247,0.15); color:#93bbfc; border:1.5px solid rgba(79,143,247,0.3); }
+  .sn-6 { background:rgba(167,139,250,0.15); color:#c4b5fd; border:1.5px solid rgba(167,139,250,0.3); }
+  .sn-7 { background:rgba(244,114,182,0.15); color:#f9a8d4; border:1.5px solid rgba(244,114,182,0.3); }
+
+  /* FLOW */
+  .flow-container { display:flex; align-items:stretch; gap:0; margin:20px 0; overflow-x:auto; }
+  .flow-step { flex:1; min-width:140px; padding:16px 12px; text-align:center; position:relative; background:var(--bg3); border:1px solid var(--border); }
+  .flow-step:first-child { border-radius:12px 0 0 12px; }
+  .flow-step:last-child { border-radius:0 12px 12px 0; }
+  .flow-step-num { font-size:22px; font-weight:800; margin-bottom:4px; }
+  .flow-step-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; }
+  .flow-step-desc { font-size:10px; color:var(--text2); }
+  .flow-arrow { display:flex; align-items:center; color:var(--text2); font-size:18px; padding:0 2px; }
+
+  /* NARRATIVE */
+  .narrative { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:20px; margin:12px 0; font-size:13px; line-height:1.8; }
+  .narrative p { margin-bottom:12px; }
+  .narrative p:last-child { margin-bottom:0; }
+  .narrative strong { color:var(--text); }
+  .highlight { color:var(--orange); font-weight:600; }
+  .highlight-red { color:var(--red); font-weight:600; }
+  .highlight-green { color:var(--green); font-weight:600; }
+  .highlight-blue { color:var(--blue); font-weight:600; }
+
+  /* COMPARISON TABLE */
+  .compare-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .compare-table th { background:rgba(245,158,11,0.08); padding:12px; text-align:left; border:1px solid var(--border); font-weight:700; color:var(--orange); }
+  .compare-table td { padding:12px; border:1px solid var(--border); vertical-align:top; }
+  .compare-table tr:nth-child(even) { background:rgba(255,255,255,0.015); }
+
+  /* METRICS */
+  .counter-row { display:flex; justify-content:center; gap:30px; flex-wrap:wrap; margin:20px 0; }
+  .counter { text-align:center; }
+  .counter-num { font-size:36px; font-weight:800; }
+  .counter-label { font-size:10px; color:var(--text2); text-transform:uppercase; letter-spacing:1px; }
+
+  /* TIMELINE */
+  .timeline { position:relative; padding-left:30px; margin:20px 0; }
+  .timeline::before { content:''; position:absolute; left:12px; top:0; bottom:0; width:2px; background:linear-gradient(to bottom,var(--orange),var(--green)); }
+  .tl-item { position:relative; padding:12px 0 24px; }
+  .tl-item:last-child { padding-bottom:0; }
+  .tl-dot { position:absolute; left:-24px; top:16px; width:12px; height:12px; border-radius:50%; border:2px solid var(--orange); background:var(--bg); }
+  .tl-item:last-child .tl-dot { border-color:var(--green); }
+  .tl-title { font-size:14px; font-weight:700; margin-bottom:4px; }
+  .tl-desc { font-size:12px; color:var(--text2); }
+
+  /* CHECKLIST */
+  .checklist { list-style:none; padding:0; }
+  .checklist li { display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:12px; }
+  .checklist li:last-child { border:none; }
+  .check-icon { width:20px; height:20px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; margin-top:1px; }
+  .check-done { background:rgba(16,185,129,0.15); color:#6ee7b7; border:1px solid rgba(16,185,129,0.3); }
+  .check-pending { background:rgba(245,158,11,0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.3); }
+
+  .footer { text-align:center; padding:40px; color:var(--text2); font-size:11px; border-top:1px solid var(--border); margin-top:30px; }
+  .footer strong { color:var(--text); }
+
+  @media(max-width:900px) {
+    .grid-2,.grid-3,.grid-4,.grid-7 { grid-template-columns:1fr; }
+    .hero h1 { font-size:28px; }
+    .section { padding:30px 16px; }
+    .flow-container { flex-direction:column; }
+    .flow-step { border-radius:12px !important; }
+    .flow-arrow { transform:rotate(90deg); justify-content:center; padding:4px 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+    <span class="nav-logo">&#x1f6e1;&#xfe0f; PASTA</span>
+    <a href="#justificacion" class="nav-link">Justificaci&oacute;n</a>
+    <a href="#comparativa" class="nav-link">Comparativa</a>
+    <a href="#pasta" class="nav-link">PASTA 7 Etapas</a>
+    <a href="#etapa1" class="nav-link">E1: Objetivos</a>
+    <a href="#etapa2" class="nav-link">E2: Alcance</a>
+    <a href="#etapa3" class="nav-link">E3: Descomposici&oacute;n</a>
+    <a href="#etapa4" class="nav-link">E4: An&aacute;lisis</a>
+    <a href="#etapa5" class="nav-link">E5: Vulnerabilidades</a>
+    <a href="#etapa6" class="nav-link">E6: Ataques</a>
+    <a href="#etapa7" class="nav-link">E7: Riesgo &amp; Impacto</a>
+    <a href="#integracion" class="nav-link">Integraci&oacute;n</a>
+    <a href="#conclusiones" class="nav-link">Conclusiones</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">Metodolog&iacute;a Adoptada &mdash; Fase 8</div>
+  <h1>PASTA: Process for Attack<br>Simulation &amp; Threat Analysis</h1>
+  <p>Metodolog&iacute;a de 7 etapas centrada en riesgo para el modelamiento integral de amenazas del sistema ISO SECURE. Complementa el an&aacute;lisis STRIDE con un enfoque orientado a negocio y simulaci&oacute;n de ataques.</p>
+  <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;">
+    <span class="badge badge-orange">7 Etapas PASTA</span>
+    <span class="badge badge-red">24 Amenazas STRIDE</span>
+    <span class="badge badge-blue">39 Endpoints Analizados</span>
+    <span class="badge badge-green">15 Mitigaciones Priorizadas</span>
+    <span class="badge badge-purple">ISO/IEC 27001:2022</span>
+  </div>
+</div>
+
+<!-- S1: JUSTIFICACION -->
+<div class="divider"></div>
+<section class="section" id="justificacion">
+  <div class="section-num">Secci&oacute;n 01</div>
+  <div class="section-title">Justificaci&oacute;n de la Metodolog&iacute;a</div>
+  <div class="section-desc">Selecci&oacute;n de PASTA como framework principal de modelamiento de amenazas para ISO SECURE, con integraci&oacute;n de STRIDE como t&eacute;cnica de categorizaci&oacute;n.</div>
+
+  <div class="narrative">
+    <p>El modelamiento de amenazas es una pr&aacute;ctica fundamental dentro de la gesti&oacute;n de seguridad de la informaci&oacute;n establecida por <strong>ISO/IEC 27001:2022</strong>. Para el sistema <span class="highlight">ISO SECURE</span>, se adopt&oacute; la metodolog&iacute;a <strong>PASTA</strong> (Process for Attack Simulation and Threat Analysis) como framework principal, complementada con <strong>STRIDE</strong> de Microsoft como t&eacute;cnica de categorizaci&oacute;n de amenazas dentro de la Etapa 4 del proceso PASTA.</p>
+    <p><strong>PASTA</strong> fue seleccionada por ser una metodolog&iacute;a <span class="highlight">centrada en riesgo</span> que conecta los objetivos de negocio con el an&aacute;lisis t&eacute;cnico de amenazas. A diferencia de metodolog&iacute;as puramente t&eacute;cnicas, PASTA inicia desde los objetivos estrat&eacute;gicos de la organizaci&oacute;n &mdash; en este caso, el cumplimiento ISO 27001 y la protecci&oacute;n de datos multi-tenant &mdash; y desciende hasta la simulaci&oacute;n concreta de ataques y la cuantificaci&oacute;n del impacto en el negocio.</p>
+    <p>La combinaci&oacute;n <strong>PASTA + STRIDE</strong> permite obtener tanto una visi&oacute;n estrat&eacute;gica (qu&eacute; riesgos afectan los objetivos de cumplimiento) como una visi&oacute;n t&aacute;ctica (c&oacute;mo un atacante podr&iacute;a explotar cada componente del sistema).</p>
+  </div>
+
+  <div class="grid-3" style="margin-top:20px;">
+    <div class="card card-orange">
+      <div class="card-title">&#x1f3af; Orientada a Riesgo</div>
+      <div class="card-sub">Business-driven approach</div>
+      <p style="font-size:12px;color:var(--text2);">PASTA conecta cada amenaza t&eacute;cnica con su impacto real en los objetivos de negocio del SGSI, permitiendo priorizar mitigaciones por valor de negocio, no solo por severidad t&eacute;cnica.</p>
+    </div>
+    <div class="card card-blue">
+      <div class="card-title">&#x1f504; Proceso Iterativo</div>
+      <div class="card-sub">7 etapas secuenciales</div>
+      <p style="font-size:12px;color:var(--text2);">Las 7 etapas de PASTA proporcionan un proceso estructurado y repetible que puede ejecutarse en cada ciclo de desarrollo, aline&aacute;ndose con el enfoque de mejora continua PDCA de ISO 27001.</p>
+    </div>
+    <div class="card card-green">
+      <div class="card-title">&#x1f50d; Simulaci&oacute;n de Ataques</div>
+      <div class="card-sub">Attack-centric analysis</div>
+      <p style="font-size:12px;color:var(--text2);">La Etapa 6 de PASTA simula escenarios de ataque reales contra la arquitectura espec&iacute;fica del sistema, generando &aacute;rboles de amenazas que mapean rutas concretas de explotaci&oacute;n.</p>
+    </div>
+  </div>
+</section>
+
+<!-- S2: COMPARATIVA -->
+<div class="divider"></div>
+<section class="section" id="comparativa">
+  <div class="section-num">Secci&oacute;n 02</div>
+  <div class="section-title">An&aacute;lisis Comparativo de Metodolog&iacute;as</div>
+  <div class="section-desc">Evaluaci&oacute;n de las principales metodolog&iacute;as de modelamiento de amenazas y justificaci&oacute;n de la selecci&oacute;n de PASTA + STRIDE.</div>
+
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th style="width:14%;">Metodolog&iacute;a</th>
+        <th style="width:14%;">Enfoque</th>
+        <th style="width:18%;">Fortalezas</th>
+        <th style="width:18%;">Limitaciones</th>
+        <th style="width:12%;">Etapas</th>
+        <th style="width:12%;">Complejidad</th>
+        <th style="width:12%;">Selecci&oacute;n</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong style="color:var(--orange);">PASTA</strong></td>
+        <td>Riesgo + Negocio</td>
+        <td>Conecta amenazas con impacto de negocio; proceso completo de 7 etapas; incluye simulaci&oacute;n de ataques</td>
+        <td>Requiere mayor esfuerzo inicial; necesita conocimiento del contexto de negocio</td>
+        <td style="text-align:center;">7</td>
+        <td><span class="badge badge-orange">Alta</span></td>
+        <td><span class="badge badge-green">&#x2713; Adoptada</span></td>
+      </tr>
+      <tr>
+        <td><strong style="color:var(--red);">STRIDE</strong></td>
+        <td>T&eacute;cnico / Categorizaci&oacute;n</td>
+        <td>Categorizaci&oacute;n clara (6 tipos); ideal para DFD; amplia documentaci&oacute;n de Microsoft</td>
+        <td>No cuantifica riesgo de negocio; no incluye simulaci&oacute;n; enfoque solo en software</td>
+        <td style="text-align:center;">6 cat.</td>
+        <td><span class="badge badge-yellow">Media</span></td>
+        <td><span class="badge badge-blue">&#x2713; Integrada</span></td>
+      </tr>
+      <tr>
+        <td><strong style="color:var(--purple);">VAST</strong></td>
+        <td>&Aacute;gil / Visual</td>
+        <td>Escalable; integra con Agile/DevOps; dos modelos (app + operacional)</td>
+        <td>Propietaria (ThreatModeler); menos profundidad en an&aacute;lisis de ataques</td>
+        <td style="text-align:center;">2 modelos</td>
+        <td><span class="badge badge-yellow">Media</span></td>
+        <td><span class="badge" style="color:var(--text2);">Evaluada</span></td>
+      </tr>
+      <tr>
+        <td><strong style="color:var(--cyan);">OCTAVE</strong></td>
+        <td>Activos / Organizaci&oacute;n</td>
+        <td>Enfoque organizacional; evaluaci&oacute;n de activos cr&iacute;ticos; desarrollado por SEI/CMU</td>
+        <td>Menos detalle t&eacute;cnico en software; orientado a grandes organizaciones</td>
+        <td style="text-align:center;">3 fases</td>
+        <td><span class="badge badge-orange">Alta</span></td>
+        <td><span class="badge" style="color:var(--text2);">Evaluada</span></td>
+      </tr>
+      <tr>
+        <td><strong style="color:var(--green);">DREAD</strong></td>
+        <td>Calificaci&oacute;n de riesgo</td>
+        <td>F&oacute;rmula simple de puntuaci&oacute;n (D+R+E+A+D); r&aacute;pida priorizaci&oacute;n</td>
+        <td>Subjetivo; no identifica amenazas; solo clasifica las ya conocidas</td>
+        <td style="text-align:center;">5 crit.</td>
+        <td><span class="badge badge-green">Baja</span></td>
+        <td><span class="badge" style="color:var(--text2);">Descartada</span></td>
+      </tr>
+      <tr>
+        <td><strong style="color:var(--pink);">LINDDUN</strong></td>
+        <td>Privacidad</td>
+        <td>Especializada en amenazas de privacidad; complementa STRIDE con foco en datos personales</td>
+        <td>Alcance limitado a privacidad; no cubre disponibilidad ni integridad operativa</td>
+        <td style="text-align:center;">7 cat.</td>
+        <td><span class="badge badge-yellow">Media</span></td>
+        <td><span class="badge" style="color:var(--text2);">Descartada</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="narrative" style="margin-top:20px;">
+    <p><strong>Decisi&oacute;n:</strong> Se adopta <span class="highlight">PASTA</span> como metodolog&iacute;a principal y se integra <span class="highlight-red">STRIDE</span> como t&eacute;cnica de categorizaci&oacute;n dentro de la Etapa 4. Esta combinaci&oacute;n fue seleccionada porque:</p>
+    <p><strong>1.</strong> PASTA proporciona el <span class="highlight">marco estrat&eacute;gico</span> que conecta amenazas con objetivos de cumplimiento ISO 27001 &mdash; cr&iacute;tico para un SGSI que gestiona KPIs de seguridad.</p>
+    <p><strong>2.</strong> STRIDE aporta la <span class="highlight-red">granularidad t&eacute;cnica</span> para categorizar las 24 amenazas identificadas en 6 tipos concretos aplicados a cada componente del DFD.</p>
+    <p><strong>3.</strong> La combinaci&oacute;n permite cubrir tanto la perspectiva <span class="highlight-green">organizacional</span> (requisitos de cumplimiento, activos cr&iacute;ticos, impacto en operaciones) como la perspectiva <span class="highlight-blue">t&eacute;cnica</span> (vectores de ataque, vulnerabilidades en c&oacute;digo, simulaci&oacute;n de exploits).</p>
+    <p><strong>VAST</strong> fue evaluada pero descartada por su dependencia de herramientas propietarias. <strong>OCTAVE</strong> fue considerada pero su enfoque organizacional resulta excesivo para un sistema de software espec&iacute;fico. <strong>DREAD</strong> se utiliza parcialmente para la puntuaci&oacute;n de riesgo pero no como metodolog&iacute;a principal dado que no identifica amenazas.</p>
+  </div>
+</section>
+
+<!-- S3: PASTA OVERVIEW -->
+<div class="divider"></div>
+<section class="section" id="pasta">
+  <div class="section-num">Secci&oacute;n 03</div>
+  <div class="section-title">PASTA: Las 7 Etapas</div>
+  <div class="section-desc">Proceso secuencial de an&aacute;lisis que va desde los objetivos estrat&eacute;gicos hasta la cuantificaci&oacute;n del riesgo residual.</div>
+
+  <div class="flow-container">
+    <div class="flow-step" style="border-bottom:3px solid #ef4444;">
+      <div class="flow-step-num" style="color:#f87171;">I</div>
+      <div class="flow-step-title">Definir<br>Objetivos</div>
+      <div class="flow-step-desc">Objetivos de negocio y cumplimiento</div>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step" style="border-bottom:3px solid #f59e0b;">
+      <div class="flow-step-num" style="color:#fbbf24;">II</div>
+      <div class="flow-step-title">Definir<br>Alcance</div>
+      <div class="flow-step-desc">Componentes y l&iacute;mites t&eacute;cnicos</div>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step" style="border-bottom:3px solid #facc15;">
+      <div class="flow-step-num" style="color:#fde68a;">III</div>
+      <div class="flow-step-title">Descomponer<br>Aplicaci&oacute;n</div>
+      <div class="flow-step-desc">DFD, trust boundaries, flujos de datos</div>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step" style="border-bottom:3px solid #10b981;">
+      <div class="flow-step-num" style="color:#6ee7b7;">IV</div>
+      <div class="flow-step-title">An&aacute;lisis de<br>Amenazas</div>
+      <div class="flow-step-desc">STRIDE + cat&aacute;logo de 24 amenazas</div>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step" style="border-bottom:3px solid #4f8ff7;">
+      <div class="flow-step-num" style="color:#93bbfc;">V</div>
+      <div class="flow-step-title">An&aacute;lisis de<br>Vulnerabilidades</div>
+      <div class="flow-step-desc">Debilidades en c&oacute;digo y configuraci&oacute;n</div>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step" style="border-bottom:3px solid #a78bfa;">
+      <div class="flow-step-num" style="color:#c4b5fd;">VI</div>
+      <div class="flow-step-title">Modelar<br>Ataques</div>
+      <div class="flow-step-desc">&Aacute;rboles de ataque y simulaci&oacute;n</div>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step" style="border-bottom:3px solid #f472b6;">
+      <div class="flow-step-num" style="color:#f9a8d4;">VII</div>
+      <div class="flow-step-title">Riesgo &amp;<br>Impacto</div>
+      <div class="flow-step-desc">Cuantificaci&oacute;n y priorizaci&oacute;n</div>
+    </div>
+  </div>
+
+  <div class="counter-row" style="margin-top:30px;">
+    <div class="counter"><div class="counter-num" style="color:#f87171;">7</div><div class="counter-label">Etapas PASTA</div></div>
+    <div class="counter"><div class="counter-num" style="color:#fbbf24;">6</div><div class="counter-label">Categor&iacute;as STRIDE</div></div>
+    <div class="counter"><div class="counter-num" style="color:#6ee7b7;">24</div><div class="counter-label">Amenazas Identificadas</div></div>
+    <div class="counter"><div class="counter-num" style="color:#93bbfc;">4</div><div class="counter-label">Trust Boundaries</div></div>
+    <div class="counter"><div class="counter-num" style="color:#c4b5fd;">3</div><div class="counter-label">&Aacute;rboles de Ataque</div></div>
+    <div class="counter"><div class="counter-num" style="color:#f9a8d4;">8</div><div class="counter-label">Amenazas Cr&iacute;ticas</div></div>
+  </div>
+</section>
+
+<!-- ETAPA 1 -->
+<div class="divider"></div>
+<section class="section" id="etapa1">
+  <div class="section-num">Etapa I</div>
+  <div class="section-title">Definici&oacute;n de Objetivos de Negocio</div>
+  <div class="section-desc">Identificaci&oacute;n de los objetivos estrat&eacute;gicos que el modelamiento de amenazas debe proteger.</div>
+
+  <div class="grid-2">
+    <div class="card card-orange">
+      <div class="card-title"><span class="stage-num sn-1">I</span> Objetivos Estrat&eacute;gicos</div>
+      <div class="card-sub">Requisitos de negocio protegidos por el SGSI</div>
+      <table class="data-table" style="margin-top:8px;">
+        <thead><tr><th>ID</th><th>Objetivo</th><th>Prioridad</th></tr></thead>
+        <tbody>
+          <tr><td><strong>OBJ-01</strong></td><td>Cumplimiento ISO/IEC 27001:2022 &mdash; Mantener conformidad con los 93 controles del Anexo A aplicables al sistema</td><td><span class="badge badge-red">Cr&iacute;tica</span></td></tr>
+          <tr><td><strong>OBJ-02</strong></td><td>Protecci&oacute;n multi-tenant &mdash; Garantizar aislamiento total de datos entre empresas registradas</td><td><span class="badge badge-red">Cr&iacute;tica</span></td></tr>
+          <tr><td><strong>OBJ-03</strong></td><td>Integridad de m&eacute;tricas SGSI &mdash; Asegurar que los KPIs de compliance reflejan el estado real del sistema</td><td><span class="badge badge-orange">Alta</span></td></tr>
+          <tr><td><strong>OBJ-04</strong></td><td>Disponibilidad operativa &mdash; Mantener acceso continuo al dashboard y funciones de auditor&iacute;a</td><td><span class="badge badge-orange">Alta</span></td></tr>
+          <tr><td><strong>OBJ-05</strong></td><td>Trazabilidad y no repudio &mdash; Registrar todas las acciones cr&iacute;ticas sobre controles, riesgos e incidentes</td><td><span class="badge badge-orange">Alta</span></td></tr>
+          <tr><td><strong>OBJ-06</strong></td><td>Control de acceso basado en roles &mdash; Aplicar principio de m&iacute;nimo privilegio en las 11 vistas del sistema</td><td><span class="badge badge-orange">Alta</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card card-red">
+      <div class="card-title">&#x26a0;&#xfe0f; Escenarios de Impacto</div>
+      <div class="card-sub">Consecuencias de negocio si los objetivos son comprometidos</div>
+      <table class="data-table" style="margin-top:8px;">
+        <thead><tr><th>Escenario</th><th>Impacto</th><th>Objetivo</th></tr></thead>
+        <tbody>
+          <tr><td>Fuga de datos entre tenants</td><td>Incumplimiento regulatorio, p&eacute;rdida de confianza de clientes, sanciones legales</td><td>OBJ-02</td></tr>
+          <tr><td>Manipulaci&oacute;n de KPIs de compliance</td><td>Falsa sensaci&oacute;n de seguridad, auditor&iacute;a fallida, certificaci&oacute;n ISO rechazada</td><td>OBJ-03</td></tr>
+          <tr><td>Escalamiento de privilegios a admin</td><td>Control total del sistema, modificaci&oacute;n de controles/riesgos de todas las empresas</td><td>OBJ-06</td></tr>
+          <tr><td>Denegaci&oacute;n de servicio en auditor&iacute;a</td><td>Imposibilidad de completar ciclo de auditor&iacute;a, retraso en certificaci&oacute;n</td><td>OBJ-04</td></tr>
+          <tr><td>Repudio de cambios en controles</td><td>Imposibilidad de determinar qui&eacute;n alter&oacute; estado de cumplimiento</td><td>OBJ-05</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="narrative" style="margin-top:16px;">
+    <p><strong>An&aacute;lisis:</strong> Los objetivos OBJ-01 y OBJ-02 son clasificados como <span class="highlight-red">cr&iacute;ticos</span> porque una brecha en el aislamiento multi-tenant o en el cumplimiento ISO invalidar&iacute;a el prop&oacute;sito fundamental del sistema. ISO SECURE no es una aplicaci&oacute;n gen&eacute;rica &mdash; es la herramienta central de gesti&oacute;n del SGSI, por lo que su compromiso afecta directamente la postura de seguridad de cada organizaci&oacute;n registrada.</p>
+    <p>Los objetivos OBJ-03 a OBJ-06 son clasificados como <span class="highlight">alta prioridad</span> porque, aunque su compromiso no destruye el sistema, genera informaci&oacute;n falsa o permite acciones no autorizadas que socavan la confianza en las m&eacute;tricas y decisiones del SGSI.</p>
+  </div>
+</section>
+
+<!-- ETAPA 2 -->
+<div class="divider"></div>
+<section class="section" id="etapa2">
+  <div class="section-num">Etapa II</div>
+  <div class="section-title">Definici&oacute;n del Alcance T&eacute;cnico</div>
+  <div class="section-desc">Inventario de componentes, tecnolog&iacute;as y superficies de ataque del sistema ISO SECURE.</div>
+
+  <div class="grid-3">
+    <div class="card card-blue">
+      <div class="card-title">&#x1f310; Frontend</div>
+      <div class="card-sub">Superficie de ataque del cliente</div>
+      <ul style="font-size:12px;color:var(--text2);list-style:none;padding:0;">
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);">&#x25b8; <strong style="color:var(--text)">React 19</strong> + Vite 8 &mdash; SPA monol&iacute;tica (App.jsx ~2100 l&iacute;neas)</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);">&#x25b8; <strong style="color:var(--text)">Axios</strong> con interceptor Bearer token</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);">&#x25b8; <strong style="color:var(--text)">11 vistas</strong> con guards RBAC client-side</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);">&#x25b8; <strong style="color:var(--text)">Supabase JS</strong> para autenticaci&oacute;n directa</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);">&#x25b8; <strong style="color:var(--text)">localStorage</strong> para persistencia de tokens</li>
+        <li style="padding:4px 0;">&#x25b8; <strong style="color:var(--text)">Nginx</strong> (alpine) serviendo build est&aacute;tico :3000</li>
+      </ul>
+    </div>
+    <div class="card card-green">
+      <div class="card-title">&#x2699;&#xfe0f; Backend</div>
+      <div class="card-sub">Superficie de ataque del servidor</div>
+      <ul style="font-size:12px;color:var(--text2);list-style:none;padding:0;">
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);">&#x25b8; <strong style="color:var(--text)">FastAPI</strong> 0.111+ / Python 3.13 &mdash; 9 routers</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);">&#x25b8; <strong style="color:var(--text)">39 endpoints</strong> REST con prefijo /api/v1</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);">&#x25b8; <strong style="color:var(--text)">SQLAlchemy 2.0</strong> async + AsyncSession pooling</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);">&#x25b8; <strong style="color:var(--text)">Pydantic v2</strong> para validaci&oacute;n de request/response</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);">&#x25b8; <strong style="color:var(--text)">auth.py</strong>: get_supabase_user + require_role()</li>
+        <li style="padding:4px 0;">&#x25b8; <strong style="color:var(--text)">Uvicorn</strong> ASGI server :8000</li>
+      </ul>
+    </div>
+    <div class="card card-purple">
+      <div class="card-title">&#x1f5c4;&#xfe0f; Datos &amp; Infra</div>
+      <div class="card-sub">Superficie de ataque de infraestructura</div>
+      <ul style="font-size:12px;color:var(--text2);list-style:none;padding:0;">
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);">&#x25b8; <strong style="color:var(--text)">PostgreSQL 15+</strong> (Supabase Cloud)</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);">&#x25b8; <strong style="color:var(--text)">9 tablas</strong> con FK empresa_id para multi-tenant</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);">&#x25b8; <strong style="color:var(--text)">Supabase Auth</strong> JWT + OAuth 2.0</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);">&#x25b8; <strong style="color:var(--text)">Docker Compose</strong> v3.8 orquestaci&oacute;n</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);">&#x25b8; <strong style="color:var(--text)">app-network</strong> (bridge) DNS interno</li>
+        <li style="padding:4px 0;">&#x25b8; <strong style="color:var(--text)">Variables .env</strong>: DATABASE_URL, SUPABASE_URL, keys</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card card-yellow" style="margin-top:16px;">
+    <div class="card-title">&#x1f6e1;&#xfe0f; Activos Cr&iacute;ticos Identificados</div>
+    <div class="card-sub">Clasificaci&oacute;n de activos por criticidad para el SGSI</div>
+    <table class="data-table" style="margin-top:8px;">
+      <thead><tr><th>Activo</th><th>Tipo</th><th>Criticidad</th><th>Datos Contenidos</th><th>Amenaza Principal</th></tr></thead>
+      <tbody>
+        <tr><td><strong>JWT Tokens</strong></td><td>Credencial</td><td><span class="badge badge-red">Cr&iacute;tica</span></td><td>user_id, rol, empresa_id, exp</td><td>Spoofing (S-01, S-04)</td></tr>
+        <tr><td><strong>Tabla controls</strong></td><td>Datos</td><td><span class="badge badge-red">Cr&iacute;tica</span></td><td>93 controles ISO por empresa, estado compliance</td><td>Tampering (T-04), Info Disclosure (I-01)</td></tr>
+        <tr><td><strong>Tabla risk_levels</strong></td><td>Datos</td><td><span class="badge badge-red">Cr&iacute;tica</span></td><td>Evaluaciones de riesgo P&times;I por dominio</td><td>Tampering (T-02), Info Disclosure (I-01)</td></tr>
+        <tr><td><strong>Tabla user_profiles</strong></td><td>Datos</td><td><span class="badge badge-orange">Alta</span></td><td>Roles, empresa_id, identidad</td><td>Elevation of Privilege (E-01)</td></tr>
+        <tr><td><strong>Tabla auditoria_items</strong></td><td>Datos</td><td><span class="badge badge-orange">Alta</span></td><td>Checklist de auditor&iacute;a interna</td><td>Tampering (T-04), Repudiation (R-01)</td></tr>
+        <tr><td><strong>Dashboard KPIs</strong></td><td>M&eacute;trica</td><td><span class="badge badge-orange">Alta</span></td><td>Indicadores consolidados de compliance</td><td>Tampering (T-01)</td></tr>
+        <tr><td><strong>DATABASE_URL</strong></td><td>Secreto</td><td><span class="badge badge-red">Cr&iacute;tica</span></td><td>Credenciales PostgreSQL completas</td><td>Info Disclosure (I-03)</td></tr>
+        <tr><td><strong>SUPABASE_ANON_KEY</strong></td><td>Secreto</td><td><span class="badge badge-orange">Alta</span></td><td>API key para autenticaci&oacute;n</td><td>Info Disclosure (I-04)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ETAPA 3 -->
+<div class="divider"></div>
+<section class="section" id="etapa3">
+  <div class="section-num">Etapa III</div>
+  <div class="section-title">Descomposici&oacute;n de la Aplicaci&oacute;n</div>
+  <div class="section-desc">Diagrama de Flujo de Datos (DFD) con trust boundaries y flujos de informaci&oacute;n cr&iacute;ticos.</div>
+
+  <div class="narrative">
+    <p>La descomposici&oacute;n del sistema ISO SECURE identifica <strong>4 trust boundaries</strong> (l&iacute;mites de confianza) que representan los puntos donde el nivel de privilegio cambia. Cada cruce de un trust boundary es un punto potencial de ataque que requiere validaci&oacute;n.</p>
+  </div>
+
+  <div class="card" style="margin-top:16px;background:var(--bg2);padding:30px;">
+    <!-- DFD Diagram -->
+    <div style="text-align:center;margin-bottom:20px;">
+      <span class="badge badge-orange" style="font-size:12px;padding:6px 16px;">Diagrama de Flujo de Datos &mdash; ISO SECURE</span>
+    </div>
+
+    <!-- TB1: Internet / Usuario -->
+    <div style="border:2px dashed rgba(239,68,68,0.4);border-radius:14px;padding:20px;margin:10px 0;position:relative;">
+      <div style="position:absolute;top:-11px;left:20px;background:var(--bg2);padding:0 10px;font-size:11px;font-weight:700;letter-spacing:1px;color:#f87171;">TB-1: INTERNET / USUARIO EXTERNO</div>
+      <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;">
+        <div style="background:rgba(239,68,68,0.12);border:1.5px solid rgba(239,68,68,0.35);border-radius:10px;padding:12px 20px;text-align:center;">
+          <div style="font-size:12px;font-weight:700;">&#x1f464; Usuario</div>
+          <div style="font-size:9px;color:var(--text2);">Browser + Supabase JS</div>
+        </div>
+        <div style="background:rgba(239,68,68,0.12);border:1.5px solid rgba(239,68,68,0.35);border-radius:10px;padding:12px 20px;text-align:center;">
+          <div style="font-size:12px;font-weight:700;">&#x1f916; ISORA AI</div>
+          <div style="font-size:9px;color:var(--text2);">Chat SSE externo</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:6px 0;color:var(--text2);font-size:11px;">&#x2193; HTTPS + JWT &nbsp;&nbsp;&nbsp; &#x2193; SSE Stream</div>
+
+    <!-- TB2: DMZ / Frontend -->
+    <div style="border:2px dashed rgba(79,143,247,0.4);border-radius:14px;padding:20px;margin:10px 0;position:relative;">
+      <div style="position:absolute;top:-11px;left:20px;background:var(--bg2);padding:0 10px;font-size:11px;font-weight:700;letter-spacing:1px;color:#93bbfc;">TB-2: DMZ / FRONTEND CONTAINER</div>
+      <div style="display:flex;justify-content:center;gap:16px;">
+        <div style="background:rgba(79,143,247,0.12);border:1.5px solid rgba(79,143,247,0.35);border-radius:10px;padding:12px 20px;text-align:center;">
+          <div style="font-size:12px;font-weight:700;">&#x1f4e6; Nginx :3000</div>
+          <div style="font-size:9px;color:var(--text2);">Static files + React SPA</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:6px 0;color:var(--text2);font-size:11px;">&#x2193; HTTP /api/v1/* &nbsp;&nbsp;&nbsp; (app-network bridge)</div>
+
+    <!-- TB3: Backend -->
+    <div style="border:2px dashed rgba(16,185,129,0.4);border-radius:14px;padding:20px;margin:10px 0;position:relative;">
+      <div style="position:absolute;top:-11px;left:20px;background:var(--bg2);padding:0 10px;font-size:11px;font-weight:700;letter-spacing:1px;color:#6ee7b7;">TB-3: BACKEND CONTAINER (TRUSTED)</div>
+      <div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;">
+        <div style="background:rgba(16,185,129,0.12);border:1.5px solid rgba(16,185,129,0.35);border-radius:10px;padding:12px 16px;text-align:center;">
+          <div style="font-size:12px;font-weight:700;">&#x1f6e1;&#xfe0f; auth.py</div>
+          <div style="font-size:9px;color:var(--text2);">JWT + RBAC</div>
+        </div>
+        <div style="background:rgba(16,185,129,0.12);border:1.5px solid rgba(16,185,129,0.35);border-radius:10px;padding:12px 16px;text-align:center;">
+          <div style="font-size:12px;font-weight:700;">&#x1f4cb; 9 Routers</div>
+          <div style="font-size:9px;color:var(--text2);">39 endpoints</div>
+        </div>
+        <div style="background:rgba(16,185,129,0.12);border:1.5px solid rgba(16,185,129,0.35);border-radius:10px;padding:12px 16px;text-align:center;">
+          <div style="font-size:12px;font-weight:700;">&#x2699;&#xfe0f; 9 Services</div>
+          <div style="font-size:9px;color:var(--text2);">Business Logic</div>
+        </div>
+        <div style="background:rgba(16,185,129,0.12);border:1.5px solid rgba(16,185,129,0.35);border-radius:10px;padding:12px 16px;text-align:center;">
+          <div style="font-size:12px;font-weight:700;">&#x1f4d0; Schemas</div>
+          <div style="font-size:9px;color:var(--text2);">Pydantic v2</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:6px 0;color:var(--text2);font-size:11px;">&#x2193; asyncpg (SQL) &nbsp;&nbsp;&nbsp; &#x2193; HTTPX (JWT validation)</div>
+
+    <!-- TB4: Data -->
+    <div style="border:2px dashed rgba(167,139,250,0.4);border-radius:14px;padding:20px;margin:10px 0;position:relative;">
+      <div style="position:absolute;top:-11px;left:20px;background:var(--bg2);padding:0 10px;font-size:11px;font-weight:700;letter-spacing:1px;color:#c4b5fd;">TB-4: SERVICIOS EXTERNOS (CLOUD)</div>
+      <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;">
+        <div style="background:rgba(167,139,250,0.12);border:1.5px solid rgba(167,139,250,0.35);border-radius:10px;padding:12px 20px;text-align:center;">
+          <div style="font-size:12px;font-weight:700;">&#x1f418; PostgreSQL</div>
+          <div style="font-size:9px;color:var(--text2);">Supabase Cloud &mdash; 9 tablas</div>
+        </div>
+        <div style="background:rgba(167,139,250,0.12);border:1.5px solid rgba(167,139,250,0.35);border-radius:10px;padding:12px 20px;text-align:center;">
+          <div style="font-size:12px;font-weight:700;">&#x1f511; Supabase Auth</div>
+          <div style="font-size:9px;color:var(--text2);">JWT /auth/v1/user</div>
+        </div>
+        <div style="background:rgba(167,139,250,0.12);border:1.5px solid rgba(167,139,250,0.35);border-radius:10px;padding:12px 20px;text-align:center;">
+          <div style="font-size:12px;font-weight:700;">&#x1f3ac; YouTube CDN</div>
+          <div style="font-size:9px;color:var(--text2);">Videos capacitaci&oacute;n</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:16px;">
+    <div class="card card-red">
+      <div class="card-title">&#x1f534; Puntos Cr&iacute;ticos de Cruce</div>
+      <div class="card-sub">Trust boundary crossings de mayor riesgo</div>
+      <table class="data-table" style="margin-top:8px;">
+        <thead><tr><th>Cruce</th><th>Flujo</th><th>Riesgo</th></tr></thead>
+        <tbody>
+          <tr><td>TB-1 &rarr; TB-2</td><td>Usuario env&iacute;a JWT al SPA</td><td>Token robado/falsificado</td></tr>
+          <tr><td>TB-2 &rarr; TB-3</td><td>SPA env&iacute;a requests a /api/v1</td><td>Bypass RBAC, inyecci&oacute;n</td></tr>
+          <tr><td>TB-3 &rarr; TB-4</td><td>Backend consulta PostgreSQL</td><td>SQL injection, fuga datos</td></tr>
+          <tr><td>TB-3 &rarr; TB-4</td><td>Backend valida JWT con Supabase</td><td>MITM, cache poisoning</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card card-green">
+      <div class="card-title">&#x1f7e2; Controles en Trust Boundaries</div>
+      <div class="card-sub">Mecanismos de protecci&oacute;n implementados por cruce</div>
+      <table class="data-table" style="margin-top:8px;">
+        <thead><tr><th>Cruce</th><th>Control Implementado</th><th>Estado</th></tr></thead>
+        <tbody>
+          <tr><td>TB-1 &rarr; TB-2</td><td>HTTPS/TLS + CORS restrictivo</td><td><span class="badge badge-green">&#x2713;</span></td></tr>
+          <tr><td>TB-2 &rarr; TB-3</td><td>get_current_user() + require_role()</td><td><span class="badge badge-green">&#x2713;</span></td></tr>
+          <tr><td>TB-3 &rarr; TB-4</td><td>SQLAlchemy ORM (parametrizado)</td><td><span class="badge badge-green">&#x2713;</span></td></tr>
+          <tr><td>TB-3 &rarr; TB-4</td><td>HTTPX + SSL verification</td><td><span class="badge badge-green">&#x2713;</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ETAPA 4 -->
+<div class="divider"></div>
+<section class="section" id="etapa4">
+  <div class="section-num">Etapa IV</div>
+  <div class="section-title">An&aacute;lisis de Amenazas (STRIDE)</div>
+  <div class="section-desc">Aplicaci&oacute;n de la categorizaci&oacute;n STRIDE de Microsoft como t&eacute;cnica de identificaci&oacute;n de amenazas dentro del framework PASTA.</div>
+
+  <div class="narrative">
+    <p>En esta etapa se integra <span class="highlight-red">STRIDE</span> como t&eacute;cnica de categorizaci&oacute;n dentro del proceso PASTA. STRIDE clasifica las amenazas en 6 categor&iacute;as que cubren las propiedades de seguridad fundamentales: <strong>autenticidad</strong> (Spoofing), <strong>integridad</strong> (Tampering), <strong>no repudio</strong> (Repudiation), <strong>confidencialidad</strong> (Information Disclosure), <strong>disponibilidad</strong> (Denial of Service) y <strong>autorizaci&oacute;n</strong> (Elevation of Privilege).</p>
+    <p>Cada amenaza se map&oacute; contra los componentes espec&iacute;ficos del DFD, con referencias a funciones concretas del c&oacute;digo fuente de ISO SECURE. El an&aacute;lisis completo (24 amenazas) est&aacute; documentado en <a href="threat-modeling.html" style="color:var(--orange);text-decoration:underline;">threat-modeling.html</a>.</p>
+  </div>
+
+  <div class="grid-3" style="margin-top:16px;">
+    <!-- S -->
+    <div class="card card-red">
+      <div class="card-title"><span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;font-size:16px;font-weight:800;background:rgba(239,68,68,0.15);color:#f87171;border:1.5px solid rgba(239,68,68,0.3);">S</span> Spoofing</div>
+      <div class="card-sub">Suplantaci&oacute;n de identidad</div>
+      <ul style="font-size:11px;color:var(--text2);list-style:none;padding:0;">
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span class="badge badge-red">S-01</span> Robo de JWT desde localStorage</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span class="badge badge-orange">S-02</span> Fuerza bruta Supabase Auth</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span class="badge badge-orange">S-03</span> Re-uso de tokens expirados</li>
+        <li style="padding:4px 0;"><span class="badge badge-red">S-04</span> Manipulaci&oacute;n de claims JWT</li>
+      </ul>
+      <div style="margin-top:8px;font-size:10px;color:var(--text2);"><strong style="color:var(--text)">Propiedad protegida:</strong> Autenticidad</div>
+    </div>
+    <!-- T -->
+    <div class="card card-orange">
+      <div class="card-title"><span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;font-size:16px;font-weight:800;background:rgba(245,158,11,0.15);color:#fbbf24;border:1.5px solid rgba(245,158,11,0.3);">T</span> Tampering</div>
+      <div class="card-sub">Alteraci&oacute;n de datos</div>
+      <ul style="font-size:11px;color:var(--text2);list-style:none;padding:0;">
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span class="badge badge-orange">T-01</span> Manipulaci&oacute;n de KPIs dashboard</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span class="badge badge-orange">T-02</span> Alteraci&oacute;n de matrices de riesgo</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span class="badge badge-yellow">T-03</span> Inyecci&oacute;n en campos de texto</li>
+        <li style="padding:4px 0;"><span class="badge badge-red">T-04</span> Modificaci&oacute;n directa estado controles</li>
+      </ul>
+      <div style="margin-top:8px;font-size:10px;color:var(--text2);"><strong style="color:var(--text)">Propiedad protegida:</strong> Integridad</div>
+    </div>
+    <!-- R -->
+    <div class="card card-purple">
+      <div class="card-title"><span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;font-size:16px;font-weight:800;background:rgba(167,139,250,0.15);color:#c4b5fd;border:1.5px solid rgba(167,139,250,0.3);">R</span> Repudiation</div>
+      <div class="card-sub">Negaci&oacute;n de acciones</div>
+      <ul style="font-size:11px;color:var(--text2);list-style:none;padding:0;">
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span class="badge badge-red">R-01</span> Sin audit trail de cambios cr&iacute;ticos</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span class="badge badge-orange">R-02</span> Logs insuficientes en auth</li>
+        <li style="padding:4px 0;"><span class="badge badge-yellow">R-03</span> Sin firma digital en exportaciones</li>
+      </ul>
+      <div style="margin-top:8px;font-size:10px;color:var(--text2);"><strong style="color:var(--text)">Propiedad protegida:</strong> No repudio</div>
+    </div>
+    <!-- I -->
+    <div class="card card-blue">
+      <div class="card-title"><span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;font-size:16px;font-weight:800;background:rgba(79,143,247,0.15);color:#93bbfc;border:1.5px solid rgba(79,143,247,0.3);">I</span> Information Disclosure</div>
+      <div class="card-sub">Divulgaci&oacute;n de informaci&oacute;n</div>
+      <ul style="font-size:11px;color:var(--text2);list-style:none;padding:0;">
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span class="badge badge-red">I-01</span> Fuga cross-tenant por IDOR</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span class="badge badge-orange">I-02</span> Verbose error messages</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span class="badge badge-orange">I-03</span> Exposici&oacute;n de DATABASE_URL</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span class="badge badge-orange">I-04</span> SUPABASE_ANON_KEY en frontend</li>
+        <li style="padding:4px 0;"><span class="badge badge-yellow">I-05</span> Headers informativos del servidor</li>
+      </ul>
+      <div style="margin-top:8px;font-size:10px;color:var(--text2);"><strong style="color:var(--text)">Propiedad protegida:</strong> Confidencialidad</div>
+    </div>
+    <!-- D -->
+    <div class="card card-cyan">
+      <div class="card-title"><span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;font-size:16px;font-weight:800;background:rgba(34,211,238,0.15);color:#67e8f9;border:1.5px solid rgba(34,211,238,0.3);">D</span> Denial of Service</div>
+      <div class="card-sub">Denegaci&oacute;n de servicio</div>
+      <ul style="font-size:11px;color:var(--text2);list-style:none;padding:0;">
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span class="badge badge-red">D-01</span> Sin rate limiting en endpoints</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span class="badge badge-orange">D-02</span> Agotamiento pool conexiones DB</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span class="badge badge-yellow">D-03</span> Payload oversized en requests</li>
+        <li style="padding:4px 0;"><span class="badge badge-orange">D-04</span> Ca&iacute;da de Supabase Auth externo</li>
+      </ul>
+      <div style="margin-top:8px;font-size:10px;color:var(--text2);"><strong style="color:var(--text)">Propiedad protegida:</strong> Disponibilidad</div>
+    </div>
+    <!-- E -->
+    <div class="card card-pink">
+      <div class="card-title"><span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;font-size:16px;font-weight:800;background:rgba(244,114,182,0.15);color:#f9a8d4;border:1.5px solid rgba(244,114,182,0.3);">E</span> Elevation of Privilege</div>
+      <div class="card-sub">Escalamiento de privilegios</div>
+      <ul style="font-size:11px;color:var(--text2);list-style:none;padding:0;">
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span class="badge badge-red">E-01</span> Auto-asignaci&oacute;n de rol admin</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span class="badge badge-orange">E-02</span> Bypass guards RBAC client-side</li>
+        <li style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span class="badge badge-orange">E-03</span> Acceso cross-empresa v&iacute;a API</li>
+        <li style="padding:4px 0;"><span class="badge badge-red">E-04</span> Registro sin aprobaci&oacute;n de admin</li>
+      </ul>
+      <div style="margin-top:8px;font-size:10px;color:var(--text2);"><strong style="color:var(--text)">Propiedad protegida:</strong> Autorizaci&oacute;n</div>
+    </div>
+  </div>
+
+  <div class="card card-orange" style="margin-top:20px;">
+    <div class="card-title">&#x1f4ca; Distribuci&oacute;n de Amenazas por Severidad</div>
+    <div class="card-sub">24 amenazas clasificadas por nivel de riesgo</div>
+    <div style="display:flex;gap:8px;align-items:flex-end;justify-content:center;margin-top:16px;height:120px;">
+      <div style="text-align:center;">
+        <div style="background:linear-gradient(to top,rgba(239,68,68,0.3),rgba(239,68,68,0.6));width:60px;height:96px;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fca5a5;">8</div>
+        <div style="font-size:10px;color:var(--text2);margin-top:4px;">Cr&iacute;tico</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="background:linear-gradient(to top,rgba(245,158,11,0.3),rgba(245,158,11,0.6));width:60px;height:108px;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fcd34d;">11</div>
+        <div style="font-size:10px;color:var(--text2);margin-top:4px;">Alto</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="background:linear-gradient(to top,rgba(250,204,21,0.3),rgba(250,204,21,0.6));width:60px;height:48px;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fde68a;">5</div>
+        <div style="font-size:10px;color:var(--text2);margin-top:4px;">Medio</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="background:linear-gradient(to top,rgba(16,185,129,0.3),rgba(16,185,129,0.6));width:60px;height:12px;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#6ee7b7;">0</div>
+        <div style="font-size:10px;color:var(--text2);margin-top:4px;">Bajo</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ETAPA 5 -->
+<div class="divider"></div>
+<section class="section" id="etapa5">
+  <div class="section-num">Etapa V</div>
+  <div class="section-title">An&aacute;lisis de Vulnerabilidades</div>
+  <div class="section-desc">Mapeo de debilidades concretas en el c&oacute;digo y configuraci&oacute;n que habilitan las amenazas identificadas.</div>
+
+  <div class="narrative">
+    <p>Esta etapa correlaciona las 24 amenazas STRIDE con <span class="highlight">vulnerabilidades espec&iacute;ficas</span> en la implementaci&oacute;n actual de ISO SECURE. Cada vulnerabilidad se mape&oacute; a su ubicaci&oacute;n exacta en el c&oacute;digo fuente y a los controles ISO 27001 del Anexo A que aplican.</p>
+  </div>
+
+  <table class="data-table" style="margin-top:16px;">
+    <thead>
+      <tr>
+        <th style="width:8%;">ID</th>
+        <th style="width:22%;">Vulnerabilidad</th>
+        <th style="width:18%;">Ubicaci&oacute;n en C&oacute;digo</th>
+        <th style="width:10%;">Amenazas</th>
+        <th style="width:12%;">OWASP Top 10</th>
+        <th style="width:15%;">Control ISO 27001</th>
+        <th style="width:8%;">Severidad</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>V-01</strong></td>
+        <td>JWT almacenado en localStorage sin protecci&oacute;n XSS</td>
+        <td><code>frontend/src/App.jsx</code> &mdash; Supabase session handler</td>
+        <td>S-01</td>
+        <td>A07:2021</td>
+        <td>A.8.3 Restricci&oacute;n de acceso</td>
+        <td><span class="badge badge-red">Cr&iacute;tica</span></td>
+      </tr>
+      <tr>
+        <td><strong>V-02</strong></td>
+        <td>Sin rate limiting en endpoints de autenticaci&oacute;n y API</td>
+        <td><code>app/routers/*.py</code> &mdash; ninguno implementa throttle</td>
+        <td>S-02, D-01</td>
+        <td>A04:2021</td>
+        <td>A.8.6 Gesti&oacute;n de capacidad</td>
+        <td><span class="badge badge-red">Cr&iacute;tica</span></td>
+      </tr>
+      <tr>
+        <td><strong>V-03</strong></td>
+        <td>_empresa_filter() no valida en todos los service methods</td>
+        <td><code>app/services/*_service.py</code> &mdash; filtro en list/get, posible gap en update/delete</td>
+        <td>I-01, E-03</td>
+        <td>A01:2021</td>
+        <td>A.5.15 Control de acceso</td>
+        <td><span class="badge badge-red">Cr&iacute;tica</span></td>
+      </tr>
+      <tr>
+        <td><strong>V-04</strong></td>
+        <td>Rol asignado durante registro sin aprobaci&oacute;n de admin</td>
+        <td><code>app/routers/auth_router.py</code> &mdash; POST /auth/register</td>
+        <td>E-01, E-04</td>
+        <td>A01:2021</td>
+        <td>A.5.18 Derechos de acceso</td>
+        <td><span class="badge badge-red">Cr&iacute;tica</span></td>
+      </tr>
+      <tr>
+        <td><strong>V-05</strong></td>
+        <td>Sin audit logging para cambios en controles, riesgos y auditor&iacute;a</td>
+        <td><code>app/services/</code> &mdash; ninguno registra qui&eacute;n/cu&aacute;ndo modific&oacute;</td>
+        <td>R-01, R-02</td>
+        <td>A09:2021</td>
+        <td>A.8.15 Registro de actividad</td>
+        <td><span class="badge badge-red">Cr&iacute;tica</span></td>
+      </tr>
+      <tr>
+        <td><strong>V-06</strong></td>
+        <td>CORS permite or&iacute;genes amplios en configuraci&oacute;n</td>
+        <td><code>main.py</code> &mdash; CORSMiddleware origins</td>
+        <td>S-01, T-01</td>
+        <td>A05:2021</td>
+        <td>A.8.9 Gesti&oacute;n de configuraci&oacute;n</td>
+        <td><span class="badge badge-orange">Alta</span></td>
+      </tr>
+      <tr>
+        <td><strong>V-07</strong></td>
+        <td>Mensajes de error verbose exponen stack traces en modo debug</td>
+        <td><code>main.py</code> &mdash; FastAPI default exception handler</td>
+        <td>I-02, I-05</td>
+        <td>A05:2021</td>
+        <td>A.8.9 Gesti&oacute;n de configuraci&oacute;n</td>
+        <td><span class="badge badge-orange">Alta</span></td>
+      </tr>
+      <tr>
+        <td><strong>V-08</strong></td>
+        <td>SUPABASE_ANON_KEY hardcoded como fallback en frontend</td>
+        <td><code>frontend/src/App.jsx</code> &mdash; fallback en const inicializaci&oacute;n</td>
+        <td>I-04</td>
+        <td>A02:2021</td>
+        <td>A.5.33 Protecci&oacute;n de registros</td>
+        <td><span class="badge badge-orange">Alta</span></td>
+      </tr>
+      <tr>
+        <td><strong>V-09</strong></td>
+        <td>Guards RBAC solo client-side en ciertas vistas (VIEW_ROLES)</td>
+        <td><code>frontend/src/App.jsx</code> &mdash; VIEW_ROLES + AccessDenied</td>
+        <td>E-02</td>
+        <td>A01:2021</td>
+        <td>A.8.3 Restricci&oacute;n de acceso</td>
+        <td><span class="badge badge-orange">Alta</span></td>
+      </tr>
+      <tr>
+        <td><strong>V-10</strong></td>
+        <td>Sin validaci&oacute;n de integridad en URLs de video de cursos</td>
+        <td><code>app/models/</code> &mdash; Curso model, migrate.py seed</td>
+        <td>T-03</td>
+        <td>A08:2021</td>
+        <td>A.8.9 Gesti&oacute;n de configuraci&oacute;n</td>
+        <td><span class="badge badge-yellow">Media</span></td>
+      </tr>
+      <tr>
+        <td><strong>V-11</strong></td>
+        <td>Sin pool limit expl&iacute;cito en AsyncEngine configuration</td>
+        <td><code>app/database.py</code> &mdash; create_async_engine</td>
+        <td>D-02</td>
+        <td>A04:2021</td>
+        <td>A.8.6 Gesti&oacute;n de capacidad</td>
+        <td><span class="badge badge-orange">Alta</span></td>
+      </tr>
+      <tr>
+        <td><strong>V-12</strong></td>
+        <td>Sin l&iacute;mite de tama&ntilde;o en payloads de request body</td>
+        <td><code>app/routers/*.py</code> &mdash; FastAPI default sin max_content_length</td>
+        <td>D-03</td>
+        <td>A04:2021</td>
+        <td>A.8.6 Gesti&oacute;n de capacidad</td>
+        <td><span class="badge badge-yellow">Media</span></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ETAPA 6 -->
+<div class="divider"></div>
+<section class="section" id="etapa6">
+  <div class="section-num">Etapa VI</div>
+  <div class="section-title">Modelado de Ataques</div>
+  <div class="section-desc">&Aacute;rboles de ataque que representan rutas de explotaci&oacute;n concretas contra ISO SECURE.</div>
+
+  <div class="narrative">
+    <p>La Etapa 6 de PASTA es lo que diferencia esta metodolog&iacute;a de enfoques puramente te&oacute;ricos: se <span class="highlight">simulan escenarios de ataque reales</span> mapeando c&oacute;mo un adversario podr&iacute;a encadenar las vulnerabilidades identificadas en la Etapa V para alcanzar los objetivos de ataque. Cada &aacute;rbol representa una cadena de acci&oacute;n desde el punto de entrada hasta el impacto en un objetivo de negocio.</p>
+  </div>
+
+  <!-- Attack Tree 1 -->
+  <div class="card card-red" style="margin-top:20px;">
+    <div class="card-title">&#x1f332; &Aacute;rbol de Ataque 1: Brecha de Datos Cross-Tenant</div>
+    <div class="card-sub">Objetivo: Acceder a controles ISO, riesgos e incidentes de otra empresa &mdash; Impacta OBJ-02</div>
+    <div style="padding:16px;background:var(--bg2);border-radius:10px;margin-top:12px;font-size:12px;">
+      <div style="background:rgba(239,68,68,0.15);border:1.5px solid rgba(239,68,68,0.3);border-radius:10px;padding:14px;text-align:center;margin-bottom:12px;">
+        <div style="font-size:14px;font-weight:800;color:#fca5a5;">&#x1f3af; META: Acceder a datos de otra empresa</div>
+        <div style="font-size:10px;color:var(--text2);">Impacto: Fuga de informaci&oacute;n regulatoria + incumplimiento ISO A.5.15</div>
+      </div>
+      <div style="text-align:center;color:var(--text2);padding:4px 0;">&#x250a; OR &#x250a;</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <!-- Path A -->
+        <div style="border:1px solid var(--border);border-radius:8px;padding:12px;">
+          <div style="font-weight:700;color:#fca5a5;margin-bottom:6px;">Ruta A: IDOR en API</div>
+          <div style="background:rgba(255,255,255,0.03);border-radius:6px;padding:8px;margin:4px 0;font-size:11px;">
+            <strong>1.</strong> Autenticarse con cuenta v&aacute;lida<br>
+            <strong>2.</strong> Enumerar empresa_id en GET /controls?empresa_id=X<br>
+            <strong>3.</strong> Si _empresa_filter() no valida en update/delete: modificar registros ajenos
+          </div>
+          <div style="margin-top:6px;"><span class="badge badge-red">V-03</span> <span class="badge badge-orange">V-09</span></div>
+        </div>
+        <!-- Path B -->
+        <div style="border:1px solid var(--border);border-radius:8px;padding:12px;">
+          <div style="font-weight:700;color:#fca5a5;margin-bottom:6px;">Ruta B: Escalamiento de rol</div>
+          <div style="background:rgba(255,255,255,0.03);border-radius:6px;padding:8px;margin:4px 0;font-size:11px;">
+            <strong>1.</strong> Registrarse con rol admin (V-04)<br>
+            <strong>2.</strong> Acceder como admin &rarr; ver datos de todas las empresas<br>
+            <strong>3.</strong> Exportar datos v&iacute;a /dashboard/export
+          </div>
+          <div style="margin-top:6px;"><span class="badge badge-red">V-04</span> <span class="badge badge-orange">V-09</span></div>
+        </div>
+        <!-- Path C -->
+        <div style="border:1px solid var(--border);border-radius:8px;padding:12px;">
+          <div style="font-weight:700;color:#fca5a5;margin-bottom:6px;">Ruta C: Token hijacking</div>
+          <div style="background:rgba(255,255,255,0.03);border-radius:6px;padding:8px;margin:4px 0;font-size:11px;">
+            <strong>1.</strong> Explotar XSS para robar JWT de localStorage (V-01)<br>
+            <strong>2.</strong> Usar token de admin/auditor para acceder a datos globales<br>
+            <strong>3.</strong> Exfiltrar v&iacute;a /api/v1/controls + /risk
+          </div>
+          <div style="margin-top:6px;"><span class="badge badge-red">V-01</span> <span class="badge badge-orange">V-06</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attack Tree 2 -->
+  <div class="card card-orange" style="margin-top:16px;">
+    <div class="card-title">&#x1f332; &Aacute;rbol de Ataque 2: Falsificar M&eacute;tricas de Compliance</div>
+    <div class="card-sub">Objetivo: Manipular KPIs para mostrar cumplimiento falso &mdash; Impacta OBJ-03</div>
+    <div style="padding:16px;background:var(--bg2);border-radius:10px;margin-top:12px;font-size:12px;">
+      <div style="background:rgba(245,158,11,0.15);border:1.5px solid rgba(245,158,11,0.3);border-radius:10px;padding:14px;text-align:center;margin-bottom:12px;">
+        <div style="font-size:14px;font-weight:800;color:#fcd34d;">&#x1f3af; META: Dashboard muestra 100% compliance falso</div>
+        <div style="font-size:10px;color:var(--text2);">Impacto: Auditor&iacute;a ISO basada en datos falsos + certificaci&oacute;n inv&aacute;lida</div>
+      </div>
+      <div style="text-align:center;color:var(--text2);padding:4px 0;">&#x250a; OR &#x250a;</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="border:1px solid var(--border);border-radius:8px;padding:12px;">
+          <div style="font-weight:700;color:#fcd34d;margin-bottom:6px;">Ruta A: Cambio masivo de controles</div>
+          <div style="background:rgba(255,255,255,0.03);border-radius:6px;padding:8px;margin:4px 0;font-size:11px;">
+            <strong>1.</strong> Obtener acceso con rol admin/auditor<br>
+            <strong>2.</strong> PATCH /controls/{id} &rarr; status: "compliant" para todos<br>
+            <strong>3.</strong> Sin audit log (V-05), el cambio no tiene trazabilidad<br>
+            <strong>4.</strong> GET /dashboard/summary refleja compliance 100%
+          </div>
+          <div style="margin-top:6px;"><span class="badge badge-red">V-04</span> <span class="badge badge-red">V-05</span></div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:8px;padding:12px;">
+          <div style="font-weight:700;color:#fcd34d;margin-bottom:6px;">Ruta B: Manipulaci&oacute;n de riesgos</div>
+          <div style="background:rgba(255,255,255,0.03);border-radius:6px;padding:8px;margin:4px 0;font-size:11px;">
+            <strong>1.</strong> POST /risk con probabilidad=1, impacto=1 para todos los dominios<br>
+            <strong>2.</strong> Sem&aacute;foro de dashboard cambia a verde<br>
+            <strong>3.</strong> Snapshots hist&oacute;ricos no detectan el salto abrupto<br>
+            <strong>4.</strong> Auditor ve riesgo "bajo" sin poder verificar origen
+          </div>
+          <div style="margin-top:6px;"><span class="badge badge-red">V-05</span> <span class="badge badge-orange">V-09</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attack Tree 3 -->
+  <div class="card card-pink" style="margin-top:16px;">
+    <div class="card-title">&#x1f332; &Aacute;rbol de Ataque 3: Obtener Acceso Administrativo Total</div>
+    <div class="card-sub">Objetivo: Escalar privilegios hasta rol admin &mdash; Impacta OBJ-06</div>
+    <div style="padding:16px;background:var(--bg2);border-radius:10px;margin-top:12px;font-size:12px;">
+      <div style="background:rgba(244,114,182,0.15);border:1.5px solid rgba(244,114,182,0.3);border-radius:10px;padding:14px;text-align:center;margin-bottom:12px;">
+        <div style="font-size:14px;font-weight:800;color:#f9a8d4;">&#x1f3af; META: Control total como admin del sistema</div>
+        <div style="font-size:10px;color:var(--text2);">Impacto: Acceso a todas las empresas + modificaci&oacute;n de roles + datos</div>
+      </div>
+      <div style="text-align:center;color:var(--text2);padding:4px 0;">&#x250a; OR &#x250a;</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div style="border:1px solid var(--border);border-radius:8px;padding:12px;">
+          <div style="font-weight:700;color:#f9a8d4;margin-bottom:6px;">Ruta A: Self-register admin</div>
+          <div style="background:rgba(255,255,255,0.03);border-radius:6px;padding:8px;margin:4px 0;font-size:11px;">
+            <strong>1.</strong> Crear cuenta en Supabase Auth<br>
+            <strong>2.</strong> POST /auth/register con {role: "admin"}<br>
+            <strong>3.</strong> Si endpoint no valida: perfil creado como admin
+          </div>
+          <div style="margin-top:6px;"><span class="badge badge-red">V-04</span></div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:8px;padding:12px;">
+          <div style="font-weight:700;color:#f9a8d4;margin-bottom:6px;">Ruta B: JWT token theft</div>
+          <div style="background:rgba(255,255,255,0.03);border-radius:6px;padding:8px;margin:4px 0;font-size:11px;">
+            <strong>1.</strong> Inyectar script XSS (si input no sanitizado)<br>
+            <strong>2.</strong> Leer localStorage &rarr; extraer JWT de admin<br>
+            <strong>3.</strong> Replay token en requests directos al API
+          </div>
+          <div style="margin-top:6px;"><span class="badge badge-red">V-01</span> <span class="badge badge-orange">V-06</span></div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:8px;padding:12px;">
+          <div style="font-weight:700;color:#f9a8d4;margin-bottom:6px;">Ruta C: PATCH propio perfil</div>
+          <div style="background:rgba(255,255,255,0.03);border-radius:6px;padding:8px;margin:4px 0;font-size:11px;">
+            <strong>1.</strong> Autenticarse como analista<br>
+            <strong>2.</strong> PATCH /auth/users/{self_id}/role con {role: "admin"}<br>
+            <strong>3.</strong> Si require_role no protege: escalamiento exitoso
+          </div>
+          <div style="margin-top:6px;"><span class="badge badge-red">V-04</span> <span class="badge badge-orange">V-09</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ETAPA 7 -->
+<div class="divider"></div>
+<section class="section" id="etapa7">
+  <div class="section-num">Etapa VII</div>
+  <div class="section-title">An&aacute;lisis de Riesgo e Impacto</div>
+  <div class="section-desc">Cuantificaci&oacute;n del riesgo residual y priorizaci&oacute;n de mitigaciones basada en impacto de negocio.</div>
+
+  <!-- Risk Matrix -->
+  <div class="card card-orange" style="margin-bottom:20px;">
+    <div class="card-title">&#x1f4ca; Matriz de Riesgo (Probabilidad &times; Impacto)</div>
+    <div class="card-sub">Clasificaci&oacute;n de las 24 amenazas por riesgo combinado</div>
+    <table style="width:100%;max-width:600px;margin:16px auto 0;border-collapse:collapse;text-align:center;font-size:11px;">
+      <thead>
+        <tr>
+          <th style="padding:10px;border:1px solid var(--border);background:rgba(255,255,255,0.04);"></th>
+          <th style="padding:10px;border:1px solid var(--border);background:rgba(255,255,255,0.04);">Impacto Bajo</th>
+          <th style="padding:10px;border:1px solid var(--border);background:rgba(255,255,255,0.04);">Impacto Medio</th>
+          <th style="padding:10px;border:1px solid var(--border);background:rgba(255,255,255,0.04);">Impacto Alto</th>
+          <th style="padding:10px;border:1px solid var(--border);background:rgba(255,255,255,0.04);">Impacto Cr&iacute;tico</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="padding:10px;border:1px solid var(--border);font-weight:700;background:rgba(255,255,255,0.04);">Prob. Alta</td>
+          <td style="padding:10px;border:1px solid var(--border);background:rgba(250,204,21,0.15);color:#fde68a;">Medio</td>
+          <td style="padding:10px;border:1px solid var(--border);background:rgba(245,158,11,0.2);color:#fcd34d;font-weight:700;">Alto</td>
+          <td style="padding:10px;border:1px solid var(--border);background:rgba(239,68,68,0.2);color:#fca5a5;font-weight:700;">D-01, E-04</td>
+          <td style="padding:10px;border:1px solid var(--border);background:rgba(239,68,68,0.3);color:#fca5a5;font-weight:700;">S-01, R-01, E-01</td>
+        </tr>
+        <tr>
+          <td style="padding:10px;border:1px solid var(--border);font-weight:700;background:rgba(255,255,255,0.04);">Prob. Media</td>
+          <td style="padding:10px;border:1px solid var(--border);background:rgba(16,185,129,0.1);color:#6ee7b7;">Bajo</td>
+          <td style="padding:10px;border:1px solid var(--border);background:rgba(250,204,21,0.15);color:#fde68a;">T-03, I-05, D-03</td>
+          <td style="padding:10px;border:1px solid var(--border);background:rgba(245,158,11,0.2);color:#fcd34d;font-weight:700;">S-02, T-01, I-02, I-03, D-02</td>
+          <td style="padding:10px;border:1px solid var(--border);background:rgba(239,68,68,0.2);color:#fca5a5;font-weight:700;">S-04, T-04, I-01</td>
+        </tr>
+        <tr>
+          <td style="padding:10px;border:1px solid var(--border);font-weight:700;background:rgba(255,255,255,0.04);">Prob. Baja</td>
+          <td style="padding:10px;border:1px solid var(--border);background:rgba(16,185,129,0.1);color:#6ee7b7;">Bajo</td>
+          <td style="padding:10px;border:1px solid var(--border);background:rgba(16,185,129,0.1);color:#6ee7b7;">R-03</td>
+          <td style="padding:10px;border:1px solid var(--border);background:rgba(250,204,21,0.15);color:#fde68a;">S-03, I-04, R-02, E-02</td>
+          <td style="padding:10px;border:1px solid var(--border);background:rgba(245,158,11,0.2);color:#fcd34d;font-weight:700;">T-02, D-04, E-03</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Prioritized Mitigations -->
+  <div class="card card-green">
+    <div class="card-title">&#x1f6e1;&#xfe0f; Hoja de Ruta de Mitigaciones Priorizada</div>
+    <div class="card-sub">Ordenada por riesgo residual &times; esfuerzo de implementaci&oacute;n</div>
+
+    <div style="margin-top:16px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <span class="badge badge-red" style="font-size:12px;padding:6px 14px;">INMEDIATO (Sprint 1&ndash;2)</span>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>Prioridad</th><th>Mitigaci&oacute;n</th><th>Vulnerabilidades</th><th>Amenazas Resueltas</th><th>Esfuerzo</th></tr></thead>
+        <tbody>
+          <tr><td><strong>P1</strong></td><td>Implementar validaci&oacute;n de rol en registro &mdash; require_role(["admin"]) en POST /auth/register o workflow de aprobaci&oacute;n</td><td>V-04</td><td>E-01, E-04</td><td><span class="badge badge-green">Bajo</span></td></tr>
+          <tr><td><strong>P2</strong></td><td>Audit logging completo &mdash; tabla audit_logs con user_id, acci&oacute;n, recurso, timestamp, IP en todos los services</td><td>V-05</td><td>R-01, R-02</td><td><span class="badge badge-yellow">Medio</span></td></tr>
+          <tr><td><strong>P3</strong></td><td>Rate limiting con slowapi &mdash; 100 req/min general, 10 req/min en /auth, 5 req/min en registro</td><td>V-02</td><td>S-02, D-01</td><td><span class="badge badge-green">Bajo</span></td></tr>
+          <tr><td><strong>P4</strong></td><td>Validar _empresa_filter() en TODOS los m&eacute;todos CRUD (create, read, update, delete) de cada service</td><td>V-03</td><td>I-01, E-03</td><td><span class="badge badge-yellow">Medio</span></td></tr>
+          <tr><td><strong>P5</strong></td><td>Migrar tokens de localStorage a httpOnly cookies &mdash; configurar SameSite=Strict, Secure=true</td><td>V-01</td><td>S-01</td><td><span class="badge badge-yellow">Medio</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:20px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <span class="badge badge-orange" style="font-size:12px;padding:6px 14px;">CORTO PLAZO (Sprint 3&ndash;4)</span>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>Prioridad</th><th>Mitigaci&oacute;n</th><th>Vulnerabilidades</th><th>Amenazas Resueltas</th><th>Esfuerzo</th></tr></thead>
+        <tbody>
+          <tr><td><strong>P6</strong></td><td>Restringir CORS a dominios espec&iacute;ficos de producci&oacute;n (no wildcard)</td><td>V-06</td><td>S-01, T-01</td><td><span class="badge badge-green">Bajo</span></td></tr>
+          <tr><td><strong>P7</strong></td><td>Configurar error handling personalizado &mdash; ocultar stack traces, retornar mensajes gen&eacute;ricos en producci&oacute;n</td><td>V-07</td><td>I-02, I-05</td><td><span class="badge badge-green">Bajo</span></td></tr>
+          <tr><td><strong>P8</strong></td><td>Eliminar SUPABASE_ANON_KEY hardcoded del frontend &mdash; usar solo variables de entorno</td><td>V-08</td><td>I-04</td><td><span class="badge badge-green">Bajo</span></td></tr>
+          <tr><td><strong>P9</strong></td><td>Configurar pool_size y max_overflow expl&iacute;citos en AsyncEngine</td><td>V-11</td><td>D-02</td><td><span class="badge badge-green">Bajo</span></td></tr>
+          <tr><td><strong>P10</strong></td><td>Implementar max_content_length en middleware o Nginx para limitar payloads</td><td>V-12</td><td>D-03</td><td><span class="badge badge-green">Bajo</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:20px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <span class="badge badge-yellow" style="font-size:12px;padding:6px 14px;">MEDIANO PLAZO (Sprint 5&ndash;8)</span>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>Prioridad</th><th>Mitigaci&oacute;n</th><th>Vulnerabilidades</th><th>Amenazas Resueltas</th><th>Esfuerzo</th></tr></thead>
+        <tbody>
+          <tr><td><strong>P11</strong></td><td>Firma digital en exportaciones PDF/Excel para garantizar integridad</td><td>&mdash;</td><td>R-03</td><td><span class="badge badge-orange">Alto</span></td></tr>
+          <tr><td><strong>P12</strong></td><td>Validaci&oacute;n de URLs de video con whitelist de dominios permitidos</td><td>V-10</td><td>T-03</td><td><span class="badge badge-green">Bajo</span></td></tr>
+          <tr><td><strong>P13</strong></td><td>Cache local de JWT validation para resiliencia ante ca&iacute;da de Supabase</td><td>&mdash;</td><td>D-04</td><td><span class="badge badge-yellow">Medio</span></td></tr>
+          <tr><td><strong>P14</strong></td><td>Detecci&oacute;n de anomal&iacute;as en snapshots &mdash; alertar cambios abruptos en compliance %</td><td>&mdash;</td><td>T-02, T-04</td><td><span class="badge badge-yellow">Medio</span></td></tr>
+          <tr><td><strong>P15</strong></td><td>Rotaci&oacute;n autom&aacute;tica de secretos (DATABASE_URL, ANON_KEY) con vault</td><td>&mdash;</td><td>I-03</td><td><span class="badge badge-orange">Alto</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- INTEGRACION -->
+<div class="divider"></div>
+<section class="section" id="integracion">
+  <div class="section-num">Secci&oacute;n 08</div>
+  <div class="section-title">Integraci&oacute;n PASTA + STRIDE</div>
+  <div class="section-desc">C&oacute;mo las 7 etapas de PASTA se complementan con la categorizaci&oacute;n STRIDE para un an&aacute;lisis completo.</div>
+
+  <div class="narrative">
+    <p>La integraci&oacute;n de ambas metodolog&iacute;as sigue un flujo <span class="highlight">top-down</span>: PASTA proporciona el marco estrat&eacute;gico (desde objetivos de negocio hasta cuantificaci&oacute;n de riesgo) mientras que STRIDE actua como <span class="highlight-red">motor de categorizaci&oacute;n</span> dentro de la Etapa IV. Esta combinaci&oacute;n es reconocida como best practice en la industria porque:</p>
+    <p><strong>PASTA sin STRIDE</strong> identifica amenazas pero carece de una taxonom&iacute;a sistem&aacute;tica &mdash; podr&iacute;a omitir categor&iacute;as completas como Repudiation o Elevation of Privilege.</p>
+    <p><strong>STRIDE sin PASTA</strong> categoriza amenazas pero no las conecta con impacto de negocio ni simula ataques reales &mdash; genera listas de amenazas sin priorizaci&oacute;n contextual.</p>
+    <p><strong>PASTA + STRIDE</strong> garantiza cobertura completa (6 categor&iacute;as STRIDE) dentro de un proceso que cuantifica riesgo y prioriza por valor de negocio (7 etapas PASTA).</p>
+  </div>
+
+  <table class="compare-table" style="margin-top:16px;">
+    <thead>
+      <tr>
+        <th style="width:15%;">Etapa PASTA</th>
+        <th style="width:20%;">Actividad</th>
+        <th style="width:20%;">Rol de STRIDE</th>
+        <th style="width:25%;">Resultado para ISO SECURE</th>
+        <th style="width:20%;">Documento</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong style="color:#f87171;">I. Objetivos</strong></td>
+        <td>Definir qu&eacute; proteger y por qu&eacute;</td>
+        <td>&mdash; (PASTA exclusivo)</td>
+        <td>6 objetivos estrat&eacute;gicos del SGSI identificados</td>
+        <td>Secci&oacute;n Etapa I (este documento)</td>
+      </tr>
+      <tr>
+        <td><strong style="color:#fbbf24;">II. Alcance</strong></td>
+        <td>Inventariar componentes y tecnolog&iacute;as</td>
+        <td>&mdash; (PASTA exclusivo)</td>
+        <td>3 capas, 8 activos cr&iacute;ticos, 12 vulnerabilidades</td>
+        <td>Secci&oacute;n Etapa II (este documento)</td>
+      </tr>
+      <tr>
+        <td><strong style="color:#fde68a;">III. Descomposici&oacute;n</strong></td>
+        <td>Crear DFD + trust boundaries</td>
+        <td>STRIDE mapea amenazas por elemento DFD</td>
+        <td>4 trust boundaries, DFD de 4 niveles</td>
+        <td><a href="threat-modeling.html" style="color:var(--orange)">threat-modeling.html</a> &sect;3</td>
+      </tr>
+      <tr>
+        <td><strong style="color:#6ee7b7;">IV. An&aacute;lisis</strong></td>
+        <td>Identificar y categorizar amenazas</td>
+        <td><strong style="color:var(--red);">STRIDE es el motor principal</strong> &mdash; 6 categor&iacute;as aplicadas</td>
+        <td>24 amenazas: 4S + 4T + 3R + 5I + 4D + 4E</td>
+        <td><a href="threat-modeling.html" style="color:var(--orange)">threat-modeling.html</a> &sect;4</td>
+      </tr>
+      <tr>
+        <td><strong style="color:#93bbfc;">V. Vulnerabilidades</strong></td>
+        <td>Correlacionar con debilidades en c&oacute;digo</td>
+        <td>STRIDE categoriza el tipo de vulnerabilidad</td>
+        <td>12 vulnerabilidades mapeadas a OWASP + ISO A</td>
+        <td>Secci&oacute;n Etapa V (este documento)</td>
+      </tr>
+      <tr>
+        <td><strong style="color:#c4b5fd;">VI. Ataques</strong></td>
+        <td>Simular &aacute;rboles de ataque</td>
+        <td>STRIDE informa las categor&iacute;as en cada nodo</td>
+        <td>3 &aacute;rboles: cross-tenant, compliance falso, admin access</td>
+        <td><a href="threat-modeling.html" style="color:var(--orange)">threat-modeling.html</a> &sect;5</td>
+      </tr>
+      <tr>
+        <td><strong style="color:#f9a8d4;">VII. Riesgo</strong></td>
+        <td>Cuantificar y priorizar mitigaciones</td>
+        <td>&mdash; (PASTA exclusivo)</td>
+        <td>Matriz P&times;I + 15 mitigaciones priorizadas en 3 fases</td>
+        <td>Secci&oacute;n Etapa VII (este documento)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="card card-purple" style="margin-top:20px;">
+    <div class="card-title">&#x1f504; Ciclo de Mejora Continua</div>
+    <div class="card-sub">Alineaci&oacute;n con el ciclo PDCA de ISO 27001:2022</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-top:12px;">
+      <div style="background:rgba(79,143,247,0.08);border:1px solid rgba(79,143,247,0.2);border-radius:10px;padding:14px;text-align:center;">
+        <div style="font-size:20px;font-weight:800;color:#93bbfc;">P</div>
+        <div style="font-size:11px;font-weight:700;">PLAN</div>
+        <div style="font-size:10px;color:var(--text2);margin-top:4px;">Ejecutar PASTA Etapas I&ndash;IV: definir objetivos, alcance, descomponer y analizar amenazas</div>
+      </div>
+      <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:14px;text-align:center;">
+        <div style="font-size:20px;font-weight:800;color:#6ee7b7;">D</div>
+        <div style="font-size:11px;font-weight:700;">DO</div>
+        <div style="font-size:10px;color:var(--text2);margin-top:4px;">Implementar mitigaciones P1&ndash;P15 seg&uacute;n hoja de ruta priorizada</div>
+      </div>
+      <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:14px;text-align:center;">
+        <div style="font-size:20px;font-weight:800;color:#fbbf24;">C</div>
+        <div style="font-size:11px;font-weight:700;">CHECK</div>
+        <div style="font-size:10px;color:var(--text2);margin-top:4px;">Re-ejecutar PASTA Etapas V&ndash;VII: verificar vulnerabilidades corregidas y riesgo residual</div>
+      </div>
+      <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:14px;text-align:center;">
+        <div style="font-size:20px;font-weight:800;color:#f87171;">A</div>
+        <div style="font-size:11px;font-weight:700;">ACT</div>
+        <div style="font-size:10px;color:var(--text2);margin-top:4px;">Actualizar cat&aacute;logo de amenazas, ajustar prioridades, alimentar pr&oacute;ximo ciclo PASTA</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONCLUSIONES -->
+<div class="divider"></div>
+<section class="section" id="conclusiones">
+  <div class="section-num">Secci&oacute;n 09</div>
+  <div class="section-title">Conclusiones y Recomendaciones</div>
+  <div class="section-desc">Hallazgos principales y pr&oacute;ximos pasos del modelamiento de amenazas.</div>
+
+  <div class="grid-2">
+    <div class="card card-orange">
+      <div class="card-title">&#x1f4cb; Hallazgos Principales</div>
+      <div class="card-sub">Resultados clave del an&aacute;lisis PASTA + STRIDE</div>
+      <ul class="checklist" style="margin-top:8px;">
+        <li><span class="check-icon check-done">&#x2713;</span><div><strong>24 amenazas identificadas</strong> en 6 categor&iacute;as STRIDE, con 8 clasificadas como cr&iacute;ticas</div></li>
+        <li><span class="check-icon check-done">&#x2713;</span><div><strong>12 vulnerabilidades</strong> concretas mapeadas a ubicaciones espec&iacute;ficas en el c&oacute;digo fuente</div></li>
+        <li><span class="check-icon check-done">&#x2713;</span><div><strong>3 &aacute;rboles de ataque</strong> con rutas de explotaci&oacute;n verificables contra la arquitectura actual</div></li>
+        <li><span class="check-icon check-done">&#x2713;</span><div><strong>4 trust boundaries</strong> identificados en el DFD con controles existentes evaluados</div></li>
+        <li><span class="check-icon check-done">&#x2713;</span><div><strong>15 mitigaciones</strong> priorizadas en 3 fases alineadas con sprints de desarrollo</div></li>
+        <li><span class="check-icon check-done">&#x2713;</span><div><strong>Correlaci&oacute;n directa</strong> con controles ISO 27001 Anexo A y OWASP Top 10 2021</div></li>
+      </ul>
+    </div>
+    <div class="card card-red">
+      <div class="card-title">&#x1f6a8; Riesgos Cr&iacute;ticos que Requieren Acci&oacute;n Inmediata</div>
+      <div class="card-sub">Top 5 por impacto combinado en objetivos de negocio</div>
+      <ul class="checklist" style="margin-top:8px;">
+        <li><span class="check-icon check-pending">!</span><div><strong>V-04: Registro sin aprobaci&oacute;n</strong> &mdash; Permite auto-asignaci&oacute;n de rol admin. Impacta OBJ-02, OBJ-06.</div></li>
+        <li><span class="check-icon check-pending">!</span><div><strong>V-05: Sin audit logging</strong> &mdash; Cambios cr&iacute;ticos sin trazabilidad. Impacta OBJ-03, OBJ-05.</div></li>
+        <li><span class="check-icon check-pending">!</span><div><strong>V-02: Sin rate limiting</strong> &mdash; Fuerza bruta y DoS sin restricci&oacute;n. Impacta OBJ-04.</div></li>
+        <li><span class="check-icon check-pending">!</span><div><strong>V-03: _empresa_filter() incompleto</strong> &mdash; Posible fuga cross-tenant. Impacta OBJ-02.</div></li>
+        <li><span class="check-icon check-pending">!</span><div><strong>V-01: JWT en localStorage</strong> &mdash; Vulnerable a XSS token theft. Impacta OBJ-06.</div></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="narrative" style="margin-top:20px;">
+    <p><strong>Conclusi&oacute;n metodol&oacute;gica:</strong> La adopci&oacute;n de <span class="highlight">PASTA + STRIDE</span> como framework combinado de modelamiento de amenazas proporciona a ISO SECURE un enfoque <strong>completo y repetible</strong> para la gesti&oacute;n de amenazas. PASTA aporta la conexi&oacute;n estrat&eacute;gica con los objetivos del SGSI y la simulaci&oacute;n de ataques reales, mientras que STRIDE garantiza la cobertura sistem&aacute;tica de las 6 propiedades de seguridad fundamentales.</p>
+    <p>El an&aacute;lisis revela que el sistema tiene una <span class="highlight-green">base s&oacute;lida</span> en cuanto a autenticaci&oacute;n (Supabase JWT), validaci&oacute;n de datos (Pydantic v2) y prevenci&oacute;n de inyecci&oacute;n (SQLAlchemy ORM parametrizado). Sin embargo, las 5 vulnerabilidades cr&iacute;ticas identificadas requieren atenci&oacute;n inmediata, especialmente V-04 (registro sin aprobaci&oacute;n) y V-05 (sin audit logging), que comprometen directamente los objetivos de <span class="highlight-red">cumplimiento ISO 27001</span>.</p>
+    <p>Se recomienda ejecutar las mitigaciones P1&ndash;P5 en los pr&oacute;ximos <strong>2 sprints</strong>, re-ejecutar las Etapas V&ndash;VII de PASTA para verificar la reducci&oacute;n del riesgo residual, y mantener el cat&aacute;logo de amenazas actualizado como parte del ciclo PDCA del SGSI.</p>
+  </div>
+
+  <div class="card card-green" style="margin-top:16px;">
+    <div class="card-title">&#x1f517; Documentos Relacionados</div>
+    <div class="card-sub">Documentaci&oacute;n completa del sistema ISO SECURE</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px;">
+      <a href="arquitectura.html" style="text-decoration:none;display:block;background:rgba(79,143,247,0.08);border:1px solid rgba(79,143,247,0.2);border-radius:10px;padding:14px;text-align:center;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+        <div style="font-size:24px;margin-bottom:6px;">&#x1f3d7;&#xfe0f;</div>
+        <div style="font-size:12px;font-weight:700;color:var(--blue);">Arquitectura del Sistema</div>
+        <div style="font-size:10px;color:var(--text2);">7 secciones &mdash; backend, frontend, stack, deploy, auth, datos</div>
+      </a>
+      <a href="threat-modeling.html" style="text-decoration:none;display:block;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:14px;text-align:center;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+        <div style="font-size:24px;margin-bottom:6px;">&#x1f6e1;&#xfe0f;</div>
+        <div style="font-size:12px;font-weight:700;color:var(--red);">Modelamiento STRIDE</div>
+        <div style="font-size:10px;color:var(--text2);">24 amenazas &mdash; DFD, &aacute;rboles, cat&aacute;logo, mitigaciones</div>
+      </a>
+      <a href="docs.html" style="text-decoration:none;display:block;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:14px;text-align:center;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+        <div style="font-size:24px;margin-bottom:6px;">&#x1f4d6;</div>
+        <div style="font-size:12px;font-weight:700;color:var(--green);">Documentaci&oacute;n API v2.0</div>
+        <div style="font-size:10px;color:var(--text2);">39 endpoints &mdash; schemas, modelos, ejemplos</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <strong>ISO SECURE</strong> &mdash; Metodolog&iacute;a de Modelamiento de Amenazas PASTA + STRIDE<br>
+  Universidad de San Buenaventura &mdash; Ingenier&iacute;a de Sistemas &mdash; 2026<br>
+  <span style="color:var(--text2);font-size:10px;">Generado como parte del SGSI conforme a ISO/IEC 27001:2022</span>
+</footer>
+
+</body>
+</html>

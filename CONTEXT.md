@@ -21,6 +21,7 @@
 | 6 | Manual de usuario con videos por modulo + anexos XLSX | ✅ Pusheado |
 | 7 | **Documentacion de arquitectura completa** — HTML interactivo con 7 secciones: arquitectura general, backend, frontend, stack tecnologico, despliegue, autenticacion/RBAC, modelo de datos ER | ✅ Pusheado |
 | 8 | **Modelamiento de amenazas STRIDE** — HTML interactivo con 9 secciones: metodologia, alcance, DFD, analisis STRIDE, arboles de amenazas, catalogo (24 amenazas), matriz de riesgo, mitigaciones, conclusiones | ✅ Pusheado |
+| 9 | **Metodologia PASTA + STRIDE** — HTML interactivo con 9 secciones: justificacion, comparativa de 6 metodologias, 7 etapas PASTA aplicadas, 12 vulnerabilidades, 3 arboles de ataque, matriz P×I, 15 mitigaciones priorizadas, integracion PDCA | ✅ Pusheado |
 
 ### Ultimo commit pusheado
 ```
@@ -175,6 +176,15 @@ Frontend: `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` en `/frontend/.env` (o 
 - 24 amenazas identificadas: S-01 a S-04, T-01 a T-04, R-01 a R-03, I-01 a I-05, D-01 a D-04, E-01 a E-04
 - 8 amenazas criticas, 3 arboles de amenazas (brecha cross-tenant, falsificar metricas, obtener acceso admin)
 - Hoja de ruta de seguridad priorizada: inmediato (5), corto plazo (5), mediano plazo (5)
+
+### Metodologia PASTA + STRIDE (Fase 9)
+- Archivo: `frontend/public/metodologia-amenazas.html` — HTML interactivo con navegacion fija
+- 9 secciones: Justificacion, Comparativa, PASTA 7 Etapas, Etapas I-VII aplicadas, Integracion, Conclusiones
+- Comparativa de 6 metodologias: PASTA (adoptada), STRIDE (integrada), VAST, OCTAVE, DREAD, LINDDUN
+- 7 etapas PASTA aplicadas al sistema: objetivos de negocio, alcance tecnico, DFD, STRIDE, vulnerabilidades, arboles de ataque, riesgo/impacto
+- 12 vulnerabilidades mapeadas a OWASP Top 10 + controles ISO 27001 Anexo A
+- 15 mitigaciones priorizadas en 3 fases (inmediato, corto plazo, mediano plazo)
+- Ciclo de mejora continua PDCA alineado con ISO 27001:2022
 
 ### Deuda tecnica conocida
 - `dummyChartData` en dashboard → reemplazar con datos reales de `/snapshots`

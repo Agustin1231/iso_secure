@@ -10,6 +10,8 @@ La documentacion visual completa de la arquitectura esta disponible en [`/fronte
 
 El modelamiento de amenazas STRIDE (Microsoft Threat Modeling) esta disponible en [`/frontend/public/threat-modeling.html`](frontend/public/threat-modeling.html) — incluye DFD, 24 amenazas identificadas, arboles de amenazas, matriz de riesgo y hoja de ruta de mitigaciones.
 
+La metodologia adoptada PASTA + STRIDE esta documentada en [`/frontend/public/metodologia-amenazas.html`](frontend/public/metodologia-amenazas.html) — incluye justificacion, comparativa de 6 metodologias, 7 etapas PASTA aplicadas, 12 vulnerabilidades con mapeo OWASP/ISO, y 15 mitigaciones priorizadas.
+
 ### Stack Tecnologico
 
 | Capa | Tecnologia | Version |
