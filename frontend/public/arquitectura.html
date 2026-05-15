@@ -1,0 +1,1631 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISO SECURE — Arquitectura Completa del Sistema</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  :root {
+    --bg-primary: #0a0e1a;
+    --bg-secondary: #111827;
+    --bg-card: #1a1f35;
+    --border: #2a3050;
+    --text-primary: #f0f4ff;
+    --text-secondary: #8892b0;
+    --accent-blue: #4f8ff7;
+    --accent-green: #10b981;
+    --accent-orange: #f59e0b;
+    --accent-red: #ef4444;
+    --accent-purple: #a78bfa;
+    --accent-cyan: #22d3ee;
+    --accent-pink: #f472b6;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+  }
+
+  /* ========== NAVIGATION ========== */
+  .nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: rgba(10, 14, 26, 0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+  }
+  .nav-inner {
+    max-width: 1300px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    height: 60px;
+    gap: 8px;
+    overflow-x: auto;
+  }
+  .nav-logo {
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--accent-blue);
+    white-space: nowrap;
+    margin-right: 12px;
+    flex-shrink: 0;
+  }
+  .nav-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 8px;
+    white-space: nowrap;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .nav-link:hover {
+    background: rgba(79, 143, 247, 0.1);
+    color: var(--accent-blue);
+  }
+
+  /* ========== HERO ========== */
+  .hero {
+    padding: 120px 40px 60px;
+    text-align: center;
+    background: radial-gradient(ellipse at top, rgba(79,143,247,0.08) 0%, transparent 60%);
+  }
+  .hero-badge {
+    display: inline-block;
+    background: rgba(79,143,247,0.1);
+    border: 1px solid rgba(79,143,247,0.3);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-blue);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .hero h1 {
+    font-size: 48px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #fff 0%, #a78bfa 50%, #4f8ff7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+    line-height: 1.1;
+  }
+  .hero p {
+    font-size: 18px;
+    color: var(--text-secondary);
+    max-width: 700px;
+    margin: 0 auto 30px;
+  }
+  .hero-stats {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    flex-wrap: wrap;
+  }
+  .hero-stat {
+    text-align: center;
+  }
+  .hero-stat-num {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--accent-blue);
+  }
+  .hero-stat-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* ========== SECTIONS ========== */
+  .section {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 60px 40px;
+  }
+  .section-header {
+    margin-bottom: 40px;
+  }
+  .section-num {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent-blue);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .section-title {
+    font-size: 36px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    line-height: 1.2;
+  }
+  .section-desc {
+    font-size: 15px;
+    color: var(--text-secondary);
+    max-width: 700px;
+  }
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin: 0 40px;
+  }
+
+  /* ========== CARDS & BOXES ========== */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .card-blue::before { background: linear-gradient(90deg, #4f8ff7, #22d3ee); }
+  .card-green::before { background: linear-gradient(90deg, #10b981, #34d399); }
+  .card-orange::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+  .card-red::before { background: linear-gradient(90deg, #ef4444, #f87171); }
+  .card-purple::before { background: linear-gradient(90deg, #a78bfa, #c4b5fd); }
+  .card-cyan::before { background: linear-gradient(90deg, #22d3ee, #67e8f9); }
+  .card-pink::before { background: linear-gradient(90deg, #f472b6, #f9a8d4); }
+
+  .card-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card-subtitle {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+  }
+
+  .badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    margin: 2px;
+  }
+  .badge-blue { background: rgba(79,143,247,0.12); color: #93bbfc; border-color: rgba(79,143,247,0.25); }
+  .badge-green { background: rgba(16,185,129,0.12); color: #6ee7b7; border-color: rgba(16,185,129,0.25); }
+  .badge-orange { background: rgba(245,158,11,0.12); color: #fcd34d; border-color: rgba(245,158,11,0.25); }
+  .badge-red { background: rgba(239,68,68,0.12); color: #fca5a5; border-color: rgba(239,68,68,0.25); }
+  .badge-purple { background: rgba(167,139,250,0.12); color: #c4b5fd; border-color: rgba(167,139,250,0.25); }
+
+  /* ========== GRIDS ========== */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+
+  /* ========== FLOW / ARROWS ========== */
+  .flow-vertical {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .flow-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0;
+  }
+  .flow-arrow-line {
+    width: 3px;
+    height: 30px;
+    background: linear-gradient(to bottom, var(--border), var(--text-secondary));
+    position: relative;
+  }
+  .flow-arrow-line::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-top: 9px solid var(--text-secondary);
+  }
+  .flow-arrow-label {
+    font-size: 10px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+  }
+
+  /* ========== LAYER LABEL ========== */
+  .layer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0 14px;
+  }
+  .layer-tag {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    padding: 5px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+  .layer-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ========== SECTION 1: GENERAL ========== */
+  .arch-general-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .arch-row {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    width: 100%;
+  }
+  .arch-box {
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+    flex: 1;
+    max-width: 280px;
+    min-width: 200px;
+  }
+  .arch-box-icon { font-size: 36px; margin-bottom: 8px; }
+  .arch-box-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .arch-box-detail { font-size: 11px; opacity: 0.85; line-height: 1.5; }
+
+  .ab-client { background: linear-gradient(135deg, #1e3a5f, #2563eb); border: 2px solid #60a5fa; }
+  .ab-frontend { background: linear-gradient(135deg, #064e3b, #059669); border: 2px solid #34d399; }
+  .ab-backend { background: linear-gradient(135deg, #7c2d12, #ea580c); border: 2px solid #fb923c; }
+  .ab-database { background: linear-gradient(135deg, #164e63, #0891b2); border: 2px solid #22d3ee; }
+  .ab-auth { background: linear-gradient(135deg, #581c87, #9333ea); border: 2px solid #c084fc; }
+  .ab-ai { background: linear-gradient(135deg, #4c1d95, #7c3aed); border: 2px solid #a78bfa; }
+  .ab-infra { background: linear-gradient(135deg, #374151, #6b7280); border: 2px solid #9ca3af; }
+  .arch-box-wide { max-width: 100%; flex: unset; width: 100%; }
+
+  /* ========== SECTION 2: BACKEND LAYERS ========== */
+  .backend-layer {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .bl-box {
+    background: var(--bg-card);
+    border: 1.5px solid;
+    border-radius: 12px;
+    padding: 14px 18px;
+    text-align: center;
+    min-width: 120px;
+    flex: 1;
+    max-width: 180px;
+  }
+  .bl-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .bl-detail { font-size: 10px; color: var(--text-secondary); line-height: 1.4; }
+
+  .bl-entry { border-color: #fb923c; }
+  .bl-auth { border-color: #f87171; }
+  .bl-router { border-color: #60a5fa; }
+  .bl-schema { border-color: #c084fc; }
+  .bl-service { border-color: #34d399; }
+  .bl-model { border-color: #22d3ee; }
+  .bl-db { border-color: #818cf8; }
+  .bl-util { border-color: #9ca3af; }
+
+  /* ========== SECTION 3: FRONTEND ========== */
+  .fe-state-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .fe-list {
+    list-style: none;
+    padding: 0;
+  }
+  .fe-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    font-size: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .fe-list li:last-child { border: none; }
+  .fe-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .fe-view-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+  }
+  .fe-view {
+    background: rgba(167,139,250,0.08);
+    border: 1px solid rgba(167,139,250,0.2);
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+  }
+  .fe-view-title { font-size: 13px; font-weight: 700; color: #c4b5fd; margin-bottom: 4px; }
+  .fe-view-detail { font-size: 10px; color: var(--text-secondary); }
+
+  /* ========== SECTION 4: TECH STACK ========== */
+  .tech-col {
+    border-radius: 16px;
+    padding: 20px;
+    border: 1.5px solid;
+    position: relative;
+    overflow: hidden;
+  }
+  .tech-col::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .tc-frontend { border-color: #059669; background: rgba(5,150,105,0.05); }
+  .tc-frontend::before { background: linear-gradient(90deg, #059669, #34d399); }
+  .tc-backend { border-color: #ea580c; background: rgba(234,88,12,0.05); }
+  .tc-backend::before { background: linear-gradient(90deg, #ea580c, #fb923c); }
+  .tc-data { border-color: #0891b2; background: rgba(8,145,178,0.05); }
+  .tc-data::before { background: linear-gradient(90deg, #0891b2, #22d3ee); }
+  .tc-infra { border-color: #9333ea; background: rgba(147,51,234,0.05); }
+  .tc-infra::before { background: linear-gradient(90deg, #9333ea, #c084fc); }
+  .tc-quality { border-color: #ca8a04; background: rgba(202,138,4,0.05); }
+  .tc-quality::before { background: linear-gradient(90deg, #ca8a04, #facc15); }
+
+  .tc-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tech-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+  .tech-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 800;
+    flex-shrink: 0;
+    color: #fff;
+  }
+  .tech-name { font-size: 13px; font-weight: 600; }
+  .tech-desc { font-size: 10px; color: var(--text-secondary); }
+  .tech-ver {
+    margin-left: auto;
+    font-size: 10px;
+    background: rgba(255,255,255,0.08);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  /* ========== SECTION 5: DEPLOY ========== */
+  .docker-host {
+    border: 2px dashed #475569;
+    border-radius: 16px;
+    padding: 28px;
+    position: relative;
+    background: rgba(255,255,255,0.01);
+  }
+  .docker-label {
+    position: absolute;
+    top: -13px;
+    left: 24px;
+    background: var(--bg-primary);
+    padding: 0 14px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-secondary);
+  }
+  .container-card {
+    border-radius: 14px;
+    padding: 20px;
+    border: 1.5px solid;
+    flex: 1;
+  }
+  .cc-frontend { border-color: #059669; background: rgba(5,150,105,0.06); }
+  .cc-backend { border-color: #ea580c; background: rgba(234,88,12,0.06); }
+  .cc-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cc-row {
+    display: flex;
+    align-items: center;
+    padding: 5px 0;
+    font-size: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    gap: 8px;
+  }
+  .cc-row:last-child { border: none; }
+  .cc-label { color: var(--text-secondary); min-width: 90px; font-size: 11px; }
+  .cc-value { font-weight: 600; }
+  .port-tag {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .pt-green { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid #22c55e; }
+  .pt-orange { background: rgba(249,115,22,0.15); color: #fb923c; border: 1px solid #f97316; }
+
+  .network-bar {
+    background: rgba(99,102,241,0.08);
+    border: 1.5px solid #818cf8;
+    border-radius: 12px;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #a5b4fc;
+  }
+
+  .ext-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-top: 14px;
+  }
+  .ext-box {
+    border-radius: 12px;
+    padding: 18px;
+    text-align: center;
+    border: 1.5px solid;
+  }
+  .ext-supa { border-color: #22c55e; background: rgba(34,197,94,0.06); }
+  .ext-ai { border-color: #9333ea; background: rgba(147,51,234,0.06); }
+  .ext-cdn { border-color: #3b82f6; background: rgba(59,130,246,0.06); }
+  .ext-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .ext-detail { font-size: 11px; color: var(--text-secondary); line-height: 1.5; }
+
+  .pipeline {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 14px;
+  }
+  .pipe-step {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    text-align: center;
+    min-width: 130px;
+  }
+  .pipe-num { font-size: 9px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+  .pipe-title { font-size: 12px; font-weight: 700; margin-bottom: 3px; }
+  .pipe-detail { font-size: 10px; color: var(--text-secondary); }
+  .pipe-arrow { color: var(--text-secondary); font-size: 20px; }
+
+  /* ========== SECTION 6: AUTH FLOW ========== */
+  .swimlane {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    margin-bottom: 6px;
+  }
+  .swim-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+    padding: 10px;
+    border-radius: 12px 0 0 12px;
+    letter-spacing: 1px;
+  }
+  .swim-content {
+    padding: 14px 16px;
+    border-radius: 0 12px 12px 0;
+    border-left: 3px solid;
+  }
+  .sl-fe { background: rgba(5,150,105,0.04); }
+  .sl-fe .swim-label { background: rgba(5,150,105,0.15); color: #34d399; }
+  .sl-fe .swim-content { border-color: #059669; }
+  .sl-be { background: rgba(234,88,12,0.04); }
+  .sl-be .swim-label { background: rgba(234,88,12,0.15); color: #fb923c; }
+  .sl-be .swim-content { border-color: #ea580c; }
+  .sl-su { background: rgba(34,197,94,0.04); }
+  .sl-su .swim-label { background: rgba(34,197,94,0.15); color: #4ade80; }
+  .sl-su .swim-content { border-color: #22c55e; }
+
+  .flow-h {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .flow-step {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 8px 12px;
+    text-align: center;
+    min-width: 120px;
+  }
+  .fs-num { font-size: 8px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; }
+  .fs-title { font-size: 11px; font-weight: 700; }
+  .fs-detail { font-size: 9px; color: var(--text-secondary); }
+  .fs-highlight { border-color: #f87171; background: rgba(239,68,68,0.06); }
+  .fs-success { border-color: #22c55e; background: rgba(34,197,94,0.06); }
+  .flow-h-arrow { color: var(--text-secondary); font-size: 14px; font-weight: 700; }
+
+  /* RBAC Table */
+  .rbac-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .rbac-table th {
+    background: rgba(255,255,255,0.04);
+    padding: 10px 12px;
+    text-align: center;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    font-size: 11px;
+  }
+  .rbac-table td {
+    padding: 8px 10px;
+    text-align: center;
+    border: 1px solid var(--border);
+    font-size: 11px;
+  }
+  .rbac-table tr:nth-child(even) { background: rgba(255,255,255,0.015); }
+  .rbac-check { color: #4ade80; font-weight: 700; }
+  .rbac-cross { color: #475569; }
+  .role-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .rt-admin { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+  .rt-auditor { background: rgba(167,139,250,0.12); color: #c4b5fd; border: 1px solid rgba(167,139,250,0.3); }
+  .rt-supervisor { background: rgba(59,130,246,0.12); color: #93bbfc; border: 1px solid rgba(59,130,246,0.3); }
+  .rt-analista { background: rgba(16,185,129,0.12); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
+
+  /* ========== SECTION 7: DATA MODEL ========== */
+  .entity {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1.5px solid;
+  }
+  .entity-header {
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  .entity-tname {
+    font-size: 10px;
+    font-weight: 400;
+    opacity: 0.7;
+    margin-left: auto;
+  }
+  .entity-body { padding: 0; background: rgba(0,0,0,0.25); }
+  .field {
+    display: flex;
+    align-items: center;
+    padding: 4px 14px;
+    font-size: 11px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    gap: 6px;
+  }
+  .field:last-child { border: none; }
+  .field-name { font-weight: 600; min-width: 130px; }
+  .field-type { color: var(--text-secondary); font-size: 10px; flex: 1; }
+  .fk-tag {
+    font-size: 8px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .fk-pk { background: rgba(250,204,21,0.15); color: #facc15; border: 1px solid rgba(250,204,21,0.4); }
+  .fk-fk { background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.4); }
+  .fk-uq { background: rgba(236,72,153,0.15); color: #f472b6; border: 1px solid rgba(236,72,153,0.4); }
+  .fk-en { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.4); }
+
+  .e-empresa { border-color: #dc2626; }
+  .e-empresa .entity-header { background: linear-gradient(135deg, #7f1d1d, #dc2626); }
+  .e-incident { border-color: #eab308; }
+  .e-incident .entity-header { background: linear-gradient(135deg, #713f12, #eab308); }
+  .e-control { border-color: #22c55e; }
+  .e-control .entity-header { background: linear-gradient(135deg, #14532d, #22c55e); }
+  .e-risk { border-color: #06b6d4; }
+  .e-risk .entity-header { background: linear-gradient(135deg, #164e63, #06b6d4); }
+  .e-user { border-color: #f97316; }
+  .e-user .entity-header { background: linear-gradient(135deg, #7c2d12, #f97316); }
+  .e-snapshot { border-color: #8b5cf6; }
+  .e-snapshot .entity-header { background: linear-gradient(135deg, #4c1d95, #8b5cf6); }
+  .e-curso { border-color: #ec4899; }
+  .e-curso .entity-header { background: linear-gradient(135deg, #831843, #ec4899); }
+  .e-progreso { border-color: #f472b6; }
+  .e-progreso .entity-header { background: linear-gradient(135deg, #9d174d, #f472b6); }
+  .e-auditoria { border-color: #3b82f6; }
+  .e-auditoria .entity-header { background: linear-gradient(135deg, #1e3a5f, #3b82f6); }
+
+  .rel-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .rel-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.05);
+    font-size: 12px;
+  }
+  .rel-from { font-weight: 700; color: #fb923c; min-width: 100px; }
+  .rel-arrow { color: var(--text-secondary); font-size: 14px; }
+  .rel-to { font-weight: 700; color: #60a5fa; }
+  .rel-type { margin-left: auto; font-size: 9px; color: var(--text-secondary); background: rgba(255,255,255,0.04); padding: 2px 8px; border-radius: 4px; }
+
+  .enums-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .enum-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+  }
+  .enum-name { font-size: 12px; font-weight: 700; color: #4ade80; margin-bottom: 6px; }
+  .enum-val { font-size: 10px; color: var(--text-secondary); padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+  .enum-val:last-child { border: none; }
+
+  /* ========== FOOTER ========== */
+  .footer {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+  }
+  .footer strong { color: var(--text-primary); }
+
+  /* ========== RESPONSIVE ========== */
+  @media (max-width: 900px) {
+    .grid-2, .grid-3, .grid-4, .grid-5, .fe-state-grid, .ext-grid, .rel-grid, .enums-grid {
+      grid-template-columns: 1fr;
+    }
+    .hero h1 { font-size: 32px; }
+    .section { padding: 40px 20px; }
+    .arch-row { flex-direction: column; align-items: center; }
+    .swimlane { grid-template-columns: 1fr; }
+    .swim-label { writing-mode: horizontal-tb; transform: none; border-radius: 12px 12px 0 0; }
+    .swim-content { border-radius: 0 0 12px 12px; border-left: none; border-top: 3px solid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== NAVIGATION ========== -->
+<nav class="nav">
+  <div class="nav-inner">
+    <span class="nav-logo">ISO SECURE</span>
+    <a href="#general" class="nav-link">Arquitectura General</a>
+    <a href="#backend" class="nav-link">Backend</a>
+    <a href="#frontend" class="nav-link">Frontend</a>
+    <a href="#stack" class="nav-link">Stack Tecnologico</a>
+    <a href="#deploy" class="nav-link">Despliegue</a>
+    <a href="#auth" class="nav-link">Autenticacion</a>
+    <a href="#data" class="nav-link">Modelo de Datos</a>
+  </div>
+</nav>
+
+<!-- ========== HERO ========== -->
+<section class="hero">
+  <div class="hero-badge">Documento de Arquitectura</div>
+  <h1>ISO SECURE</h1>
+  <p>Plataforma de Cumplimiento ISO 27001 — Arquitectura completa del sistema, tecnologias adoptadas y diseno de cada capa</p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-num">39</div>
+      <div class="hero-stat-label">API Endpoints</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">9</div>
+      <div class="hero-stat-label">Modulos</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">9</div>
+      <div class="hero-stat-label">Tablas DB</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">4</div>
+      <div class="hero-stat-label">Roles RBAC</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">93</div>
+      <div class="hero-stat-label">Controles ISO</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ====================================================================== -->
+<!-- SECTION 1: ARQUITECTURA GENERAL -->
+<!-- ====================================================================== -->
+<section class="section" id="general">
+  <div class="section-header">
+    <div class="section-num">01</div>
+    <h2 class="section-title">Arquitectura General del Sistema</h2>
+    <p class="section-desc">Vision de alto nivel: flujo de datos desde el cliente hasta la base de datos y servicios externos.</p>
+  </div>
+
+  <div class="arch-general-grid">
+    <!-- Clients -->
+    <div class="arch-row">
+      <div class="arch-box ab-client">
+        <div class="arch-box-icon">&#x1F310;</div>
+        <div class="arch-box-title">Navegador Web</div>
+        <div class="arch-box-detail">Chrome / Firefox / Edge<br><span class="badge">HTTPS</span> <span class="badge">Puerto 3000</span></div>
+      </div>
+      <div class="arch-box ab-client">
+        <div class="arch-box-icon">&#x1F4F1;</div>
+        <div class="arch-box-title">Dispositivo Movil</div>
+        <div class="arch-box-detail">Responsive Design<br><span class="badge">Mobile First</span></div>
+      </div>
+    </div>
+
+    <div class="flow-arrow">
+      <div class="flow-arrow-line"></div>
+      <div class="flow-arrow-label">HTTP/HTTPS Requests</div>
+    </div>
+
+    <!-- Frontend -->
+    <div class="arch-row">
+      <div class="arch-box ab-frontend" style="max-width:500px;">
+        <div class="arch-box-icon">&#x269B;&#xFE0F;</div>
+        <div class="arch-box-title">Frontend — React 19 + Vite 8</div>
+        <div class="arch-box-detail">
+          SPA servida por Nginx Alpine<br>
+          <span class="badge badge-green">React Router</span> <span class="badge badge-green">Chart.js</span> <span class="badge badge-green">Framer Motion</span> <span class="badge badge-green">Axios</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-arrow">
+      <div class="flow-arrow-line"></div>
+      <div class="flow-arrow-label">REST API &middot; JSON &middot; JWT Bearer Token</div>
+    </div>
+
+    <!-- Backend -->
+    <div class="arch-row">
+      <div class="arch-box ab-backend" style="max-width:500px;">
+        <div class="arch-box-icon">&#x1F680;</div>
+        <div class="arch-box-title">Backend — FastAPI + Python 3.13</div>
+        <div class="arch-box-detail">
+          Uvicorn ASGI &middot; SQLAlchemy 2.0 Async<br>
+          <span class="badge badge-orange">39 Endpoints</span> <span class="badge badge-orange">9 Routers</span> <span class="badge badge-orange">Pydantic v2</span> <span class="badge badge-orange">RBAC</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-arrow">
+      <div class="flow-arrow-line"></div>
+      <div class="flow-arrow-label">asyncpg &middot; SQL Queries &middot; HTTPX</div>
+    </div>
+
+    <!-- Data & Services -->
+    <div class="arch-row" style="gap: 20px;">
+      <div class="arch-box ab-database">
+        <div class="arch-box-icon">&#x1F5C4;&#xFE0F;</div>
+        <div class="arch-box-title">PostgreSQL</div>
+        <div class="arch-box-detail">Supabase Cloud<br><span class="badge badge-blue">9 Tablas</span> <span class="badge badge-blue">Multi-tenant</span></div>
+      </div>
+      <div class="arch-box ab-auth">
+        <div class="arch-box-icon">&#x1F510;</div>
+        <div class="arch-box-title">Supabase Auth</div>
+        <div class="arch-box-detail">JWT Validation<br><span class="badge badge-purple">OAuth 2.0</span> <span class="badge badge-purple">REST</span></div>
+      </div>
+      <div class="arch-box ab-ai">
+        <div class="arch-box-icon">&#x1F916;</div>
+        <div class="arch-box-title">ISORA Chat AI</div>
+        <div class="arch-box-detail">Asistente Virtual<br><span class="badge badge-purple">SSE Streaming</span></div>
+      </div>
+    </div>
+
+    <!-- Infra bar -->
+    <div style="margin-top: 20px; width: 100%;">
+      <div class="arch-box ab-infra arch-box-wide" style="max-width:100%;">
+        <div class="arch-box-title" style="font-size:14px;">&#x1F433; Infraestructura Docker Compose</div>
+        <div class="arch-box-detail">
+          <span class="badge">Backend Container :8001</span>
+          <span class="badge">Frontend Container :3000</span>
+          <span class="badge">Bridge Network</span>
+          <span class="badge">Auto-Migrations</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ====================================================================== -->
+<!-- SECTION 2: BACKEND -->
+<!-- ====================================================================== -->
+<section class="section" id="backend">
+  <div class="section-header">
+    <div class="section-num">02</div>
+    <h2 class="section-title">Arquitectura Backend</h2>
+    <p class="section-desc">Patron Layered Architecture: cada capa tiene una responsabilidad unica y se comunica solo con la capa adyacente.</p>
+  </div>
+
+  <!-- Entry -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#fb923c;">&#x1F4E1; Punto de Entrada</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="backend-layer">
+    <div class="bl-box bl-entry" style="max-width:100%;flex:unset;width:100%;">
+      <div class="bl-title">main.py — FastAPI Application</div>
+      <div class="bl-detail">Uvicorn ASGI &middot; Puerto 8000 &middot; <span class="badge badge-orange">CORS</span> <span class="badge badge-orange">Lifespan</span> <span class="badge badge-orange">OpenAPI /docs</span> <span class="badge badge-orange">9 Router Includes</span></div>
+    </div>
+  </div>
+
+  <div class="flow-arrow"><div class="flow-arrow-line"></div><div class="flow-arrow-label">HTTP Request &rarr; Middleware Pipeline</div></div>
+
+  <!-- Auth -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#f87171;">&#x1F510; Autenticacion & Middleware</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="backend-layer">
+    <div class="bl-box bl-auth"><div class="bl-title">auth.py</div><div class="bl-detail">get_supabase_user()<br><span class="badge badge-red">JWT Validation</span></div></div>
+    <div class="bl-box bl-auth"><div class="bl-title">get_current_user</div><div class="bl-detail">Profile + Role Lookup<br><span class="badge badge-red">DB Query</span></div></div>
+    <div class="bl-box bl-auth"><div class="bl-title">require_role()</div><div class="bl-detail">RBAC Factory<br><span class="badge badge-red">Dependency Injection</span></div></div>
+    <div class="bl-box bl-entry"><div class="bl-title">CORS Middleware</div><div class="bl-detail">Cross-Origin<br><span class="badge badge-orange">AllowAll</span></div></div>
+  </div>
+
+  <div class="flow-arrow"><div class="flow-arrow-line"></div><div class="flow-arrow-label">Authenticated Request &rarr; Router Dispatch</div></div>
+
+  <!-- Routers -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#60a5fa;">&#x1F6E3;&#xFE0F; Capa de Routers (API /api/v1)</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="backend-layer">
+    <div class="bl-box bl-router"><div class="bl-title">auth_router</div><div class="bl-detail"><span class="badge badge-blue">/auth</span> 5 eps</div></div>
+    <div class="bl-box bl-router"><div class="bl-title">incidents</div><div class="bl-detail"><span class="badge badge-blue">/incidents</span> 5 eps</div></div>
+    <div class="bl-box bl-router"><div class="bl-title">controls</div><div class="bl-detail"><span class="badge badge-blue">/controls</span> 4 eps</div></div>
+    <div class="bl-box bl-router"><div class="bl-title">risk</div><div class="bl-detail"><span class="badge badge-blue">/risk</span> 4 eps</div></div>
+    <div class="bl-box bl-router"><div class="bl-title">dashboard</div><div class="bl-detail"><span class="badge badge-blue">/dashboard</span> 3 eps</div></div>
+  </div>
+  <div class="backend-layer" style="margin-top:8px;">
+    <div class="bl-box bl-router"><div class="bl-title">empresa</div><div class="bl-detail"><span class="badge badge-blue">/empresas</span> 4 eps</div></div>
+    <div class="bl-box bl-router"><div class="bl-title">capacitaciones</div><div class="bl-detail"><span class="badge badge-blue">/capacitaciones</span> 4 eps</div></div>
+    <div class="bl-box bl-router"><div class="bl-title">implementacion</div><div class="bl-detail"><span class="badge badge-blue">/implementacion</span> 3 eps</div></div>
+    <div class="bl-box bl-router"><div class="bl-title">auditoria</div><div class="bl-detail"><span class="badge badge-blue">/auditoria</span> 4 eps</div></div>
+    <div class="bl-box bl-router"><div class="bl-title">snapshots</div><div class="bl-detail"><span class="badge badge-blue">/snapshots</span> 2 eps</div></div>
+  </div>
+
+  <div class="flow-arrow"><div class="flow-arrow-line"></div><div class="flow-arrow-label">Request Validation &rarr; Pydantic Schemas</div></div>
+
+  <!-- Schemas -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#c084fc;">&#x1F4CB; Capa de Schemas (Pydantic v2)</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="backend-layer">
+    <div class="bl-box bl-schema" style="max-width:320px;"><div class="bl-title">Request / Response Schemas</div><div class="bl-detail"><span class="badge badge-purple">IncidentCreate</span> <span class="badge badge-purple">ControlUpdate</span> <span class="badge badge-purple">RiskCreate</span> <span class="badge badge-purple">EmpresaCreate</span> <span class="badge badge-purple">DashboardSummary</span></div></div>
+    <div class="bl-box bl-schema" style="max-width:200px;"><div class="bl-title">Validacion</div><div class="bl-detail"><span class="badge badge-purple">Type Safety</span> <span class="badge badge-purple">Serialization</span> <span class="badge badge-purple">Auto OpenAPI</span></div></div>
+  </div>
+
+  <div class="flow-arrow"><div class="flow-arrow-line"></div><div class="flow-arrow-label">Validated Data &rarr; Business Logic</div></div>
+
+  <!-- Services -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#34d399;">&#x2699;&#xFE0F; Capa de Servicios (Business Logic)</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="backend-layer">
+    <div class="bl-box bl-service"><div class="bl-title">incident_service</div><div class="bl-detail">CRUD + Stats · MTTR</div></div>
+    <div class="bl-box bl-service"><div class="bl-title">control_service</div><div class="bl-detail">Compliance %</div></div>
+    <div class="bl-box bl-service"><div class="bl-title">risk_service</div><div class="bl-detail">Score = P &times; I</div></div>
+    <div class="bl-box bl-service"><div class="bl-title">dashboard_service</div><div class="bl-detail">KPI Aggregation</div></div>
+    <div class="bl-box bl-service"><div class="bl-title">empresa_service</div><div class="bl-detail">Multi-tenant</div></div>
+  </div>
+  <div class="backend-layer" style="margin-top:8px;">
+    <div class="bl-box bl-service"><div class="bl-title">capacitacion_service</div><div class="bl-detail">Cursos + Progreso</div></div>
+    <div class="bl-box bl-service"><div class="bl-title">auditoria_service</div><div class="bl-detail">Checklist</div></div>
+    <div class="bl-box bl-service"><div class="bl-title">snapshot_service</div><div class="bl-detail">Historicos KPI</div></div>
+  </div>
+
+  <div class="flow-arrow"><div class="flow-arrow-line"></div><div class="flow-arrow-label">ORM Queries &rarr; SQLAlchemy Async</div></div>
+
+  <!-- Models -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#22d3ee;">&#x1F5C2;&#xFE0F; Capa de Modelos (SQLAlchemy 2.0)</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="backend-layer">
+    <div class="bl-box bl-model"><div class="bl-title">Incident</div></div>
+    <div class="bl-box bl-model"><div class="bl-title">Control</div></div>
+    <div class="bl-box bl-model"><div class="bl-title">RiskLevel</div></div>
+    <div class="bl-box bl-model"><div class="bl-title">KPISnapshot</div></div>
+    <div class="bl-box bl-model"><div class="bl-title">Empresa</div></div>
+  </div>
+  <div class="backend-layer" style="margin-top:8px;">
+    <div class="bl-box bl-model"><div class="bl-title">UserProfile</div></div>
+    <div class="bl-box bl-model"><div class="bl-title">Curso</div></div>
+    <div class="bl-box bl-model"><div class="bl-title">CursoProgreso</div></div>
+    <div class="bl-box bl-model"><div class="bl-title">AuditoriaItem</div></div>
+  </div>
+
+  <div class="flow-arrow"><div class="flow-arrow-line"></div><div class="flow-arrow-label">asyncpg Driver &rarr; PostgreSQL</div></div>
+
+  <!-- DB -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#818cf8;">&#x1F5C4;&#xFE0F; Base de Datos</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="backend-layer">
+    <div class="bl-box bl-db" style="max-width:100%;flex:unset;width:100%;">
+      <div class="bl-title">PostgreSQL — Supabase Cloud</div>
+      <div class="bl-detail"><span class="badge badge-blue">AsyncEngine</span> <span class="badge badge-blue">AsyncSession</span> <span class="badge badge-blue">Connection Pool</span> <span class="badge badge-blue">Alembic Migrations</span> <span class="badge badge-blue">9 Tablas</span> <span class="badge badge-blue">8 Enums</span></div>
+    </div>
+  </div>
+
+  <!-- Utils -->
+  <div class="layer" style="margin-top:24px;">
+    <span class="layer-tag" style="color:#9ca3af;">&#x1F527; Utilidades Transversales</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="backend-layer">
+    <div class="bl-box bl-util"><div class="bl-title">enums.py</div><div class="bl-detail">8 Enums del sistema</div></div>
+    <div class="bl-box bl-util"><div class="bl-title">actividad_controles.py</div><div class="bl-detail">93 controles ISO &middot; 7 sectores</div></div>
+    <div class="bl-box bl-util"><div class="bl-title">database.py</div><div class="bl-detail">AsyncEngine + SessionLocal</div></div>
+    <div class="bl-box bl-util"><div class="bl-title">migrate.py</div><div class="bl-detail">Alembic auto-migration</div></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ====================================================================== -->
+<!-- SECTION 3: FRONTEND -->
+<!-- ====================================================================== -->
+<section class="section" id="frontend">
+  <div class="section-header">
+    <div class="section-num">03</div>
+    <h2 class="section-title">Arquitectura Frontend</h2>
+    <p class="section-desc">Single Page Application con React 19, Vite 8 como build tool y Nginx como servidor de produccion.</p>
+  </div>
+
+  <!-- Build & Entry -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#fb923c;">&#x26A1; Build & Entry Point</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="grid-4">
+    <div class="card card-orange"><div class="card-title" style="font-size:14px;">Vite 8</div><div class="card-subtitle">Build Tool &middot; HMR &middot; ESBuild &middot; Tree Shaking</div></div>
+    <div class="card card-orange"><div class="card-title" style="font-size:14px;">index.html</div><div class="card-subtitle">HTML Entry &middot; Root Mount Point</div></div>
+    <div class="card card-orange"><div class="card-title" style="font-size:14px;">main.jsx</div><div class="card-subtitle">ReactDOM &middot; StrictMode &middot; BrowserRouter</div></div>
+    <div class="card card-orange"><div class="card-title" style="font-size:14px;">Nginx Alpine</div><div class="card-subtitle">Production Server &middot; SPA Fallback</div></div>
+  </div>
+
+  <div class="flow-arrow"><div class="flow-arrow-line"></div><div class="flow-arrow-label">React Tree &rarr; App.jsx (Root Component)</div></div>
+
+  <!-- State & Auth -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#60a5fa;">&#x1F4E6; Estado & Autenticacion</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="fe-state-grid">
+    <div class="card card-blue">
+      <div class="card-title" style="font-size:14px;">&#x1F4E6; Estado Global (useState + useEffect)</div>
+      <ul class="fe-list">
+        <li><div class="fe-dot" style="background:#60a5fa"></div><strong>session / user</strong> &mdash; Supabase Auth State</li>
+        <li><div class="fe-dot" style="background:#60a5fa"></div><strong>userProfile</strong> &mdash; Rol + Empresa del usuario</li>
+        <li><div class="fe-dot" style="background:#60a5fa"></div><strong>currentView</strong> &mdash; Vista activa (11 vistas)</li>
+        <li><div class="fe-dot" style="background:#60a5fa"></div><strong>darkMode</strong> &mdash; Tema claro/oscuro</li>
+        <li><div class="fe-dot" style="background:#60a5fa"></div><strong>sidebarOpen</strong> &mdash; Estado sidebar movil</li>
+        <li><div class="fe-dot" style="background:#60a5fa"></div><strong>incidents / controls / risks</strong> &mdash; Data arrays</li>
+        <li><div class="fe-dot" style="background:#60a5fa"></div><strong>dashboardData</strong> &mdash; KPIs consolidados</li>
+      </ul>
+    </div>
+    <div class="card card-red">
+      <div class="card-title" style="font-size:14px;">&#x1F510; Flujo de Autenticacion</div>
+      <ul class="fe-list">
+        <li><div class="fe-dot" style="background:#f87171"></div><strong>Login</strong> &mdash; signInWithPassword</li>
+        <li><div class="fe-dot" style="background:#f87171"></div><strong>Register</strong> &mdash; signUp + register-profile</li>
+        <li><div class="fe-dot" style="background:#f87171"></div><strong>Session Check</strong> &mdash; getSession() on mount</li>
+        <li><div class="fe-dot" style="background:#f87171"></div><strong>Token Inject</strong> &mdash; Axios interceptor Bearer</li>
+        <li><div class="fe-dot" style="background:#f87171"></div><strong>Role Guard</strong> &mdash; VIEW_ROLES map</li>
+        <li><div class="fe-dot" style="background:#f87171"></div><strong>AccessDenied</strong> &mdash; Componente de bloqueo</li>
+        <li><div class="fe-dot" style="background:#f87171"></div><strong>Logout</strong> &mdash; signOut + clear state</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="flow-arrow"><div class="flow-arrow-line"></div><div class="flow-arrow-label">currentView &rarr; Render Condicional</div></div>
+
+  <!-- Views -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#c084fc;">&#x1F5A5;&#xFE0F; Vistas del Sistema (11 Modulos)</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="fe-view-grid">
+    <div class="fe-view"><div class="fe-view-title">Dashboard</div><div class="fe-view-detail">KPIs &middot; Charts &middot; Quick Access</div></div>
+    <div class="fe-view"><div class="fe-view-title">Incidentes</div><div class="fe-view-detail">CRUD &middot; Filtros &middot; Stats</div></div>
+    <div class="fe-view"><div class="fe-view-title">Controles</div><div class="fe-view-detail">ISO 27001 &middot; Compliance</div></div>
+    <div class="fe-view"><div class="fe-view-title">Riesgos</div><div class="fe-view-detail">Matriz P&times;I &middot; Dominios</div></div>
+    <div class="fe-view"><div class="fe-view-title">Historial</div><div class="fe-view-detail">Snapshots &middot; Tendencias</div></div>
+    <div class="fe-view"><div class="fe-view-title">Empresas</div><div class="fe-view-detail">Multi-tenant &middot; Controles</div></div>
+    <div class="fe-view"><div class="fe-view-title">Usuarios</div><div class="fe-view-detail">Admin Only &middot; Roles</div></div>
+    <div class="fe-view"><div class="fe-view-title">Capacitaciones</div><div class="fe-view-detail">Videos &middot; Progreso</div></div>
+    <div class="fe-view"><div class="fe-view-title">Implementacion</div><div class="fe-view-detail">Tareas &middot; Estado</div></div>
+    <div class="fe-view"><div class="fe-view-title">Auditoria</div><div class="fe-view-detail">Checklist &middot; Evaluacion</div></div>
+    <div class="fe-view"><div class="fe-view-title">Resumen</div><div class="fe-view-detail">Export &middot; Anexos XLSX</div></div>
+  </div>
+
+  <div class="flow-arrow"><div class="flow-arrow-line"></div><div class="flow-arrow-label">UI Rendering &rarr; Librerias Visuales + API</div></div>
+
+  <!-- Libraries -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#facc15;">&#x1F4DA; Librerias & Comunicacion</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="grid-4">
+    <div class="card card-orange"><div class="card-title" style="font-size:13px;">Chart.js 4.5</div><div class="card-subtitle">Graficas KPI &middot; Doughnut &middot; Bar &middot; Line</div></div>
+    <div class="card card-pink"><div class="card-title" style="font-size:13px;">Framer Motion</div><div class="card-subtitle">Animaciones &middot; Transitions &middot; Variants</div></div>
+    <div class="card card-blue"><div class="card-title" style="font-size:13px;">Axios + api.js</div><div class="card-subtitle">HTTP Client &middot; Bearer Auto-inject</div></div>
+    <div class="card card-green"><div class="card-title" style="font-size:13px;">Supabase Client</div><div class="card-subtitle">Auth Methods &middot; createClient()</div></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ====================================================================== -->
+<!-- SECTION 4: STACK TECNOLOGICO -->
+<!-- ====================================================================== -->
+<section class="section" id="stack">
+  <div class="section-header">
+    <div class="section-num">04</div>
+    <h2 class="section-title">Stack Tecnologico</h2>
+    <p class="section-desc">Todas las tecnologias adoptadas en cada capa del sistema con sus versiones.</p>
+  </div>
+
+  <div class="grid-3">
+    <!-- Frontend -->
+    <div class="tech-col tc-frontend">
+      <div class="tc-title" style="color:#34d399;">&#x269B;&#xFE0F; FRONTEND</div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#06b6d4,#0891b2);">R</div><div><div class="tech-name">React</div><div class="tech-desc">Libreria UI &middot; Componentes reactivos</div></div><div class="tech-ver">v19.0</div></div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#a855f7,#7c3aed);">V</div><div><div class="tech-name">Vite</div><div class="tech-desc">Build tool &middot; HMR &middot; ESBuild</div></div><div class="tech-ver">v8.0</div></div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#ef4444,#dc2626);">R</div><div><div class="tech-name">React Router DOM</div><div class="tech-desc">Navegacion SPA</div></div><div class="tech-ver">v7.13</div></div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#f97316,#ea580c);">C</div><div><div class="tech-name">Chart.js</div><div class="tech-desc">Graficas interactivas</div></div><div class="tech-ver">v4.5</div></div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#ec4899,#db2777);">F</div><div><div class="tech-name">Framer Motion</div><div class="tech-desc">Animaciones UI</div></div><div class="tech-ver">v12.38</div></div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#6366f1,#4f46e5);">A</div><div><div class="tech-name">Axios</div><div class="tech-desc">HTTP Client</div></div><div class="tech-ver">v1.13</div></div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#64748b,#475569);">L</div><div><div class="tech-name">Lucide React</div><div class="tech-desc">577 iconos SVG</div></div><div class="tech-ver">v0.577</div></div>
+    </div>
+
+    <!-- Backend -->
+    <div class="tech-col tc-backend">
+      <div class="tc-title" style="color:#fb923c;">&#x1F680; BACKEND</div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#059669,#047857);">F</div><div><div class="tech-name">FastAPI</div><div class="tech-desc">Framework REST async</div></div><div class="tech-ver">v0.111+</div></div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#3b82f6,#fbbf24);">Py</div><div><div class="tech-name">Python</div><div class="tech-desc">Lenguaje principal</div></div><div class="tech-ver">v3.13</div></div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#dc2626,#991b1b);">S</div><div><div class="tech-name">SQLAlchemy</div><div class="tech-desc">ORM async &middot; Mapped types</div></div><div class="tech-ver">v2.0+</div></div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#e11d48,#be123c);">P</div><div><div class="tech-name">Pydantic</div><div class="tech-desc">Validacion &middot; Schemas</div></div><div class="tech-ver">v2</div></div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);">U</div><div><div class="tech-name">Uvicorn</div><div class="tech-desc">ASGI Server</div></div><div class="tech-ver">latest</div></div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#6b7280,#4b5563);">A</div><div><div class="tech-name">Alembic</div><div class="tech-desc">Migraciones DB</div></div><div class="tech-ver">latest</div></div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#0ea5e9,#0284c7);">H</div><div><div class="tech-name">HTTPX</div><div class="tech-desc">HTTP async client</div></div><div class="tech-ver">latest</div></div>
+    </div>
+
+    <!-- Data -->
+    <div class="tech-col tc-data">
+      <div class="tc-title" style="color:#22d3ee;">&#x1F5C4;&#xFE0F; DATOS & AUTH</div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);">P</div><div><div class="tech-name">PostgreSQL</div><div class="tech-desc">Base de datos relacional</div></div><div class="tech-ver">v15+</div></div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#22c55e,#16a34a);">S</div><div><div class="tech-name">Supabase</div><div class="tech-desc">BaaS &middot; Auth &middot; DB</div></div><div class="tech-ver">Cloud</div></div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#0ea5e9,#0284c7);">a</div><div><div class="tech-name">asyncpg</div><div class="tech-desc">Driver PostgreSQL async</div></div><div class="tech-ver">latest</div></div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#f472b6,#ec4899);">J</div><div><div class="tech-name">JWT</div><div class="tech-desc">Autenticacion stateless</div></div><div class="tech-ver">OAuth 2.0</div></div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#ef4444,#b91c1c);">R</div><div><div class="tech-name">RBAC</div><div class="tech-desc">4 roles &middot; Control acceso</div></div><div class="tech-ver">Custom</div></div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:16px;">
+    <!-- Infra -->
+    <div class="tech-col tc-infra">
+      <div class="tc-title" style="color:#c084fc;">&#x1F433; INFRAESTRUCTURA</div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);">D</div><div><div class="tech-name">Docker</div><div class="tech-desc">Contenedores multi-stage</div></div><div class="tech-ver">latest</div></div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#06b6d4,#0891b2);">DC</div><div><div class="tech-name">Docker Compose</div><div class="tech-desc">Orquestacion</div></div><div class="tech-ver">v3.8</div></div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#22c55e,#15803d);">N</div><div><div class="tech-name">Nginx</div><div class="tech-desc">Reverse proxy &middot; Static</div></div><div class="tech-ver">Alpine</div></div>
+    </div>
+    <!-- Quality -->
+    <div class="tech-col tc-quality">
+      <div class="tc-title" style="color:#facc15;">&#x1F527; CALIDAD & HERRAMIENTAS</div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#84cc16,#65a30d);">O</div><div><div class="tech-name">OpenAPI / Swagger</div><div class="tech-desc">Documentacion auto-generada</div></div><div class="tech-ver">v3.1</div></div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);">E</div><div><div class="tech-name">ESLint</div><div class="tech-desc">Linter JavaScript/React</div></div><div class="tech-ver">v9</div></div>
+      <div class="tech-item"><div class="tech-icon" style="background:linear-gradient(135deg,#f97316,#ea580c);">G</div><div><div class="tech-name">Git + GitHub</div><div class="tech-desc">Control de versiones</div></div><div class="tech-ver">latest</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ====================================================================== -->
+<!-- SECTION 5: DESPLIEGUE -->
+<!-- ====================================================================== -->
+<section class="section" id="deploy">
+  <div class="section-header">
+    <div class="section-num">05</div>
+    <h2 class="section-title">Arquitectura de Despliegue</h2>
+    <p class="section-desc">Contenedores Docker, servicios externos y pipeline de build/deploy.</p>
+  </div>
+
+  <!-- Docker Host -->
+  <div class="docker-host">
+    <div class="docker-label">&#x1F433; Docker Compose &mdash; app-network (bridge)</div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;">
+      <div class="container-card cc-frontend">
+        <div class="cc-title" style="color:#34d399;">&#x1F4E6; Frontend Container <span class="port-tag pt-green">:3000 &rarr; :80</span></div>
+        <div class="cc-row"><span class="cc-label">Imagen:</span><span class="cc-value">nginx:alpine</span></div>
+        <div class="cc-row"><span class="cc-label">Build:</span><span class="cc-value">Node 20 Alpine &rarr; npm ci &amp;&amp; npm run build</span></div>
+        <div class="cc-row"><span class="cc-label">Serve:</span><span class="cc-value">dist/ &rarr; nginx static + SPA fallback</span></div>
+        <div class="cc-row"><span class="cc-label">Contenido:</span><span class="cc-value"><span class="badge badge-green">React SPA</span> <span class="badge badge-green">HTML/CSS/JS</span></span></div>
+      </div>
+      <div class="container-card cc-backend">
+        <div class="cc-title" style="color:#fb923c;">&#x1F4E6; Backend Container <span class="port-tag pt-orange">:8001 &rarr; :8000</span></div>
+        <div class="cc-row"><span class="cc-label">Imagen:</span><span class="cc-value">python:3.13-slim</span></div>
+        <div class="cc-row"><span class="cc-label">Pre-flight:</span><span class="cc-value">python migrate.py (Alembic)</span></div>
+        <div class="cc-row"><span class="cc-label">Servidor:</span><span class="cc-value">uvicorn main:app --port 8000</span></div>
+        <div class="cc-row"><span class="cc-label">Env Vars:</span><span class="cc-value"><span class="badge badge-orange">DATABASE_URL</span> <span class="badge badge-orange">SUPABASE_URL</span> <span class="badge badge-orange">SUPABASE_KEYS</span></span></div>
+      </div>
+    </div>
+    <div class="network-bar">
+      &#x1F517; app-network (bridge driver) &mdash;
+      <span class="badge">frontend &harr; backend</span>
+      <span class="badge">DNS interno</span>
+      <span class="badge">Aislamiento de red</span>
+    </div>
+  </div>
+
+  <!-- External Services -->
+  <div class="layer" style="margin-top:24px;">
+    <span class="layer-tag" style="color:#4ade80;">&#x2601;&#xFE0F; Servicios Externos</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="ext-grid">
+    <div class="ext-box ext-supa">
+      <div class="ext-title" style="color:#4ade80;">&#x1F7E2; Supabase Cloud</div>
+      <div class="ext-detail"><span class="badge badge-green">PostgreSQL DB</span> <span class="badge badge-green">Auth Service</span><br>9 tablas &middot; JWT &middot; Connection pooling</div>
+    </div>
+    <div class="ext-box ext-ai">
+      <div class="ext-title" style="color:#c084fc;">&#x1F916; ISORA AI Service</div>
+      <div class="ext-detail"><span class="badge badge-purple">SSE Streaming</span> <span class="badge badge-purple">Chat Widget</span><br>Asistente virtual ISO 27001</div>
+    </div>
+    <div class="ext-box ext-cdn">
+      <div class="ext-title" style="color:#60a5fa;">&#x1F3A5; YouTube CDN</div>
+      <div class="ext-detail"><span class="badge badge-blue">Video Embeds</span> <span class="badge badge-blue">Capacitaciones</span><br>Videos de formacion &middot; iframe</div>
+    </div>
+  </div>
+
+  <!-- Pipeline -->
+  <div class="layer" style="margin-top:24px;">
+    <span class="layer-tag" style="color:#9ca3af;">&#x1F504; Pipeline de Build & Deploy</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="pipeline">
+    <div class="pipe-step"><div class="pipe-num">Paso 1</div><div class="pipe-title">docker compose build</div><div class="pipe-detail">Multi-stage build</div></div>
+    <div class="pipe-arrow">&rarr;</div>
+    <div class="pipe-step"><div class="pipe-num">Paso 2</div><div class="pipe-title">migrate.py</div><div class="pipe-detail">Alembic upgrade head</div></div>
+    <div class="pipe-arrow">&rarr;</div>
+    <div class="pipe-step"><div class="pipe-num">Paso 3</div><div class="pipe-title">uvicorn start</div><div class="pipe-detail">Backend :8000</div></div>
+    <div class="pipe-arrow">&rarr;</div>
+    <div class="pipe-step"><div class="pipe-num">Paso 4</div><div class="pipe-title">nginx serve</div><div class="pipe-detail">Frontend :80</div></div>
+    <div class="pipe-arrow">&rarr;</div>
+    <div class="pipe-step" style="border-color:#22c55e;"><div class="pipe-num">Listo</div><div class="pipe-title" style="color:#4ade80;">Sistema Online</div><div class="pipe-detail">:3000 + :8001</div></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ====================================================================== -->
+<!-- SECTION 6: AUTENTICACION -->
+<!-- ====================================================================== -->
+<section class="section" id="auth">
+  <div class="section-header">
+    <div class="section-num">06</div>
+    <h2 class="section-title">Flujo de Autenticacion y Autorizacion</h2>
+    <p class="section-desc">Supabase JWT, RBAC con 4 roles y filtrado multi-tenant por empresa.</p>
+  </div>
+
+  <!-- Login Flow -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#60a5fa;">&#x1F511; Flujo de Login</span>
+    <div class="layer-line"></div>
+  </div>
+
+  <div class="swimlane sl-fe">
+    <div class="swim-label">FRONTEND</div>
+    <div class="swim-content">
+      <div class="flow-h">
+        <div class="flow-step"><div class="fs-num">Paso 1</div><div class="fs-title">Login Form</div><div class="fs-detail">Email + Password</div></div>
+        <div class="flow-h-arrow">&rarr;</div>
+        <div class="flow-step"><div class="fs-num">Paso 2</div><div class="fs-title">signInWithPassword</div><div class="fs-detail">Supabase Client</div></div>
+        <div class="flow-h-arrow">&rarr;&rarr;&rarr;</div>
+        <div class="flow-step fs-success"><div class="fs-num">Paso 5</div><div class="fs-title">Session Stored</div><div class="fs-detail">JWT en memoria</div></div>
+        <div class="flow-h-arrow">&rarr;</div>
+        <div class="flow-step fs-success"><div class="fs-num">Paso 6</div><div class="fs-title">GET /auth/me</div><div class="fs-detail">Rol + Empresa</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="swimlane sl-su">
+    <div class="swim-label">SUPABASE</div>
+    <div class="swim-content">
+      <div class="flow-h">
+        <div style="min-width:185px;"></div>
+        <div class="flow-step"><div class="fs-num">Paso 3</div><div class="fs-title">Validate Credentials</div><div class="fs-detail">Email/Password</div></div>
+        <div class="flow-h-arrow">&rarr;</div>
+        <div class="flow-step"><div class="fs-num">Paso 4</div><div class="fs-title">Return JWT</div><div class="fs-detail">access + refresh token</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Protected Request Flow -->
+  <div class="layer" style="margin-top:24px;">
+    <span class="layer-tag" style="color:#fb923c;">&#x1F6E1;&#xFE0F; Flujo de Request Protegido</span>
+    <div class="layer-line"></div>
+  </div>
+
+  <div class="swimlane sl-fe">
+    <div class="swim-label">FRONTEND</div>
+    <div class="swim-content">
+      <div class="flow-h">
+        <div class="flow-step"><div class="fs-num">Paso 1</div><div class="fs-title">API Call</div><div class="fs-detail">axios + Bearer JWT</div></div>
+        <div class="flow-h-arrow">&rarr;&rarr;&rarr;&rarr;&rarr;&rarr;&rarr;&rarr;&rarr;&rarr;&rarr;&rarr;&rarr;</div>
+        <div class="flow-step fs-success"><div class="fs-num">Paso 7</div><div class="fs-title">Render Data</div><div class="fs-detail">VIEW_ROLES guard</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="swimlane sl-be">
+    <div class="swim-label">BACKEND</div>
+    <div class="swim-content">
+      <div class="flow-h">
+        <div class="flow-step"><div class="fs-num">Paso 2</div><div class="fs-title">Extract Token</div><div class="fs-detail">Authorization header</div></div>
+        <div class="flow-h-arrow">&rarr;</div>
+        <div class="flow-step fs-highlight"><div class="fs-num">Paso 3</div><div class="fs-title">get_supabase_user</div><div class="fs-detail">HTTPX &rarr; Supabase</div></div>
+        <div class="flow-h-arrow">&rarr;</div>
+        <div class="flow-step"><div class="fs-num">Paso 5</div><div class="fs-title">get_current_user</div><div class="fs-detail">DB: user_profiles</div></div>
+        <div class="flow-h-arrow">&rarr;</div>
+        <div class="flow-step fs-highlight"><div class="fs-num">Paso 6</div><div class="fs-title">require_role()</div><div class="fs-detail">RBAC &middot; 403 if denied</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="swimlane sl-su">
+    <div class="swim-label">SUPABASE</div>
+    <div class="swim-content">
+      <div class="flow-h">
+        <div style="min-width:290px;"></div>
+        <div class="flow-step"><div class="fs-num">Paso 4</div><div class="fs-title">Token Validation</div><div class="fs-detail">JWT verify + decode</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RBAC Matrix -->
+  <div class="layer" style="margin-top:24px;">
+    <span class="layer-tag" style="color:#c084fc;">&#x1F465; Matriz RBAC</span>
+    <div class="layer-line"></div>
+  </div>
+  <table class="rbac-table">
+    <thead>
+      <tr>
+        <th>Modulo / Vista</th>
+        <th><span class="role-tag rt-admin">Admin</span></th>
+        <th><span class="role-tag rt-auditor">Auditor</span></th>
+        <th><span class="role-tag rt-supervisor">Supervisor</span></th>
+        <th><span class="role-tag rt-analista">Analista</span></th>
+        <th>Filtro de Datos</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Dashboard</td><td class="rbac-check">&#10004;</td><td class="rbac-check">&#10004;</td><td class="rbac-check">&#10004;</td><td class="rbac-check">&#10004;</td><td><span class="badge">Por empresa_id</span></td></tr>
+      <tr><td>Incidentes</td><td class="rbac-check">&#10004;</td><td class="rbac-check">&#10004;</td><td class="rbac-cross">&mdash;</td><td class="rbac-check">&#10004;</td><td><span class="badge">Por empresa_id</span></td></tr>
+      <tr><td>Controles ISO</td><td class="rbac-check">&#10004;</td><td class="rbac-check">&#10004;</td><td class="rbac-cross">&mdash;</td><td class="rbac-check">&#10004;</td><td><span class="badge">Por empresa_id</span></td></tr>
+      <tr><td>Riesgos</td><td class="rbac-check">&#10004;</td><td class="rbac-check">&#10004;</td><td class="rbac-cross">&mdash;</td><td class="rbac-cross">&mdash;</td><td><span class="badge">Por empresa_id</span></td></tr>
+      <tr><td>Historial</td><td class="rbac-check">&#10004;</td><td class="rbac-cross">&mdash;</td><td class="rbac-check">&#10004;</td><td class="rbac-cross">&mdash;</td><td><span class="badge">Global</span></td></tr>
+      <tr><td>Empresas</td><td class="rbac-check">&#10004;</td><td class="rbac-check">&#10004;</td><td class="rbac-cross">&mdash;</td><td class="rbac-cross">&mdash;</td><td><span class="badge">Todas</span></td></tr>
+      <tr><td>Usuarios</td><td class="rbac-check">&#10004;</td><td class="rbac-cross">&mdash;</td><td class="rbac-cross">&mdash;</td><td class="rbac-cross">&mdash;</td><td><span class="badge">Todos</span></td></tr>
+      <tr><td>Capacitaciones</td><td class="rbac-check">&#10004;</td><td class="rbac-check">&#10004;</td><td class="rbac-check">&#10004;</td><td class="rbac-check">&#10004;</td><td><span class="badge">Progreso propio</span></td></tr>
+      <tr><td>Implementacion</td><td class="rbac-check">&#10004;</td><td class="rbac-check">&#10004;</td><td class="rbac-cross">&mdash;</td><td class="rbac-cross">&mdash;</td><td><span class="badge">Por empresa_id</span></td></tr>
+      <tr><td>Auditoria</td><td class="rbac-check">&#10004;</td><td class="rbac-check">&#10004;</td><td class="rbac-cross">&mdash;</td><td class="rbac-cross">&mdash;</td><td><span class="badge">Por empresa_id</span></td></tr>
+    </tbody>
+  </table>
+
+  <!-- Security + Multi-tenant -->
+  <div class="grid-2" style="margin-top:20px;">
+    <div class="card card-red">
+      <div class="card-title" style="font-size:14px;">&#x1F512; Seguridad Implementada</div>
+      <ul class="fe-list">
+        <li><div class="fe-dot" style="background:#f87171"></div><strong>JWT Stateless</strong> &mdash; Validado via Supabase REST en cada request</li>
+        <li><div class="fe-dot" style="background:#f87171"></div><strong>Bearer Token</strong> &mdash; Inyeccion automatica via Axios interceptor</li>
+        <li><div class="fe-dot" style="background:#f87171"></div><strong>CORS Middleware</strong> &mdash; Origenes controlados en FastAPI</li>
+        <li><div class="fe-dot" style="background:#f87171"></div><strong>Dependency Injection</strong> &mdash; Auth como dependencia FastAPI</li>
+        <li><div class="fe-dot" style="background:#f87171"></div><strong>HTTP 401/403</strong> &mdash; Respuestas automaticas si token invalido</li>
+      </ul>
+    </div>
+    <div class="card card-cyan">
+      <div class="card-title" style="font-size:14px;">&#x1F3E2; Multi-tenant Filtering</div>
+      <ul class="fe-list">
+        <li><div class="fe-dot" style="background:#22d3ee"></div><strong>admin / auditor</strong> &mdash; Ven datos de TODAS las empresas</li>
+        <li><div class="fe-dot" style="background:#22d3ee"></div><strong>supervisor / analista</strong> &mdash; Solo datos de SU empresa_id</li>
+        <li><div class="fe-dot" style="background:#22d3ee"></div><strong>_empresa_filter()</strong> &mdash; Helper en cada router</li>
+        <li><div class="fe-dot" style="background:#22d3ee"></div><strong>WHERE clause</strong> &mdash; Aplicado automaticamente en SQL</li>
+        <li><div class="fe-dot" style="background:#22d3ee"></div><strong>Row-level isolation</strong> &mdash; Datos separados por organizacion</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ====================================================================== -->
+<!-- SECTION 7: MODELO DE DATOS -->
+<!-- ====================================================================== -->
+<section class="section" id="data">
+  <div class="section-header">
+    <div class="section-num">07</div>
+    <h2 class="section-title">Modelo de Datos (Entidad-Relacion)</h2>
+    <p class="section-desc">9 tablas PostgreSQL, 8 enumeraciones y arquitectura multi-tenant centrada en la entidad Empresa.</p>
+  </div>
+
+  <!-- Central: Empresa -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#f87171;">&#x1F3E2; Entidad Central &mdash; Multi-tenant Anchor</span>
+    <div class="layer-line"></div>
+  </div>
+  <div style="max-width:500px;margin:0 auto 20px;">
+    <div class="entity e-empresa">
+      <div class="entity-header">&#x1F3E2; Empresa <span class="entity-tname">empresas</span></div>
+      <div class="entity-body">
+        <div class="field"><span class="fk-tag fk-pk">PK</span><span class="field-name">id</span><span class="field-type">Integer &middot; autoincrement</span></div>
+        <div class="field"><span class="field-name">nombre</span><span class="field-type">String(200) &middot; NOT NULL</span></div>
+        <div class="field"><span class="fk-tag fk-en">ENUM</span><span class="field-name">tipo_empresa</span><span class="field-type">TipoEmpresaEnum</span></div>
+        <div class="field"><span class="field-name">actividad_economica</span><span class="field-type">String(300)</span></div>
+        <div class="field"><span class="field-name">representante_legal</span><span class="field-type">String(200)</span></div>
+        <div class="field"><span class="field-name">email / telefono / nit</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-name">direccion</span><span class="field-type">String(300)</span></div>
+        <div class="field"><span class="field-name">created_at / updated_at</span><span class="field-type">DateTime</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Security entities -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#facc15;">&#x1F4CA; Entidades de Seguridad (FK &rarr; empresas)</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="grid-3">
+    <div class="entity e-incident">
+      <div class="entity-header">&#x1F6A8; Incident <span class="entity-tname">incidents</span></div>
+      <div class="entity-body">
+        <div class="field"><span class="fk-tag fk-pk">PK</span><span class="field-name">id</span><span class="field-type">Integer</span></div>
+        <div class="field"><span class="fk-tag fk-fk">FK</span><span class="field-name">empresa_id</span><span class="field-type">&rarr; empresas.id</span></div>
+        <div class="field"><span class="field-name">title / description</span><span class="field-type">String / Text</span></div>
+        <div class="field"><span class="fk-tag fk-en">ENUM</span><span class="field-name">severity</span><span class="field-type">SeverityEnum</span></div>
+        <div class="field"><span class="fk-tag fk-en">ENUM</span><span class="field-name">status</span><span class="field-type">IncidentStatusEnum</span></div>
+        <div class="field"><span class="field-name">category / reported_by</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-name">reported_at / resolved_at</span><span class="field-type">DateTime</span></div>
+      </div>
+    </div>
+    <div class="entity e-control">
+      <div class="entity-header">&#x1F6E1;&#xFE0F; Control <span class="entity-tname">controls</span></div>
+      <div class="entity-body">
+        <div class="field"><span class="fk-tag fk-pk">PK</span><span class="field-name">id</span><span class="field-type">Integer</span></div>
+        <div class="field"><span class="fk-tag fk-fk">FK</span><span class="field-name">empresa_id</span><span class="field-type">&rarr; empresas.id</span></div>
+        <div class="field"><span class="field-name">iso_domain / iso_control_ref</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-name">name / description</span><span class="field-type">String / Text</span></div>
+        <div class="field"><span class="fk-tag fk-en">ENUM</span><span class="field-name">status</span><span class="field-type">ControlStatusEnum</span></div>
+        <div class="field"><span class="field-name">compliance_pct</span><span class="field-type">Float &middot; default 0</span></div>
+        <div class="field"><span class="field-name">responsible / last_reviewed</span><span class="field-type">String / DateTime</span></div>
+      </div>
+    </div>
+    <div class="entity e-risk">
+      <div class="entity-header">&#x26A0;&#xFE0F; RiskLevel <span class="entity-tname">risk_levels</span></div>
+      <div class="entity-body">
+        <div class="field"><span class="fk-tag fk-pk">PK</span><span class="field-name">id</span><span class="field-type">Integer</span></div>
+        <div class="field"><span class="fk-tag fk-fk">FK</span><span class="field-name">empresa_id</span><span class="field-type">&rarr; empresas.id</span></div>
+        <div class="field"><span class="field-name">domain</span><span class="field-type">String(100)</span></div>
+        <div class="field"><span class="fk-tag fk-en">ENUM</span><span class="field-name">level</span><span class="field-type">RiskLevelEnum</span></div>
+        <div class="field"><span class="field-name">score</span><span class="field-type">Float &middot; P &times; I</span></div>
+        <div class="field"><span class="field-name">probability / impact</span><span class="field-type">Float</span></div>
+        <div class="field"><span class="field-name">notes / recorded_at</span><span class="field-type">Text / DateTime</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Identity entities -->
+  <div class="layer" style="margin-top:20px;">
+    <span class="layer-tag" style="color:#fb923c;">&#x1F464; Identidad & Auditoria</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="grid-3">
+    <div class="entity e-user">
+      <div class="entity-header">&#x1F464; UserProfile <span class="entity-tname">user_profiles</span></div>
+      <div class="entity-body">
+        <div class="field"><span class="fk-tag fk-pk">PK</span><span class="field-name">id</span><span class="field-type">Integer</span></div>
+        <div class="field"><span class="fk-tag fk-uq">UQ</span><span class="field-name">user_id</span><span class="field-type">String &middot; Supabase UUID</span></div>
+        <div class="field"><span class="field-name">email</span><span class="field-type">String(200)</span></div>
+        <div class="field"><span class="fk-tag fk-en">ENUM</span><span class="field-name">role</span><span class="field-type">UserRoleEnum</span></div>
+        <div class="field"><span class="fk-tag fk-fk">FK</span><span class="field-name">empresa_id</span><span class="field-type">&rarr; empresas.id &middot; nullable</span></div>
+      </div>
+    </div>
+    <div class="entity e-auditoria">
+      <div class="entity-header">&#x1F4CB; AuditoriaItem <span class="entity-tname">auditoria_items</span></div>
+      <div class="entity-body">
+        <div class="field"><span class="fk-tag fk-pk">PK</span><span class="field-name">id</span><span class="field-type">Integer</span></div>
+        <div class="field"><span class="fk-tag fk-fk">FK</span><span class="field-name">empresa_id</span><span class="field-type">&rarr; empresas.id</span></div>
+        <div class="field"><span class="field-name">iso_control_ref / control_name</span><span class="field-type">String</span></div>
+        <div class="field"><span class="field-name">activity_desc / notas</span><span class="field-type">Text</span></div>
+        <div class="field"><span class="fk-tag fk-en">ENUM</span><span class="field-name">status</span><span class="field-type">AuditoriaStatusEnum</span></div>
+        <div class="field"><span class="field-name">auditor_id / fecha_evaluacion</span><span class="field-type">String / DateTime</span></div>
+      </div>
+    </div>
+    <div class="entity e-snapshot">
+      <div class="entity-header">&#x1F4F8; KPISnapshot <span class="entity-tname">kpi_snapshots</span></div>
+      <div class="entity-body">
+        <div class="field"><span class="fk-tag fk-pk">PK</span><span class="field-name">id</span><span class="field-type">Integer</span></div>
+        <div class="field"><span class="fk-tag fk-uq">UQ</span><span class="field-name">snapshot_date</span><span class="field-type">Date &middot; unique</span></div>
+        <div class="field"><span class="field-name">total / open / resolved / critical</span><span class="field-type">Integer (incidents)</span></div>
+        <div class="field"><span class="field-name">avg_resolution_hrs</span><span class="field-type">Float</span></div>
+        <div class="field"><span class="field-name">total_controls / compliant</span><span class="field-type">Integer</span></div>
+        <div class="field"><span class="field-name">global_compliance_pct</span><span class="field-type">Float</span></div>
+        <div class="field"><span class="field-name">global_risk_score</span><span class="field-type">Float</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Training -->
+  <div class="layer" style="margin-top:20px;">
+    <span class="layer-tag" style="color:#ec4899;">&#x1F393; Capacitacion</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="grid-2">
+    <div class="entity e-curso">
+      <div class="entity-header">&#x1F393; Curso <span class="entity-tname">cursos</span></div>
+      <div class="entity-body">
+        <div class="field"><span class="fk-tag fk-pk">PK</span><span class="field-name">id</span><span class="field-type">Integer</span></div>
+        <div class="field"><span class="field-name">titulo / descripcion</span><span class="field-type">String / Text</span></div>
+        <div class="field"><span class="field-name">video_url</span><span class="field-type">String(500) &middot; YouTube</span></div>
+        <div class="field"><span class="field-name">material_texto / categoria</span><span class="field-type">Text / String</span></div>
+        <div class="field"><span class="fk-tag fk-en">ENUM</span><span class="field-name">nivel</span><span class="field-type">NivelCursoEnum</span></div>
+      </div>
+    </div>
+    <div class="entity e-progreso">
+      <div class="entity-header">&#x1F4C8; CursoProgreso <span class="entity-tname">curso_progreso</span></div>
+      <div class="entity-body">
+        <div class="field"><span class="fk-tag fk-pk">PK</span><span class="field-name">id</span><span class="field-type">Integer</span></div>
+        <div class="field"><span class="field-name">user_id</span><span class="field-type">String &middot; Supabase UUID</span></div>
+        <div class="field"><span class="fk-tag fk-fk">FK</span><span class="field-name">curso_id</span><span class="field-type">&rarr; cursos.id</span></div>
+        <div class="field"><span class="fk-tag fk-en">ENUM</span><span class="field-name">status</span><span class="field-type">ProgresoEnum</span></div>
+        <div class="field"><span class="field-name">progreso_pct</span><span class="field-type">Float &middot; default 0</span></div>
+        <div class="field"><span class="fk-tag fk-uq">UQ</span><span class="field-name">curso_id + user_id</span><span class="field-type">Unique constraint</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Relationships -->
+  <div class="layer" style="margin-top:24px;">
+    <span class="layer-tag" style="color:#818cf8;">&#x1F517; Relaciones entre Entidades</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="card" style="margin-bottom:20px;">
+    <div class="rel-grid">
+      <div class="rel-item"><span class="rel-from">Empresa</span><span class="rel-arrow">1 &#10230; N</span><span class="rel-to">Incident</span><span class="rel-type">empresa_id FK</span></div>
+      <div class="rel-item"><span class="rel-from">Empresa</span><span class="rel-arrow">1 &#10230; N</span><span class="rel-to">Control</span><span class="rel-type">empresa_id FK</span></div>
+      <div class="rel-item"><span class="rel-from">Empresa</span><span class="rel-arrow">1 &#10230; N</span><span class="rel-to">RiskLevel</span><span class="rel-type">empresa_id FK</span></div>
+      <div class="rel-item"><span class="rel-from">Empresa</span><span class="rel-arrow">1 &#10230; N</span><span class="rel-to">UserProfile</span><span class="rel-type">empresa_id FK</span></div>
+      <div class="rel-item"><span class="rel-from">Empresa</span><span class="rel-arrow">1 &#10230; N</span><span class="rel-to">AuditoriaItem</span><span class="rel-type">empresa_id FK</span></div>
+      <div class="rel-item"><span class="rel-from">Curso</span><span class="rel-arrow">1 &#10230; N</span><span class="rel-to">CursoProgreso</span><span class="rel-type">curso_id FK</span></div>
+      <div class="rel-item"><span class="rel-from">UserProfile</span><span class="rel-arrow">1 &#10230; N</span><span class="rel-to">CursoProgreso</span><span class="rel-type">user_id (logica)</span></div>
+      <div class="rel-item"><span class="rel-from">KPISnapshot</span><span class="rel-arrow">&mdash; &mdash;</span><span class="rel-to">Independiente</span><span class="rel-type">Sin FK &middot; Agregado</span></div>
+    </div>
+  </div>
+
+  <!-- Enums -->
+  <div class="layer">
+    <span class="layer-tag" style="color:#4ade80;">&#x1F4CB; Enumeraciones (8 Enums)</span>
+    <div class="layer-line"></div>
+  </div>
+  <div class="enums-grid">
+    <div class="enum-card"><div class="enum-name">SeverityEnum</div><div class="enum-val">low</div><div class="enum-val">medium</div><div class="enum-val">high</div><div class="enum-val">critical</div></div>
+    <div class="enum-card"><div class="enum-name">IncidentStatusEnum</div><div class="enum-val">open</div><div class="enum-val">in_progress</div><div class="enum-val">closed</div></div>
+    <div class="enum-card"><div class="enum-name">ControlStatusEnum</div><div class="enum-val">compliant</div><div class="enum-val">en_proceso</div><div class="enum-val">non_compliant</div></div>
+    <div class="enum-card"><div class="enum-name">RiskLevelEnum</div><div class="enum-val">low</div><div class="enum-val">medium</div><div class="enum-val">high</div><div class="enum-val">critical</div></div>
+    <div class="enum-card"><div class="enum-name">UserRoleEnum</div><div class="enum-val">admin</div><div class="enum-val">auditor</div><div class="enum-val">supervisor</div><div class="enum-val">analista</div></div>
+    <div class="enum-card"><div class="enum-name">NivelCursoEnum</div><div class="enum-val">basico</div><div class="enum-val">intermedio</div><div class="enum-val">avanzado</div></div>
+    <div class="enum-card"><div class="enum-name">ProgresoEnum</div><div class="enum-val">pendiente</div><div class="enum-val">en_proceso</div><div class="enum-val">completado</div></div>
+    <div class="enum-card"><div class="enum-name">AuditoriaStatusEnum</div><div class="enum-val">pendiente</div><div class="enum-val">en_proceso</div><div class="enum-val">completado</div></div>
+  </div>
+</section>
+
+<!-- ========== FOOTER ========== -->
+<footer class="footer">
+  <strong>ISO SECURE</strong> &mdash; Documento de Arquitectura del Sistema<br>
+  Plataforma de Cumplimiento ISO/IEC 27001:2022<br>
+  <span style="color:var(--accent-blue);">Universidad de San Buenaventura</span>
+</footer>
+
+</body>
+</html>
