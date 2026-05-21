@@ -1,0 +1,669 @@
+\documentclass[12pt,a4paper,oneside]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{colortbl}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{tikz}
+
+\hypersetup{colorlinks=true,urlcolor=blue,linkcolor=black}
+
+% Colores corporativos
+\definecolor{darkblue}{RGB}{31,56,100}
+\definecolor{accent}{RGB}{79,143,247}
+\definecolor{success}{RGB}{16,185,129}
+\definecolor{warning}{RGB}{245,158,11}
+\definecolor{danger}{RGB}{239,68,68}
+
+% Estilos de encabezado
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\textcolor{accent}{ISO SECURE}}
+\lhead{\textcolor{accent}{Etapa 1 - Requerimientos}}
+\cfoot{Página \thepage\ de \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\color{accent}\hrule}
+
+\title{
+  {\Huge \textbf{ISO SECURE}}\\
+  {\LARGE Plataforma de Cumplimiento ISO 27001}\\[2ex]
+  {\Large \textcolor{accent}{Etapa 1: Análisis e Ingeniería de Requerimientos}}\\[1ex]
+  {\small Actividad Formativa 1 - 5\%}
+}
+\author{Agustín Peralta --- Universidad de San Buenaventura}
+\date{Entrega: 25 de Mayo de 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Este documento consolida los requerimientos de seguridad, funcionales y no funcionales del proyecto ISO SECURE, un sistema web para la gestión de seguridad de la información (SGSI) conforme a ISO/IEC 27001:2022. Incluye historias de usuario, casos de uso, casos de abuso y matriz de trazabilidad.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% ============================================================================
+\section{Introducción}
+
+ISO SECURE es una plataforma web integral para:
+\begin{itemize}
+  \item Gestionar y auditar 93 controles ISO 27001 Anexo A
+  \item Registrar y analizar incidentes de seguridad
+  \item Evaluar riesgos por dominio ISO (matriz Probabilidad x Impacto)
+  \item Capacitar a personal en seguridad de la información
+  \item Generar reportes ejecutivos y KPIs para la alta dirección
+\end{itemize}
+
+\textbf{Stack:} FastAPI (Python 3.13) + React 19 + PostgreSQL 15 (Supabase) + Supabase Auth (JWT)
+
+\textbf{Alcance:} Sistema multi-tenant con 4 roles (admin, auditor, supervisor, analista) y 9 módulos operacionales.
+
+% ============================================================================
+\section{Requerimientos de Seguridad}
+
+Los requerimientos de seguridad están alineados con ISO/IEC 27001:2022 y OWASP Top 10 (2024).
+
+\subsection{Confidencialidad (CIA - C)}
+
+\begin{itemize}[label=\textcolor{accent}{[SEC-C]}]
+  \item \textbf{SEC-C-1:} Autenticación obligatoria: todo usuario debe autenticarse vía JWT (Supabase OAuth 2.0) antes de acceder a recursos.
+  \item \textbf{SEC-C-2:} Control de acceso granular: cada acción (read, write, delete) validada según rol del usuario y pertenencia a empresa (multi-tenant).
+  \item \textbf{SEC-C-3:} Cifrado en tránsito: todas las comunicaciones backend-frontend vía HTTPS (TLS 1.3+).
+  \item \textbf{SEC-C-4:} Cifrado en reposo: credenciales, tokens sensibles cifrados en BD (Supabase built-in).
+  \item \textbf{SEC-C-5:} CORS restringido: solo dominios autorizados pueden hacer requests (whitelist en FastAPI).
+\end{itemize}
+
+\subsection{Integridad (CIA - I)}
+
+\begin{itemize}[label=\textcolor{success}{[SEC-I]}]
+  \item \textbf{SEC-I-1:} Validación de entrada: todos los payloads validados con Pydantic v2 (type hints + constraints).
+  \item \textbf{SEC-I-2:} Prevención SQL injection: SQLAlchemy ORM con prepared statements (no raw SQL).
+  \item \textbf{SEC-I-3:} CSRF protection: tokens CSRF en formularios críticos (si aplica SSR; React con Axios maneja).
+  \item \textbf{SEC-I-4:} Integridad de datos: checksums o versionado para cambios en controles y riesgos.
+  \item \textbf{SEC-I-5:} Auditoría de cambios: toda modificación (create, update, delete) registrada en tabla de auditoría con timestamp, usuario, acción y deltas.
+\end{itemize}
+
+\subsection{Disponibilidad (CIA - A)}
+
+\begin{itemize}[label=\textcolor{danger}{[SEC-A]}]
+  \item \textbf{SEC-A-1:} Rate limiting: máximo 100 requests/minuto por IP; 50/min por usuario autenticado.
+  \item \textbf{SEC-A-2:} Timeout de sesión: JWT expira en 1 hora; refresh token en 7 días.
+  \item \textbf{SEC-A-3:} Resiliencia: base de datos replicada (Supabase built-in); backend sin estado (stateless).
+  \item \textbf{SEC-A-4:} Logging y monitoreo: registro centralizado de eventos de seguridad (intentos de acceso fallidos, cambios de permisos).
+\end{itemize}
+
+\subsection{Adicionales (OWASP)}
+
+\begin{itemize}[label=\textcolor{warning}{[SEC-X]}]
+  \item \textbf{SEC-X-1:} Content Security Policy (CSP): header restrictivo (`default-src 'self'`, etc.) contra XSS.
+  \item \textbf{SEC-X-2:} X-Frame-Options: `DENY` para prevenir clickjacking.
+  \item \textbf{SEC-X-3:} X-Content-Type-Options: `nosniff` para prevenir MIME sniffing.
+  \item \textbf{SEC-X-4:} HSTS: Strict-Transport-Security con max-age=31536000.
+  \item \textbf{SEC-X-5:} Permissions-Policy: desabilitar cámara, micrófono, geolocalización.
+\end{itemize}
+
+% ============================================================================
+\section{Requerimientos Funcionales}
+
+\subsection{RF-1: Autenticación y Gestión de Usuarios}
+
+\begin{tabularx}{\linewidth}{|l|X|}
+\hline
+\textbf{ID} & RF-1.1 \\
+\textbf{Nombre} & Registro de usuario \\
+\textbf{Descripción} & Un nuevo usuario puede registrarse con email y contraseña; se valida unicidad de email y se envía token de confirmación. \\
+\textbf{Actores} & Usuario anónimo \\
+\textbf{Precondición} & Email no registrado previamente \\
+\textbf{Postcondición} & Perfil de usuario creado; email de confirmación enviado \\
+\hline
+\end{tabularx}
+
+\begin{tabularx}{\linewidth}{|l|X|}
+\hline
+\textbf{ID} & RF-1.2 \\
+\textbf{Nombre} & Login \\
+\textbf{Descripción} & Usuario autenticado recibe JWT token (válido 1 hora) y refresh token (válido 7 días). \\
+\textbf{Actores} & Usuario registrado \\
+\textbf{Precondición} & Email y contraseña correctos \\
+\textbf{Postcondición} & Tokens almacenados en localStorage; usuario redirigido a dashboard \\
+\hline
+\end{tabularx}
+
+\begin{tabularx}{\linewidth}{|l|X|}
+\hline
+\textbf{ID} & RF-1.3 \\
+\textbf{Nombre} & Gestión de roles y permisos \\
+\textbf{Descripción} & Admin puede asignar roles a usuarios (admin, auditor, supervisor, analista). Cada rol tiene permisos sobre 11 vistas. \\
+\textbf{Actores} & Admin \\
+\textbf{Precondición} & Usuario existente; admin autenticado \\
+\textbf{Postcondición} & Rol asignado; permisos actualizados dinámicamente \\
+\hline
+\end{tabularx}
+
+\subsection{RF-2: Gestión de Controles ISO 27001}
+
+\begin{tabularx}{\linewidth}{|l|X|}
+\hline
+\textbf{ID} & RF-2.1 \\
+\textbf{Nombre} & Consultar catálogo de controles \\
+\textbf{Descripción} & Auditor/Supervisor visualiza 93 controles ISO Anexo A filtrados por empresa, dominio (A.5 a A.18) y estado (no_iniciado, en_proceso, implementado, etc.). \\
+\textbf{Actores} & Auditor, Supervisor \\
+\textbf{Precondición} & Usuario autenticado \\
+\textbf{Postcondición} & Lista de controles mostrada con filtros y búsqueda \\
+\hline
+\end{tabularx}
+
+\begin{tabularx}{\linewidth}{|l|X|}
+\hline
+\textbf{ID} & RF-2.2 \\
+\textbf{Nombre} & Actualizar estado de control \\
+\textbf{Descripción} & Supervisor puede cambiar el estado de un control (no_iniciado -> en_proceso -> implementado -> auditado). \\
+\textbf{Actores} & Supervisor \\
+\textbf{Precondición} & Control existente; Supervisor autenticado \\
+\textbf{Postcondición} & Estado actualizado; auditoría registrada \\
+\hline
+\end{tabularx}
+
+\begin{tabularx}{\linewidth}{|l|X|}
+\hline
+\textbf{ID} & RF-2.3 \\
+\textbf{Nombre} & Calcular indicador de cumplimiento \\
+\textbf{Descripción} & Sistema calcula automáticamente el porcentaje de cumplimiento como (controles\_implementados / total\_controles) x 100. \\
+\textbf{Actores} & Sistema \\
+\textbf{Precondición} & Al menos 1 control registrado \\
+\textbf{Postcondición} & KPI mostrado en dashboard \\
+\hline
+\end{tabularx}
+
+\subsection{RF-3: Gestión de Incidentes de Seguridad}
+
+\begin{tabularx}{\linewidth}{|l|X|}
+\hline
+\textbf{ID} & RF-3.1 \\
+\textbf{Nombre} & Registrar incidente \\
+\textbf{Descripción} & Analista crea incidente con: descripción, severidad (1-5), empresa, fecha de detección, estado inicial (abierto). \\
+\textbf{Actores} & Analista \\
+\textbf{Precondición} & Incidente detectado \\
+\textbf{Postcondición} & Incidente almacenado; notificación a auditor \\
+\hline
+\end{tabularx}
+
+\begin{tabularx}{\linewidth}{|l|X|}
+\hline
+\textbf{ID} & RF-3.2 \\
+\textbf{Nombre} & Calcular MTTR (Mean Time To Resolve) \\
+\textbf{Descripción} & Para incidentes cerrados, MTTR = fecha\_cierre - fecha\_apertura (en horas). Dashboard muestra promedio por empresa. \\
+\textbf{Actores} & Sistema \\
+\textbf{Precondición} & Incidente cerrado \\
+\textbf{Postcondición} & KPI MTTR actualizado \\
+\hline
+\end{tabularx}
+
+\subsection{RF-4: Evaluación de Riesgos}
+
+\begin{tabularx}{\linewidth}{|l|X|}
+\hline
+\textbf{ID} & RF-4.1 \\
+\textbf{Nombre} & Crear evaluación de riesgo \\
+\textbf{Descripción} & Auditor registra riesgo con: descripción, probabilidad (1-5), impacto (1-5), dominio ISO, estado. Riesgo = P x I (1-25). \\
+\textbf{Actores} & Auditor \\
+\textbf{Precondición} & Riesgo identificado \\
+\textbf{Postcondición} & Riesgo registrado; matriz de riesgo actualizada \\
+\hline
+\end{tabularx}
+
+\begin{tabularx}{\linewidth}{|l|X|}
+\hline
+\textbf{ID} & RF-4.2 \\
+\textbf{Nombre} & Visualizar matriz de riesgo \\
+\textbf{Descripción} & Dashboard muestra matriz 5x5 (PxI) con color: verde (1-5), amarillo (6-12), rojo (13-25). Drill-down a riesgos por celda. \\
+\textbf{Actores} & Admin, Auditor \\
+\textbf{Precondición} & Al menos 1 riesgo registrado \\
+\textbf{Postcondición} & Matriz visualizada \\
+\hline
+\end{tabularx}
+
+\subsection{RF-5: Capacitaciones}
+
+\begin{tabularx}{\linewidth}{|l|X|}
+\hline
+\textbf{ID} & RF-5.1 \\
+\textbf{Nombre} & Acceder a cursos de seguridad \\
+\textbf{Descripción} & Usuario puede ver catálogo de cursos (SGSI 101, ISO 27001 Basics, Phishing Awareness, etc.), reproducir video y marcar como completado. \\
+\textbf{Actores} & Cualquier usuario autenticado \\
+\textbf{Precondición} & Cursos cargados en BD \\
+\textbf{Postcondición} & Progreso registrado \\
+\hline
+\end{tabularx}
+
+\subsection{RF-6: Auditoría Interna}
+
+\begin{tabularx}{\linewidth}{|l|X|}
+\hline
+\textbf{ID} & RF-6.1 \\
+\textbf{Nombre} & Ejecutar checklist de auditoría \\
+\textbf{Descripción} & Auditor marca items de checklist pre-configurado (ej: ``¿Se implementó control A.5.1?''). Sistema calcula % cumplimiento. \\
+\textbf{Actores} & Auditor \\
+\textbf{Precondición} & Checklist definido \\
+\textbf{Postcondición} & Resultados almacenados; informe generado \\
+\hline
+\end{tabularx}
+
+\subsection{RF-7: Reportes y Exportación}
+
+\begin{tabularx}{\linewidth}{|l|X|}
+\hline
+\textbf{ID} & RF-7.1 \\
+\textbf{Nombre} & Exportar reporte ejecutivo \\
+\textbf{Descripción} & Admin/Auditor genera PDF con: KPIs, matriz de riesgos, tabla de controles, gráficos MTTR, progreso capacitación. \\
+\textbf{Actores} & Admin, Auditor \\
+\textbf{Precondición} & Datos disponibles \\
+\textbf{Postcondición} & PDF descargado; webhook a n8n para procesamiento \\
+\hline
+\end{tabularx}
+
+% ============================================================================
+\section{Requerimientos No Funcionales}
+
+\begin{tabularx}{\linewidth}{|l|X|}
+\hline
+\textbf{RNF-1} & \textbf{Performance} --- Latencia máxima 200ms (p95) para GET; 500ms (p95) para POST. \\
+\hline
+\textbf{RNF-2} & \textbf{Escalabilidad} --- Capacidad para 1000 usuarios concurrentes por empresa; 100 empresas máximo (MVP). \\
+\hline
+\textbf{RNF-3} & \textbf{Disponibilidad} --- Uptime 99.5\% (SLA Supabase). Recovery Time Objective (RTO) \textless{} 1 hora. \\
+\hline
+\textbf{RNF-4} & \textbf{Usabilidad} --- Interfaz responsive (mobile, tablet, desktop); accesibilidad WCAG 2.1 AA mínimo. \\
+\hline
+\textbf{RNF-5} & \textbf{Mantenibilidad} --- Código documentado (docstrings); commits atómicos; CI/CD con tests automáticos. \\
+\hline
+\textbf{RNF-6} & \textbf{Portabilidad} --- Docker containerizado; deployment multi-cloud compatible. \\
+\hline
+\textbf{RNF-7} & \textbf{Confiabilidad} --- MTBF \textgreater{} 720 horas; MTTR \textless{} 2 horas para incident crítico. \\
+\hline
+\textbf{RNF-8} & \textbf{Compatibilidad} & Chrome 120+, Firefox 121+, Safari 17+, Edge 120+. \\
+\hline
+\end{tabularx}
+
+% ============================================================================
+\section{Historias de Usuario}
+
+\subsection{HU-1: Auditor - Consultar cumplimiento por empresa}
+
+\begin{description}
+  \item[Como] auditor de seguridad
+  \item[Quiero] visualizar el porcentaje de cumplimiento de controles ISO 27001 para cada empresa en el sistema
+  \item[Para] identificar rápidamente cuál organización necesita más esfuerzo en implementación
+\end{description}
+
+\textbf{Criterios de Aceptación:}
+\begin{enumerate}
+  \item Mostrar tabla con: Empresa | Total Controles | Implementados | \% Cumplimiento | Tendencia
+  \item Filtro por rango de fechas
+  \item Exportar a CSV
+  \item Drill-down: clic en empresa abre detalle de controles por estado
+\end{enumerate}
+
+\subsection{HU-2: Supervisor - Cambiar estado de control}
+
+\begin{description}
+  \item[Como] supervisor de implementación
+  \item[Quiero] actualizar el estado de un control ISO (no\_iniciado -> en\_proceso -> implementado -> auditado)
+  \item[Para] llevar un seguimiento de progreso y comunicar avances al team
+\end{description}
+
+\textbf{Criterios de Aceptación:}
+\begin{enumerate}
+  \item Dropdown con transiciones válidas (no todos los estados son alcanzables de uno)
+  \item Comentario obligatorio al cambiar de estado
+  \item Auditoría: registrar quién, cuándo, de qué a qué
+  \item Notificación a auditor si hay cambio crítico
+\end{enumerate}
+
+\subsection{HU-3: Analista - Registrar incidente de seguridad}
+
+\begin{description}
+  \item[Como] analista de incidentes
+  \item[Quiero] registrar un incidente detectado (malware, acceso no autorizado, leak, etc.)
+  \item[Para] mantener historial de eventos y calcular métricas (MTTR, tasa de resolución)
+\end{description}
+
+\textbf{Criterios de Aceptación:}
+\begin{enumerate}
+  \item Formulario con: descripción, severidad (1-5), fecha detección, empresa afectada, dominio ISO relacionado (opcional)
+  \item Validación: severidad requerida; descripción mín 10 caracteres
+  \item Email de notificación al auditor
+  \item Link a reporte de incidente en 24h
+\end{enumerate}
+
+\subsection{HU-4: Admin - Gestionar usuarios y roles}
+
+\begin{description}
+  \item[Como] administrador del sistema
+  \item[Quiero] crear, editar, eliminar usuarios y asignarles roles
+  \item[Para] controlar quién accede a qué datos en cada empresa
+\end{description}
+
+\textbf{Criterios de Aceptación:}
+\begin{enumerate}
+  \item CRUD completo: crear (email validado), editar (nombre, rol, empresa), desactivar (no borrar)
+  \item Visualización de último login
+  \item Bulk actions: asignar rol a múltiples usuarios
+  \item Auditoría completa de cambios de rol
+\end{enumerate}
+
+\subsection{HU-5: Usuario - Realizar capacitación}
+
+\begin{description}
+  \item[Como] empleado de la organización
+  \item[Quiero] acceder a cursos de seguridad (SGSI 101, Phishing Awareness, etc.)
+  \item[Para] cumplir con el requerimiento de capacitación obligatoria
+\end{description}
+
+\textbf{Criterios de Aceptación:}
+\begin{enumerate}
+  \item Catálogo de cursos con video embebido (YouTube o similar)
+  \item Progreso visual (barra \%)
+  \item Certificado descargable al completar
+  \item Recordatorio si no completa en 30 días
+\end{enumerate}
+
+\subsection{HU-6: Auditor - Evaluar riesgo}
+
+\begin{description}
+  \item[Como] auditor de riesgos
+  \item[Quiero] registrar una evaluación de riesgo (descripción, probabilidad, impacto, dominio ISO)
+  \item[Para] alimentar la matriz de riesgos y generar hoja de ruta de mitigación
+\end{description}
+
+\textbf{Criterios de Aceptación:}
+\begin{enumerate}
+  \item Formulario: descripción, P (1-5), I (1-5), dominio ISO, estado
+  \item Cálculo automático de riesgo (P x I)
+  \item Matriz 5x5 actualizada en tiempo real
+  \item Sugerencia de mitigaciones basadas en riesgo
+\end{enumerate}
+
+\subsection{HU-7: Admin --- Generar reporte ejecutivo}
+
+\begin{description}
+  \item[Como] director de seguridad
+  \item[Quiero] exportar un reporte PDF con KPIs, gráficos, matriz de riesgos para la junta directiva
+  \item[Para] documentar el estado del SGSI y justificar inversión en seguridad
+\end{description}
+
+\textbf{Criterios de Aceptación:}
+\begin{enumerate}
+  \item PDF con: portada, indice, KPIs (cumplimiento \%, MTTR, tasa incidentes), gráficos Chart.js, tabla de riesgos, tabla de controles críticos
+  \item Watermark ``Confidencial''
+  \item Timestamp de generación
+  \item Opción de programar generación mensual
+\end{enumerate}
+
+% ============================================================================
+\section{Casos de Uso}
+
+\subsection{CU-1: Implementar un control ISO}
+
+\textbf{Actores:} Supervisor (principal), Auditor (secundario), Sistema
+
+\textbf{Precondición:} Control existe; Supervisor autenticado
+
+\textbf{Flujo Principal:}
+\begin{enumerate}
+  \item Supervisor abre módulo ``Controles''
+  \item Selecciona control con estado ``no\_iniciado''
+  \item Hace clic en ``Cambiar Estado'' -> ``En Proceso''
+  \item Comenta: ``Iniciado implementación de A.5.1 Control de Acceso''
+  \item Sistema registra cambio; notifica a Auditor
+  \item Supervisor cambia a ``Implementado'' cuando finaliza
+  \item Auditor revisa; cambia a ``Auditado'' si aprueba
+\end{enumerate}
+
+\textbf{Flujo Alternativo (A1):} Supervisor añade evidencia (documento, screenshot)
+\begin{enumerate}
+  \item En paso 3, hace upload de archivo (PDF, JPG máx 5MB)
+  \item Sistema valida y almacena; crea thumbnail para preview
+\end{enumerate}
+
+\textbf{Postcondición:} Control en estado ``Auditado''; auditoría registrada; KPI cumplimiento actualizado
+
+\subsection{CU-2: Gestionar incidente de seguridad}
+
+\textbf{Actores:} Analista (principal), Auditor (secundario), Sistema, Correo
+
+\textbf{Precondición:} Incidente detectado; Analista autenticado
+
+\textbf{Flujo Principal:}
+\begin{enumerate}
+  \item Analista accede a ``Incidentes'' -> ``Crear Nuevo''
+  \item Rellena: título, descripción, severidad (ej: 4), empresa afectada, fecha detección
+  \item Selecciona dominio ISO relacionado (A.12.3 Logging)
+  \item Envía; sistema crea ID único (ej: INC-2026-001)
+  \item Auditor recibe notificación por email
+  \item Analista/Auditor registran acciones de mitigación en pestaña ``Actividades''
+  \item Cuando resuelven, cambian a ``Cerrado''; sistema calcula MTTR automáticamente
+\end{enumerate}
+
+\textbf{Flujo Alternativo (A1):} Incidente escala a crítico
+\begin{enumerate}
+  \item Si severidad \textgreater{}=\textgreater{} 4, sistema envía SMS y llamada a on-call
+\end{enumerate}
+
+\textbf{Postcondición:} Incidente registrado; MTTR calculado; KPI de incidentes actualizado
+
+\subsection{CU-3: Realizar auditoría interna}
+
+\textbf{Actores:} Auditor (principal), Sistema
+
+\textbf{Precondición:} Checklist definido; Auditor autenticado
+
+\textbf{Flujo Principal:}
+\begin{enumerate}
+  \item Auditor abre ``Auditoría'' -> ``Nueva Auditoría Interna''
+  \item Selecciona empresa y período (ej: Abril 2026)
+  \item Abre checklist pre-cargado (15 items)
+  \item Para cada item, marca: Cumple / No Cumple / Parcial / No Aplica
+  \item Agrega comentarios y evidencia (links)
+  \item Calcula automáticamente \% cumplimiento
+  \item Genera borrador de reporte
+  \item Envía para aprobación del Auditor Jefe
+  \item Una vez aprobado, marca como ``Finalizado''
+\end{enumerate}
+
+\textbf{Postcondición:} Reporte de auditoría registrado; KPI de auditoría actualizado; notificación a Auditor Jefe
+
+% ============================================================================
+\section{Casos de Abuso}
+
+\subsection{CA-1: Atacante intenta SQL injection}
+
+\textbf{Actor Malicioso:} Atacante externo
+
+\textbf{Contexto:} API REST en \texttt{/api/controls}
+
+\textbf{Escenario de Ataque:}
+\begin{enumerate}
+  \item Atacante intenta: \texttt{GET /api/controls?filter=id=1 OR 1=1}
+  \item Sistema debe rechazar con error 400 (Bad Request)
+\end{enumerate}
+
+\textbf{Mitigación:}
+\begin{itemize}
+  \item [OK] SQLAlchemy ORM con prepared statements (no raw SQL)
+  \item [OK] Validación Pydantic en todos los inputs
+\end{itemize}
+
+\subsection{CA-2: Usuario intenta acceder a datos de otra empresa}
+
+\textbf{Actor Malicioso:} Usuario autenticado (insider)
+
+\textbf{Contexto:} Multi-tenancy
+
+\textbf{Escenario de Ataque:}
+\begin{enumerate}
+  \item Usuario de Empresa A intenta: \texttt{GET /api/incidents?empresa\_id=999} (Empresa B)
+  \item Sistema debe rechazar con 403 (Forbidden)
+\end{enumerate}
+
+\textbf{Mitigación:}
+\begin{itemize}
+  \item [OK] Middleware de autorización: valida empresa\_id del token vs. parámetro
+  \item [OK] Row-level security en BD (Supabase RLS)
+\end{itemize}
+
+\subsection{CA-3: Admin deshabilitado intenta reasignarse rol}
+
+\textbf{Actor Malicioso:} Admin cuya cuenta fue desactivada
+
+\textbf{Contexto:} JWT válido pero usuario desactivado
+
+\textbf{Escenario de Ataque:}
+\begin{enumerate}
+  \item Admin desactivado recibe JWT antes de ser desactivado
+  \item Intenta: \texttt{POST /api/users/me/role} con rol=admin
+  \item Sistema debe rechazar verificando campo activo=False
+\end{enumerate}
+
+\textbf{Mitigación:}
+\begin{itemize}
+  \item [OK] En cada request, verificar estado de usuario (en caché o BD)
+  \item [OK] Invalidar JWT si usuario está inactivo
+\end{itemize}
+
+\subsection{CA-4: Auditor intenta modificar incidente ajeno}
+
+\textbf{Actor Malicioso:} Auditor de Empresa A
+
+\textbf{Contexto:} RBAC insuficiente
+
+\textbf{Escenario de Ataque:}
+\begin{enumerate}
+  \item Auditor A intenta: \texttt{PATCH /api/incidents/123} (pertenece a Empresa B)
+  \item Sistema debe rechazar con 403
+\end{enumerate}
+
+\textbf{Mitigación:}
+\begin{itemize}
+  \item [OK] Verificar owner (empresa\_id) en middleware
+  \item [OK] Auditor solo puede leer/modificar datos de su propia empresa
+\end{itemize}
+
+\subsection{CA-5: Token JWT interceptado (MITM)}
+
+\textbf{Actor Malicioso:} Atacante de red (MITM)
+
+\textbf{Contexto:} Comunicación cliente-servidor
+
+\textbf{Escenario de Ataque:}
+\begin{enumerate}
+  \item Atacante intercepta JWT en tránsito
+  \item Intenta reutilizarlo desde otra IP
+  \item Sistema debe detectar anomalía o expiración
+\end{enumerate}
+
+\textbf{Mitigación:}
+\begin{itemize}
+  \item [OK] HTTPS obligatorio (TLS 1.3)
+  \item [OK] JWT con expiry corto (1 hora)
+  \item [OK] Refresh token separado (7 días, HttpOnly)
+  \item [OK] IP binding opcional (Supabase setting)
+\end{itemize}
+
+\subsection{CA-6: XSS en campo de comentarios}
+
+\textbf{Actor Malicioso:} Supervisor
+
+\textbf{Contexto:} Formulario de ``Comentario en Control''
+
+\textbf{Escenario de Ataque:}
+\begin{enumerate}
+  \item Supervisor ingresa: \texttt{\textless{}img src=x onerror="alert('XSS')"\textgreater{}}
+  \item Si no se sanitiza, ejecuta JavaScript en navegador de Auditor
+\end{enumerate}
+
+\textbf{Mitigación:}
+\begin{itemize}
+  \item [OK] Sanitización en backend (Bleach o similar) antes de guardar
+  \item [OK] CSP header: \texttt{script-src 'self'} (bloquea inline scripts)
+  \item [OK] React escapa valores por defecto en JSX
+\end{itemize}
+
+% ============================================================================
+\section{Matriz de Trazabilidad}
+
+La siguiente tabla relaciona Historias de Usuario (HU) con Requerimientos Funcionales (RF) y Controles ISO.
+
+\begin{tiny}
+\begin{tabularx}{\textwidth}{|l|l|l|l|}
+\hline
+\textbf{HU} & \textbf{RF Relacionados} & \textbf{Controles ISO} & \textbf{Endpoints} \\
+\hline
+HU-1 & RF-2.1, RF-2.3 & A.5.15, A.9.2 & GET /api/controls, GET /dashboard/kpis \\
+\hline
+HU-2 & RF-2.2, RF-6.1 & A.5.15, A.9.4 & PATCH /api/controls/\{id\}, POST /api/auditoria \\
+\hline
+HU-3 & RF-3.1, RF-3.2 & A.12.4, A.16.1 & POST /api/incidents, GET /api/incidents \\
+\hline
+HU-4 & RF-1.3 & A.5.1, A.6.2 & POST/PATCH/DELETE /api/users, GET /api/users \\
+\hline
+HU-5 & RF-5.1 & A.7.2, A.7.3 & GET /api/capacitaciones, PATCH /api/curso-progreso \\
+\hline
+HU-6 & RF-4.1, RF-4.2 & A.12.6, A.14.1 & POST /api/risk, GET /api/risk/matriz \\
+\hline
+HU-7 & RF-7.1 & A.5.1, A.16.1 & POST /api/reportes/export-pdf \\
+\hline
+\end{tabularx}
+\end{tiny}
+
+\newpage
+
+\section{Métricas de Cobertura}
+
+\begin{itemize}
+  \item \textbf{Historias de Usuario:} 7 HU definidas
+  \item \textbf{Casos de Uso:} 3 CU principales
+  \item \textbf{Casos de Abuso:} 6 CA identificados
+  \item \textbf{Requerimientos Funcionales:} 14 RF (7 módulos)
+  \item \textbf{Requerimientos No Funcionales:} 8 RNF
+  \item \textbf{Requerimientos de Seguridad:} 16 SEC (CIA + OWASP)
+  \item \textbf{Endpoints API:} 39 endpoints REST
+  \item \textbf{Tablas BD:} 9 tablas (multi-tenant)
+  \item \textbf{Controles ISO:} 93 controles (Anexo A)
+\end{itemize}
+
+\section{Conclusiones}
+
+Los requerimientos de ISO SECURE cubren un espectro completo desde seguridad (17 controles) hasta funcionalidad (14 requerimientos), con énfasis en:
+\begin{enumerate}
+  \item \textbf{Seguridad by Design:} CIA + OWASP integrados
+  \item \textbf{Multi-tenancy:} Aislamiento de datos por empresa
+  \item \textbf{RBAC granular:} 4 roles con 11 vistas diferenciadas
+  \item \textbf{Trazabilidad completa:} HU <-> RF <-> Controles ISO <-> Endpoints
+  \item \textbf{Resiliencia:} Auditoría de cambios, MTTR/MTBF, RLS en BD
+\end{enumerate}
+
+Este documento servirá como referencia para las Etapas 2-5 (Arquitectura, Codificación, Pruebas, Entrega).
+
+\vfill
+
+\begin{center}
+  \textit{Documento generado: \today}\\
+  \textit{Etapa 1 - Análisis e Ingeniería de Requerimientos}\\
+  \textit{Universidad de San Buenaventura - Ingeniería de Sistemas}
+\end{center}
+
+\end{document}
