@@ -1,0 +1,493 @@
+\documentclass[12pt,a4paper,oneside]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-noshorthands]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{colortbl}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,positioning,fit,backgrounds,calc}
+\usepackage{longtable}
+
+\hypersetup{colorlinks=true,urlcolor=blue,linkcolor=black}
+
+\definecolor{darkblue}{RGB}{31,56,100}
+\definecolor{accent}{RGB}{79,143,247}
+\definecolor{success}{RGB}{16,185,129}
+\definecolor{warning}{RGB}{245,158,11}
+\definecolor{danger}{RGB}{239,68,68}
+\definecolor{lightgray}{RGB}{240,242,247}
+\definecolor{mediumgray}{RGB}{200,205,215}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\textcolor{accent}{ISO SECURE}}
+\lhead{\textcolor{accent}{Etapa 2 - Arquitectura y Diseño}}
+\cfoot{Página \thepage\ de \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\color{accent}\hrule}
+
+\title{
+  {\Huge \textbf{ISO SECURE}}\\
+  {\LARGE Plataforma de Cumplimiento ISO 27001}\\[2ex]
+  {\Large \textcolor{accent}{Etapa 2: Arquitectura y Diseño}}\\[1ex]
+  {\small Actividad Formativa 2 - 5\%}
+}
+\author{Agustín Peralta --- Universidad de San Buenaventura}
+\date{Entrega: 04 de Mayo de 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Este documento presenta el diseño arquitectónico y la modelación de amenazas del proyecto ISO SECURE. Cubre tres ejes: (1) análisis de riesgos mediante metodología cualitativa Probabilidad × Impacto alineada a ISO 27005; (2) patrones de diseño aplicados en backend y frontend, justificados por los requisitos no funcionales identificados en la Etapa 1; (3) modelado de ataques híbrido STRIDE + PASTA, incluyendo árboles de ataque y catálogo priorizado de mitigaciones mapeadas a OWASP Top 10 y al Anexo A de ISO/IEC 27001:2022.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% ============================================================================
+\section{Introducción}
+
+La Etapa 2 traduce los requerimientos formulados en la Etapa 1 en una arquitectura concreta y verificable. El sistema ISO SECURE es una plataforma web multi-tenant para gestión del SGSI bajo ISO/IEC 27001:2022, con cuatro roles (admin, auditor, supervisor, analista) y nueve módulos operacionales.
+
+\textbf{Premisas de diseño:}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Seguridad desde el origen:} aplicar Privacy/Security by Design (ISO 27001:2022 cláusula 8.1).
+  \item \textbf{Trazabilidad:} cada decisión arquitectónica debe responder a un requisito de la Etapa 1.
+  \item \textbf{Modificabilidad:} preparada para crecer (módulos, sectores, integraciones n8n/Supabase).
+  \item \textbf{Auditabilidad:} todo evento sensible debe quedar en bitácora (control A.8.15).
+\end{itemize}
+
+% ============================================================================
+\section{Vista Arquitectónica General}
+
+\subsection{Estilo arquitectónico}
+
+ISO SECURE adopta una arquitectura \textbf{cliente-servidor por capas (Layered)} con separación estricta entre presentación, lógica y datos, comunicada por una API REST documentada con OpenAPI.
+
+\begin{center}
+\begin{tikzpicture}[
+  layer/.style={rectangle,rounded corners=4pt,draw=darkblue,fill=lightgray,minimum width=10cm,minimum height=1.1cm,align=center,thick},
+  arrow/.style={->,>=stealth,thick,darkblue}
+]
+  \node[layer,fill=accent!20] (fe) at (0,5.5) {\textbf{Presentación} -- React 19 + Vite + Axios};
+  \node[layer,fill=success!20] (be) at (0,4) {\textbf{API / Lógica} -- FastAPI + Pydantic v2 + Servicios};
+  \node[layer,fill=warning!20] (data) at (0,2.5) {\textbf{Acceso a Datos} -- SQLAlchemy 2.0 async + Alembic};
+  \node[layer,fill=danger!20] (db) at (0,1) {\textbf{Persistencia} -- PostgreSQL 15 (Supabase) + Auth JWT};
+
+  \draw[arrow] (fe) -- (be) node[midway,right]{HTTPS/JSON};
+  \draw[arrow] (be) -- (data) node[midway,right]{ORM};
+  \draw[arrow] (data) -- (db) node[midway,right]{asyncpg};
+\end{tikzpicture}
+\end{center}
+
+\subsection{Componentes principales}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lXl}
+\toprule
+\textbf{Componente} & \textbf{Responsabilidad} & \textbf{Tecnología} \\
+\midrule
+SPA Frontend & Vistas dashboard, incidents, controls, risk, etc. & React 19 + Vite \\
+API Gateway (Nginx) & Reverse proxy + TLS termination & Nginx alpine \\
+API REST & 39 endpoints distribuidos en 9 routers & FastAPI 0.111+ \\
+Servicios & Lógica de negocio por dominio & Python 3.13 \\
+ORM & Mapeo objeto-relacional async & SQLAlchemy 2.0 \\
+Auth Provider & Emisión/validación de JWT, refresh tokens & Supabase Auth \\
+Base de Datos & 9 tablas, multi-tenant por empresa\_id & PostgreSQL 15 \\
+Migraciones & Esquema versionado declarativo & Alembic \\
+Orquestador & Webhooks de reportes y alertas & n8n self-hosted \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Decisiones arquitectónicas clave (ADR)}
+
+\textbf{ADR-01 — Stack FastAPI + Supabase.} Adoptado por velocidad de prototipado, tipado fuerte vía Pydantic v2, soporte nativo async (alto throughput con bajo footprint) y Auth JWT gestionada por Supabase (delegamos rotación de claves, MFA y políticas de contraseña).
+
+\textbf{ADR-02 — Monolito modular en lugar de microservicios.} Volumen de tráfico esperado (<200 usuarios concurrentes en piloto), equipo reducido y necesidad de iterar rápido. Si crece, los routers ya están aislados por dominio y permiten extracción posterior.
+
+\textbf{ADR-03 — Multi-tenant lógico (empresa\_id FK).} Comparte schema entre tenants para simplificar mantenimiento y reducir costos. Acepta el riesgo de fuga cross-tenant a cambio de aplicar control estricto en cada query (helper \texttt{\_empresa\_filter}) y pruebas de seguridad obligatorias.
+
+\textbf{ADR-04 — JWT validado contra Supabase.} En lugar de validar localmente la firma, validamos cada request contra \texttt{/auth/v1/user}. Trade-off: latencia adicional vs. revocación inmediata de sesiones comprometidas.
+
+% ============================================================================
+\section{Análisis de Riesgos}
+
+\subsection{Metodología}
+
+Se aplica análisis de riesgos cualitativo conforme a \textbf{ISO/IEC 27005:2022}, complementado por la matriz de impacto del Anexo A. Cada riesgo se evalúa por:
+
+\[
+\text{Nivel de Riesgo} = \text{Probabilidad} \times \text{Impacto}
+\]
+
+Las escalas son:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ccl}
+\toprule
+\textbf{Nivel} & \textbf{Valor} & \textbf{Descripción} \\
+\midrule
+Muy Baja / Insignificante & 1 & Improbable / sin impacto material \\
+Baja / Menor & 2 & Posible / pérdida limitada \\
+Media / Moderada & 3 & Probable en 12 meses / interrupción parcial \\
+Alta / Mayor & 4 & Esperable / pérdida significativa \\
+Muy Alta / Catastrófica & 5 & Recurrente / pérdida total o legal \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Matriz Probabilidad × Impacto}
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+\diagbox{Prob.}{Imp.} & \textbf{1} & \textbf{2} & \textbf{3} & \textbf{4} & \textbf{5} \\
+\hline
+\textbf{5} & \cellcolor{warning!50}5 & \cellcolor{warning!70}10 & \cellcolor{danger!50}15 & \cellcolor{danger!70}20 & \cellcolor{danger!90}25 \\
+\hline
+\textbf{4} & \cellcolor{success!50}4 & \cellcolor{warning!50}8 & \cellcolor{warning!70}12 & \cellcolor{danger!50}16 & \cellcolor{danger!70}20 \\
+\hline
+\textbf{3} & \cellcolor{success!50}3 & \cellcolor{warning!50}6 & \cellcolor{warning!50}9 & \cellcolor{warning!70}12 & \cellcolor{danger!50}15 \\
+\hline
+\textbf{2} & \cellcolor{success!70}2 & \cellcolor{success!50}4 & \cellcolor{warning!50}6 & \cellcolor{warning!50}8 & \cellcolor{warning!70}10 \\
+\hline
+\textbf{1} & \cellcolor{success!70}1 & \cellcolor{success!70}2 & \cellcolor{success!50}3 & \cellcolor{success!50}4 & \cellcolor{warning!50}5 \\
+\hline
+\end{tabular}
+\end{center}
+
+\textbf{Convención de colores:} \textcolor{success}{Verde (1-4)}: aceptable; \textcolor{warning}{Amarillo (5-12)}: tolerable con monitoreo; \textcolor{danger}{Rojo ($\geq$15)}: requiere mitigación inmediata.
+
+\subsection{Riesgos identificados por dominio ISO}
+
+\begin{longtable}{p{1.2cm}p{5cm}cccp{2.5cm}}
+\toprule
+\textbf{ID} & \textbf{Riesgo} & \textbf{P} & \textbf{I} & \textbf{R} & \textbf{Dominio ISO} \\
+\midrule
+\endhead
+R-01 & Fuga de datos cross-tenant por bypass del filtro \texttt{empresa\_id} & 3 & 5 & \cellcolor{danger!50}15 & A.5.15, A.8.3 \\
+R-02 & Token JWT robado por XSS en frontend & 2 & 5 & \cellcolor{warning!70}10 & A.5.17, A.8.5 \\
+R-03 & Inyección SQL vía parámetros no sanitizados & 1 & 5 & \cellcolor{warning!50}5 & A.8.28 \\
+R-04 & Denegación de servicio por exceso de requests (no rate limit) & 4 & 3 & \cellcolor{warning!70}12 & A.8.6 \\
+R-05 & Escalamiento de privilegios por endpoint mal protegido & 2 & 5 & \cellcolor{warning!70}10 & A.5.15, A.8.2 \\
+R-06 & Pérdida de datos por ausencia de respaldos validados & 2 & 5 & \cellcolor{warning!70}10 & A.8.13 \\
+R-07 & Repudio: ausencia de bitácora de cambios sensibles & 3 & 4 & \cellcolor{warning!70}12 & A.8.15 \\
+R-08 & Almacenamiento de secretos en variables de entorno sin gestión & 3 & 4 & \cellcolor{warning!70}12 & A.8.24 \\
+R-09 & Dependencias con vulnerabilidades conocidas (CVE) & 4 & 3 & \cellcolor{warning!70}12 & A.8.8 \\
+R-10 & Ataques CSRF a endpoints autenticados & 2 & 3 & \cellcolor{warning!50}6 & A.8.26 \\
+R-11 & Subida de archivos maliciosos (futuras integraciones) & 2 & 4 & \cellcolor{warning!50}8 & A.8.7 \\
+R-12 & Fallo en la rotación de claves JWT de Supabase & 1 & 5 & \cellcolor{warning!50}5 & A.5.17 \\
+R-13 & Ingeniería social a usuarios privilegiados & 3 & 4 & \cellcolor{warning!70}12 & A.6.3 \\
+R-14 & Logs con información sensible (tokens, PII) & 3 & 3 & \cellcolor{warning!50}9 & A.8.11, A.8.15 \\
+R-15 & Indisponibilidad del proveedor Supabase & 1 & 4 & \cellcolor{success!50}4 & A.5.30 \\
+\bottomrule
+\end{longtable}
+
+\textbf{Resumen del perfil de riesgo:}
+\begin{itemize}[leftmargin=*]
+  \item Riesgos críticos ($\geq$15): \textbf{1} (R-01)
+  \item Riesgos altos (9-12): \textbf{7}
+  \item Riesgos moderados (5-8): \textbf{6}
+  \item Riesgos bajos (1-4): \textbf{1}
+\end{itemize}
+
+\subsection{Estrategia de tratamiento}
+
+Conforme a ISO 27005, cada riesgo se trata con una de las siguientes opciones:
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Estrategia} & \textbf{Aplicación en ISO SECURE} \\
+\midrule
+Mitigar & R-01, R-02, R-03, R-04, R-05, R-07, R-08, R-09 (la mayoría) \\
+Transferir & R-15 (cobertura por SLA del proveedor Supabase) \\
+Aceptar & R-12 (bajo, controlado por Supabase) \\
+Evitar & R-11 (no se permite subida de archivos hasta integrar antivirus) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ============================================================================
+\section{Patrones de Diseño Aplicados}
+
+\subsection{Backend (Python / FastAPI)}
+
+\subsubsection{Layered Architecture}
+Separación estricta entre \textbf{Router} (HTTP), \textbf{Service} (negocio), \textbf{Repository implícito vía SQLAlchemy} (datos) y \textbf{Schema} (contratos). El router nunca toca la base de datos directamente.
+
+\textit{Por qué:} reduce acoplamiento, facilita testing unitario por capa y permite cambiar el ORM o el motor HTTP con bajo costo.
+
+\subsubsection{Dependency Injection (FastAPI Depends)}
+Cada router declara dependencias explícitas: sesión async, usuario autenticado, filtros de rol.
+
+\begin{verbatim}
+@router.get("/incidents")
+async def list_incidents(
+    db: AsyncSession = Depends(get_db),
+    user: UserProfile = Depends(get_current_user)
+):
+    ...
+\end{verbatim}
+
+\textit{Por qué:} elimina globals, hace explícitas las dependencias y habilita sobreescritura en pruebas (\texttt{app.dependency\_overrides}).
+
+\subsubsection{Factory Method para guards de rol}
+\texttt{require\_role(["admin", "auditor"])} retorna una dependency parametrizada.
+
+\textit{Por qué:} elimina código repetido de chequeo de roles en cada endpoint y centraliza la política de autorización.
+
+\subsubsection{Strategy (detección de sector)}
+\texttt{\_detect\_sector()} aplica reglas por palabras clave para asignar el catálogo de controles ISO correspondiente al sector (finanzas, salud, tecnología, etc.).
+
+\textit{Por qué:} permite agregar nuevos sectores sin tocar el flujo de creación de empresa.
+
+\subsubsection{Repository (implícito) + Unit of Work (AsyncSession)}
+Cada \texttt{AsyncSession} encapsula una transacción. Los servicios reciben la sesión y operan sobre ella; el commit/rollback es responsabilidad del scope superior.
+
+\subsubsection{DTO / Schema (Pydantic v2)}
+Separación entre modelos ORM (\texttt{models/}) y contratos de API (\texttt{schemas/}). Evita exponer columnas internas y permite validación estricta de entrada.
+
+\subsection{Frontend (React 19)}
+
+\subsubsection{Composition over inheritance}
+Componentes pequeños y componibles (no jerarquías de clases). Vistas declarativas con props tipadas implícitamente.
+
+\subsubsection{Container / Presentational}
+\texttt{App.jsx} actúa como contenedor (estado global, fetch, routing manual por vista); los componentes hijos son presentacionales.
+
+\textit{Deuda técnica reconocida:} actualmente App.jsx pesa $\sim$2100 líneas. Plan de refactor a contextos + componentes de vista cuando exceda 3000 líneas.
+
+\subsubsection{Adapter (api.js)}
+Capa de adaptación sobre Axios: interceptor de token, manejo unificado de errores y exports por dominio (\texttt{incidentApi}, \texttt{controlApi}, etc.).
+
+\textit{Por qué:} aísla la lógica de transporte HTTP; si cambiamos Axios por fetch nativo, sólo se modifica este archivo.
+
+\subsubsection{Guard de Vista (RBAC)}
+Constante \texttt{VIEW\_ROLES} mapea vista $\rightarrow$ roles permitidos; componente \texttt{AccessDenied} se renderiza si el usuario actual no cumple.
+
+\subsubsection{Lazy data loading}
+Cada vista trae sólo los datos necesarios al montarse (\texttt{useEffect}), evitando cargas innecesarias.
+
+\subsection{Patrones transversales}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Configuration via Environment:} 12-Factor App; secretos fuera del código fuente.
+  \item \textbf{Migration as Code:} Alembic + script \texttt{migrate.py} para seeding determinístico.
+  \item \textbf{Healthcheck endpoint:} \texttt{/health} para liveness/readiness en Docker.
+  \item \textbf{Versionado de API:} prefijo \texttt{/api/v1} para permitir breaking changes futuros.
+\end{itemize}
+
+% ============================================================================
+\section{Modelado de Ataques}
+
+\subsection{Metodología híbrida PASTA + STRIDE}
+
+Se adopta \textbf{PASTA} (Process for Attack Simulation and Threat Analysis) como marco de proceso, integrando \textbf{STRIDE} como taxonomía de amenazas en la Etapa IV. Comparativa de metodologías evaluadas:
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lXl}
+\toprule
+\textbf{Metodología} & \textbf{Enfoque} & \textbf{Decisión} \\
+\midrule
+PASTA & Riesgo, alineada a negocio, 7 etapas & \textcolor{success}{Adoptada} \\
+STRIDE & Taxonomía por categoría de amenaza & \textcolor{success}{Integrada en PASTA IV} \\
+VAST & Visual, ágil, para DevOps & Considerada para automatización futura \\
+OCTAVE & Operacional, corporativo & Descartada (overkill para tamaño actual) \\
+DREAD & Scoring numérico de impacto & Descartada (subjetividad alta) \\
+LINDDUN & Privacidad (GDPR) & Considerada para módulo de PII \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Diagrama de Flujo de Datos (DFD nivel 1)}
+
+\begin{center}
+\begin{tikzpicture}[
+  ent/.style={rectangle,draw=darkblue,fill=accent!20,minimum width=2.2cm,minimum height=0.9cm,thick,align=center},
+  proc/.style={circle,draw=darkblue,fill=success!20,minimum size=1.5cm,thick,align=center},
+  store/.style={rectangle,draw=darkblue,fill=warning!20,minimum width=2.5cm,minimum height=0.9cm,thick,align=center},
+  flow/.style={->,>=stealth,thick,darkblue}
+]
+  \node[ent] (user) at (-5,2) {Usuario\\(navegador)};
+  \node[proc] (api) at (0,2) {API\\FastAPI};
+  \node[ent] (sup) at (5,3.5) {Supabase\\Auth};
+  \node[store] (db) at (5,2) {DB\\Postgres};
+  \node[ent] (n8n) at (5,0.5) {n8n\\webhooks};
+
+  \draw[flow] (user) -- node[above,font=\small]{HTTPS/JWT} (api);
+  \draw[flow] (api) -- node[above,font=\small]{verify token} (sup);
+  \draw[flow] (api) -- node[above,font=\small]{SQL} (db);
+  \draw[flow] (api) -- node[below,font=\small]{trigger} (n8n);
+
+  \begin{scope}[on background layer]
+    \node[draw=danger,dashed,thick,fit=(api),inner sep=15pt,rounded corners] {};
+  \end{scope}
+  \node[font=\small,danger] at (0,3.7) {Trust Boundary};
+\end{tikzpicture}
+\end{center}
+
+Las \textbf{trust boundaries} son los puntos donde cambia el nivel de confianza. Toda entrada que cruza una boundary debe ser validada, autenticada y autorizada.
+
+\subsection{Análisis STRIDE}
+
+\begin{longtable}{p{1cm}p{2cm}p{5cm}p{5cm}}
+\toprule
+\textbf{ID} & \textbf{Categoría} & \textbf{Amenaza} & \textbf{Mitigación} \\
+\midrule
+\endhead
+S-01 & Spoofing & Falsificación de JWT & Validación contra Supabase /auth/v1/user \\
+S-02 & Spoofing & Login con credenciales robadas & MFA opcional + monitoreo de IPs anómalas \\
+S-03 & Spoofing & Reutilización de session tokens & Tokens de corta vida + refresh tokens rotados \\
+S-04 & Spoofing & Falsificar empresa\_id en payload & Inferir empresa\_id del JWT, no del request \\
+T-01 & Tampering & Modificar controles vía API directa & Validación de rol + filtro empresa\_id \\
+T-02 & Tampering & SQL Injection & ORM parametrizado + Pydantic validation \\
+T-03 & Tampering & Tamper de respuestas en tránsito & TLS 1.3 obligatorio + HSTS \\
+T-04 & Tampering & Inyección de datos en upload (futuro) & Validación MIME + antivirus \\
+R-01 & Repudio & Negar haber editado un control & Bitácora con user\_id + timestamp \\
+R-02 & Repudio & Negar haber bajado un reporte & Log de exports en tabla audit\_log \\
+R-03 & Repudio & Borrado de logs por insider & Logs append-only + envío a sink externo \\
+I-01 & Info Disclosure & Cross-tenant leakage & Helper \_empresa\_filter en cada query \\
+I-02 & Info Disclosure & Stack traces con datos sensibles & Errores genéricos en producción \\
+I-03 & Info Disclosure & Logs con tokens o PII & Mask de campos sensibles antes de loguear \\
+I-04 & Info Disclosure & Enumeración de usuarios por login & Mensajes genéricos "credenciales inválidas" \\
+I-05 & Info Disclosure & Listado de endpoints en producción & Docs OpenAPI sólo con auth de admin \\
+D-01 & DoS & Flood de requests sin rate limit & Nginx + slowapi (futuro) \\
+D-02 & DoS & Queries lentas (N+1) & Eager loading + indexes \\
+D-03 & DoS & Pool de conexiones agotado & Pool dimensionado + timeouts \\
+D-04 & DoS & Memory exhaustion en exports & Streaming responses + límites \\
+E-01 & Elev. Privilege & Endpoint sin require\_role & Tests automatizados de RBAC \\
+E-02 & Elev. Privilege & Escalamiento via cambio de rol propio & Endpoint /auth/role sólo admin \\
+E-03 & Elev. Privilege & Confused deputy via param tampering & Validación de ownership en cada acción \\
+E-04 & Elev. Privilege & Bypass por bug en lógica de filtros & Pruebas integradas multi-tenant \\
+\bottomrule
+\end{longtable}
+
+\subsection{Árboles de ataque}
+
+\subsubsection{Árbol 1: Brecha cross-tenant}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Objetivo:} ver datos de otra empresa
+  \begin{itemize}
+    \item Modificar parámetro \texttt{empresa\_id} en URL
+    \begin{itemize}
+      \item Mitigación: el filtro se aplica server-side basado en el JWT, no en el path
+    \end{itemize}
+    \item Forzar rol auditor (acceso global)
+    \begin{itemize}
+      \item Endpoint \texttt{PUT /auth/role} sólo admin + log de cambios
+    \end{itemize}
+    \item Ataque a la integración n8n (canal de salida)
+    \begin{itemize}
+      \item Webhooks autenticados + IP allowlist
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Árbol 2: Falsificar métricas de cumplimiento}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Objetivo:} aparentar compliance sin haberlo logrado
+  \begin{itemize}
+    \item Modificar status del control vía API directa $\rightarrow$ requiere rol auditor/admin
+    \item Editar snapshots históricos $\rightarrow$ tabla append-only, no update
+    \item Manipular detección de sector para evitar controles sectoriales $\rightarrow$ validación en backend
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Árbol 3: Tomar control admin}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Objetivo:} obtener cuenta admin
+  \begin{itemize}
+    \item Phishing al admin $\rightarrow$ MFA + capacitación (A.6.3)
+    \item Bug en \texttt{require\_role} $\rightarrow$ tests RBAC end-to-end
+    \item Comprometer Supabase $\rightarrow$ fuera del scope; depende del SLA del proveedor (R-15)
+    \item Reutilizar token de admin desconectado $\rightarrow$ rotación + logout invalidante
+  \end{itemize}
+\end{itemize}
+
+\subsection{Hoja de ruta de mitigaciones}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lXl}
+\toprule
+\textbf{Plazo} & \textbf{Mitigaciones} & \textbf{Prioridad} \\
+\midrule
+Inmediato (<2 semanas) & \_empresa\_filter en todos los routers, CSP headers, tests RBAC, mask de logs, errores genéricos en prod & Crítica \\
+Corto plazo (1-3 meses) & MFA opcional, rate limiting (slowapi), tabla audit\_log, secret rotation, escaneo de dependencias (CI) & Alta \\
+Mediano plazo (3-6 meses) & WAF, monitoreo de anomalías (SIEM ligero), backups automáticos validados, simulacros de incidente & Media \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ============================================================================
+\section{Trazabilidad Requisitos $\rightarrow$ Diseño}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{llX}
+\toprule
+\textbf{Req. Etapa 1} & \textbf{Elemento de diseño} & \textbf{Justificación} \\
+\midrule
+RNF-Seg-01 (Confidencialidad) & TLS 1.3 + JWT + filtro empresa\_id & Cumple CIA-C; mitiga R-01, I-01 \\
+RNF-Seg-02 (Integridad) & Bitácora + ORM parametrizado & Mitiga T-01, T-02, R-01 \\
+RNF-Seg-03 (Disponibilidad) & Pool + healthcheck + backups & Mitiga D-01..D-04 \\
+RNF-Esc & Async + Pool + indexes & Soporta carga horizontal \\
+RNF-Mod & Routers + servicios + schemas & Permite extracción a microservicios \\
+RF-Auth & Supabase Auth + RBAC factory & Cumple historia HU-01 \\
+RF-Multi-tenant & empresa\_id FK + filtros & Cumple HU-12 \\
+RF-Reportes & Endpoint /dashboard/export + n8n & Cumple HU-08 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ============================================================================
+\section{Conclusiones}
+
+La Etapa 2 consolida un diseño que responde a los requisitos formulados en la Etapa 1 y se sostiene sobre tres pilares:
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Arquitectura por capas} con separación estricta de responsabilidades, justificada por requisitos de modificabilidad y mantenibilidad.
+  \item \textbf{Análisis de riesgos cuantificado} (15 riesgos, 1 crítico, 7 altos) con estrategia de tratamiento alineada a ISO 27005 y mapeada al Anexo A de ISO 27001:2022.
+  \item \textbf{Modelado de amenazas híbrido PASTA + STRIDE} con 24 amenazas catalogadas, 3 árboles de ataque y hoja de ruta de mitigaciones priorizada.
+\end{enumerate}
+
+El diseño no es estático: cada hallazgo de las etapas siguientes (codificación, pruebas, despliegue) puede generar un nuevo riesgo que se incorporará a esta matriz. El mantenimiento continuo del modelo de amenazas forma parte del ciclo PDCA exigido por ISO 27001:2022.
+
+\section*{Referencias}
+\begin{itemize}[leftmargin=*]
+  \item ISO/IEC 27001:2022 — Information security management systems — Requirements.
+  \item ISO/IEC 27005:2022 — Guidance on managing information security risks.
+  \item OWASP Application Security Verification Standard (ASVS) 4.0.3.
+  \item OWASP Top 10:2021.
+  \item Shostack, A. (2014). \textit{Threat Modeling: Designing for Security}.
+  \item UcedaVélez, T., \& Morana, M. M. (2015). \textit{Risk Centric Threat Modeling: Process for Attack Simulation and Threat Analysis (PASTA)}.
+\end{itemize}
+
+\end{document}
