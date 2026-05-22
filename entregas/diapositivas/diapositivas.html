@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>ISO SECURE — Análisis de Seguridad</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  :root {
+    --bg-primary: #0a0e1a;
+    --bg-secondary: #111827;
+    --bg-card: #1a1f35;
+    --border: #2a3050;
+    --text-primary: #f0f4ff;
+    --text-secondary: #8892b0;
+    --accent-blue: #4f8ff7;
+    --accent-green: #10b981;
+    --accent-orange: #f59e0b;
+    --accent-red: #ef4444;
+    --accent-purple: #a78bfa;
+    --accent-cyan: #22d3ee;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  @page {
+    size: 1600px 900px;
+    margin: 0;
+  }
+
+  .slide {
+    width: 1600px;
+    height: 900px;
+    padding: 60px 80px;
+    page-break-after: always;
+    background: var(--bg-primary);
+    background-image:
+      radial-gradient(ellipse at top right, rgba(79,143,247,0.10) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom left, rgba(16,185,129,0.08) 0%, transparent 50%);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .slide:last-child { page-break-after: auto; }
+
+  .slide::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 6px;
+    background: linear-gradient(90deg, var(--accent-blue) 0%, var(--accent-purple) 50%, var(--accent-cyan) 100%);
+  }
+
+  .slide-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 30px;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 12px;
+    font-weight: 800; font-size: 18px; color: var(--accent-blue);
+    letter-spacing: 1px;
+  }
+  .brand-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--accent-blue);
+    box-shadow: 0 0 16px var(--accent-blue);
+  }
+  .slide-num {
+    color: var(--text-secondary); font-size: 14px; font-weight: 500;
+  }
+
+  h1 {
+    font-size: 84px; font-weight: 900;
+    background: linear-gradient(135deg, #f0f4ff 0%, var(--accent-blue) 60%, var(--accent-cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.05;
+    margin-bottom: 24px;
+  }
+  h2 {
+    font-size: 52px; font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.1;
+    margin-bottom: 30px;
+  }
+  h2 .accent { color: var(--accent-blue); }
+  h3 { font-size: 28px; font-weight: 700; color: var(--accent-blue); margin-bottom: 18px; }
+
+  .subtitle {
+    font-size: 30px; color: var(--text-secondary); font-weight: 400;
+    margin-bottom: 60px;
+  }
+
+  .lead {
+    font-size: 22px; color: var(--text-secondary); line-height: 1.6;
+    max-width: 1100px;
+  }
+  .lead strong { color: var(--text-primary); font-weight: 600; }
+
+  /* Cover */
+  .cover {
+    justify-content: center; align-items: flex-start;
+  }
+  .cover-tag {
+    display: inline-block;
+    background: rgba(79,143,247,0.15);
+    border: 1px solid var(--accent-blue);
+    color: var(--accent-blue);
+    padding: 8px 18px; border-radius: 24px;
+    font-size: 14px; font-weight: 600; letter-spacing: 2px;
+    margin-bottom: 40px;
+  }
+  .cover h1 { font-size: 110px; }
+  .cover .subtitle { font-size: 36px; margin-bottom: 50px; max-width: 1200px; }
+  .authors {
+    display: flex; gap: 50px; margin-top: 60px;
+  }
+  .author {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .author-name { font-size: 22px; font-weight: 700; color: var(--text-primary); }
+  .author-role { font-size: 14px; color: var(--text-secondary); letter-spacing: 1px; text-transform: uppercase; }
+  .cover-meta {
+    position: absolute; bottom: 60px; right: 80px;
+    text-align: right; color: var(--text-secondary); font-size: 14px;
+  }
+  .cover-meta strong { color: var(--accent-blue); }
+
+  /* Cards & grids */
+  .grid { display: grid; gap: 24px; flex: 1; }
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .card.accent { border-color: var(--accent-blue); background: linear-gradient(135deg, rgba(79,143,247,0.10), var(--bg-card)); }
+  .card.green { border-color: var(--accent-green); background: linear-gradient(135deg, rgba(16,185,129,0.10), var(--bg-card)); }
+  .card.orange { border-color: var(--accent-orange); background: linear-gradient(135deg, rgba(245,158,11,0.10), var(--bg-card)); }
+  .card.red { border-color: var(--accent-red); background: linear-gradient(135deg, rgba(239,68,68,0.10), var(--bg-card)); }
+  .card.purple { border-color: var(--accent-purple); background: linear-gradient(135deg, rgba(167,139,250,0.10), var(--bg-card)); }
+
+  .card h4 { font-size: 22px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+  .card .pill {
+    align-self: flex-start;
+    padding: 4px 12px; border-radius: 12px;
+    background: rgba(79,143,247,0.15);
+    color: var(--accent-blue);
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 1px; text-transform: uppercase;
+  }
+  .card.green .pill { background: rgba(16,185,129,0.15); color: var(--accent-green); }
+  .card.orange .pill { background: rgba(245,158,11,0.15); color: var(--accent-orange); }
+  .card.red .pill { background: rgba(239,68,68,0.15); color: var(--accent-red); }
+  .card.purple .pill { background: rgba(167,139,250,0.15); color: var(--accent-purple); }
+
+  .card p { font-size: 16px; color: var(--text-secondary); line-height: 1.55; }
+  .card ul { list-style: none; padding: 0; }
+  .card ul li {
+    font-size: 15px; color: var(--text-secondary);
+    padding: 6px 0 6px 18px; position: relative; line-height: 1.4;
+  }
+  .card ul li::before {
+    content: "▸";
+    position: absolute; left: 0; color: var(--accent-blue);
+    font-weight: 700;
+  }
+
+  .stat {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+  }
+  .stat .val {
+    font-size: 64px; font-weight: 900; line-height: 1;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+  .stat .lbl {
+    font-size: 14px; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 1.5px;
+  }
+
+  /* SAST vs DAST */
+  .vs {
+    display: grid; grid-template-columns: 1fr 80px 1fr;
+    align-items: stretch; gap: 0; flex: 1;
+  }
+  .vs-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .vs-card.left { border-color: var(--accent-purple); }
+  .vs-card.right { border-color: var(--accent-blue); }
+  .vs-divider {
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 900; color: var(--text-secondary);
+  }
+  .vs-card .ico {
+    width: 56px; height: 56px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 900;
+  }
+  .vs-card.left .ico { background: rgba(167,139,250,0.15); color: var(--accent-purple); }
+  .vs-card.right .ico { background: rgba(79,143,247,0.15); color: var(--accent-blue); }
+  .vs-card h3 { font-size: 36px; margin: 0; }
+  .vs-card.left h3 { color: var(--accent-purple); }
+
+  /* Tabla */
+  table {
+    width: 100%; border-collapse: collapse;
+    background: var(--bg-card); border-radius: 12px; overflow: hidden;
+    font-size: 14px;
+  }
+  th {
+    background: rgba(79,143,247,0.1);
+    color: var(--accent-blue);
+    padding: 14px 16px;
+    text-align: left; font-weight: 700;
+    font-size: 12px; text-transform: uppercase; letter-spacing: 1px;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
+    vertical-align: middle;
+  }
+  td.id { font-weight: 700; color: var(--text-primary); font-family: 'JetBrains Mono', monospace; }
+  td.sev-critica { color: var(--accent-red); font-weight: 700; }
+  td.sev-alta { color: var(--accent-orange); font-weight: 700; }
+  td.sev-media { color: var(--accent-blue); font-weight: 600; }
+  td.sev-baja { color: var(--accent-green); font-weight: 600; }
+
+  /* Code */
+  pre {
+    background: #0a0e1a;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 15px;
+    color: var(--text-primary);
+    line-height: 1.6;
+    overflow: hidden;
+  }
+  pre .kw { color: var(--accent-purple); font-weight: 600; }
+  pre .str { color: var(--accent-green); }
+  pre .cm { color: var(--text-secondary); font-style: italic; }
+
+  /* Stack layers */
+  .layers {
+    display: flex; flex-direction: column; gap: 10px; flex: 1; justify-content: center;
+  }
+  .layer {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 24px;
+    display: grid; grid-template-columns: 220px 1fr auto;
+    align-items: center; gap: 24px;
+  }
+  .layer .name {
+    font-size: 20px; font-weight: 700; color: var(--accent-blue);
+  }
+  .layer .desc { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+  .layer .badge {
+    padding: 4px 10px; border-radius: 10px;
+    background: rgba(16,185,129,0.15); color: var(--accent-green);
+    font-size: 12px; font-weight: 700;
+  }
+
+  /* Footer */
+  .slide-footer {
+    margin-top: auto;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12px; color: var(--text-secondary);
+    letter-spacing: 1px;
+  }
+
+  /* Imagen frame */
+  .frame {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .frame img { width: 100%; display: block; }
+  .frame .cap {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 13px; color: var(--text-secondary);
+    background: var(--bg-secondary);
+  }
+
+  /* URL bar */
+  .url-bar {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: rgba(16,185,129,0.10);
+    border: 1px solid var(--accent-green);
+    color: var(--accent-green);
+    padding: 10px 18px; border-radius: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px; font-weight: 600;
+  }
+  .url-bar::before {
+    content: ""; width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent-green);
+    box-shadow: 0 0 10px var(--accent-green);
+  }
+
+  /* Cierre */
+  .closing { justify-content: center; text-align: center; }
+  .closing h1 { font-size: 84px; }
+  .closing .subtitle { font-size: 26px; }
+  .quote {
+    font-size: 30px; font-weight: 300; font-style: italic;
+    color: var(--text-secondary); max-width: 1100px;
+    line-height: 1.5; margin: 40px auto;
+  }
+  .quote strong { color: var(--accent-blue); font-style: normal; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- 1. PORTADA -->
+<section class="slide cover">
+  <div class="slide-header">
+    <div class="brand"><div class="brand-dot"></div>ISO SECURE</div>
+    <div class="slide-num">01 / 14</div>
+  </div>
+  <div class="cover-tag">ETAPA 4 · ANÁLISIS DINÁMICO DE SEGURIDAD</div>
+  <h1>Análisis de Seguridad</h1>
+  <div class="subtitle">Pruebas dinámicas (DAST) y configuración segura<br>aplicadas al proyecto ISO SECURE</div>
+  <div class="authors">
+    <div class="author">
+      <div class="author-name">Agustín Peralta</div>
+      <div class="author-role">Backend & Arquitectura</div>
+    </div>
+    <div class="author">
+      <div class="author-name">Natalia Moncaleano</div>
+      <div class="author-role">Modelo de amenazas</div>
+    </div>
+    <div class="author">
+      <div class="author-name">Johan Salazar</div>
+      <div class="author-role">Hardening & DevSecOps</div>
+    </div>
+  </div>
+  <div class="cover-meta">
+    <strong>Universidad de San Buenaventura</strong><br>
+    Mayo 2026
+  </div>
+</section>
+
+<!-- 2. CONTEXTO -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="brand"><div class="brand-dot"></div>ISO SECURE</div>
+    <div class="slide-num">02 / 14</div>
+  </div>
+  <h2>¿Qué es <span class="accent">ISO SECURE</span>?</h2>
+  <p class="lead">Plataforma web para gestionar el <strong>Sistema de Gestión de Seguridad de la Información (SGSI)</strong> conforme a <strong>ISO/IEC 27001:2022</strong>. Multi-tenant, con 4 roles y 9 módulos operacionales.</p>
+  <div class="grid grid-4" style="margin-top:40px;">
+    <div class="stat"><div class="val">93</div><div class="lbl">controles ISO precargados</div></div>
+    <div class="stat"><div class="val">39</div><div class="lbl">endpoints API REST</div></div>
+    <div class="stat"><div class="val">24</div><div class="lbl">amenazas catalogadas</div></div>
+    <div class="stat"><div class="val">15</div><div class="lbl">riesgos identificados</div></div>
+  </div>
+  <div style="margin-top:50px;">
+    <div class="url-bar">https://iso-secure.agustinynatalia.site</div>
+  </div>
+  <div class="slide-footer"><span>FastAPI + React + PostgreSQL · Coolify</span><span>ISO/IEC 27001:2022</span></div>
+</section>
+
+<!-- 3. LA PREGUNTA CLAVE -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="brand"><div class="brand-dot"></div>ISO SECURE</div>
+    <div class="slide-num">03 / 14</div>
+  </div>
+  <h2>¿Por qué <span class="accent">DAST</span> si ya hicimos SAST?</h2>
+  <div class="vs">
+    <div class="vs-card left">
+      <div class="ico">📄</div>
+      <h3>SAST</h3>
+      <p class="lead" style="font-size:18px;">Static Application Security Testing</p>
+      <ul style="list-style:none; padding:0; margin-top:12px;">
+        <li style="padding:6px 0 6px 18px; position:relative; color:var(--text-secondary); font-size:16px;"><span style="position:absolute;left:0;color:var(--accent-purple);font-weight:700;">▸</span>Lee el código fuente</li>
+        <li style="padding:6px 0 6px 18px; position:relative; color:var(--text-secondary); font-size:16px;"><span style="position:absolute;left:0;color:var(--accent-purple);font-weight:700;">▸</span>Detecta patrones peligrosos</li>
+        <li style="padding:6px 0 6px 18px; position:relative; color:var(--text-secondary); font-size:16px;"><span style="position:absolute;left:0;color:var(--accent-purple);font-weight:700;">▸</span>ruff, bandit, semgrep</li>
+        <li style="padding:6px 0 6px 18px; position:relative; color:var(--text-secondary); font-size:16px;"><span style="position:absolute;left:0;color:var(--accent-purple);font-weight:700;">▸</span>Hecho en Etapa 3</li>
+      </ul>
+    </div>
+    <div class="vs-divider">VS</div>
+    <div class="vs-card right">
+      <div class="ico">⚡</div>
+      <h3>DAST</h3>
+      <p class="lead" style="font-size:18px;">Dynamic Application Security Testing</p>
+      <ul style="list-style:none; padding:0; margin-top:12px;">
+        <li style="padding:6px 0 6px 18px; position:relative; color:var(--text-secondary); font-size:16px;"><span style="position:absolute;left:0;color:var(--accent-blue);font-weight:700;">▸</span>Ataca la app corriendo</li>
+        <li style="padding:6px 0 6px 18px; position:relative; color:var(--text-secondary); font-size:16px;"><span style="position:absolute;left:0;color:var(--accent-blue);font-weight:700;">▸</span>Encuentra problemas de runtime</li>
+        <li style="padding:6px 0 6px 18px; position:relative; color:var(--text-secondary); font-size:16px;"><span style="position:absolute;left:0;color:var(--accent-blue);font-weight:700;">▸</span>OWASP ZAP, Nuclei, sqlmap</li>
+        <li style="padding:6px 0 6px 18px; position:relative; color:var(--text-secondary); font-size:16px;"><span style="position:absolute;left:0;color:var(--accent-blue);font-weight:700;">▸</span>Esta etapa</li>
+      </ul>
+    </div>
+  </div>
+  <p class="lead" style="margin-top:30px; text-align:center;"><strong>Ambos son obligatorios.</strong> Detectan cosas distintas.</p>
+  <div class="slide-footer"><span>SAST vs DAST</span><span>Etapa 4 / 5</span></div>
+</section>
+
+<!-- 4. HERRAMIENTAS -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="brand"><div class="brand-dot"></div>ISO SECURE</div>
+    <div class="slide-num">04 / 14</div>
+  </div>
+  <h2>Las herramientas del <span class="accent">DAST</span></h2>
+  <div class="grid grid-3" style="margin-top:20px;">
+    <div class="card accent">
+      <span class="pill">⚡ General</span>
+      <h4>OWASP ZAP</h4>
+      <p>Proxy interceptor + spider + scan activo con cientos de payloads. El "todo en uno" del DAST.</p>
+    </div>
+    <div class="card purple">
+      <span class="pill">📋 Plantillas</span>
+      <h4>Nuclei</h4>
+      <p>Ejecuta plantillas YAML mantenidas por la comunidad. Una plantilla = una vulnerabilidad o misconfig.</p>
+    </div>
+    <div class="card red">
+      <span class="pill">💉 Inyección</span>
+      <h4>sqlmap</h4>
+      <p>Detecta y explota automáticamente todos los tipos de SQL injection: error-based, blind, time-based.</p>
+    </div>
+    <div class="card green">
+      <span class="pill">🔐 TLS</span>
+      <h4>testssl.sh</h4>
+      <p>Auditoría completa de TLS: protocolos, suites de cifrado, certificados y CVEs conocidos.</p>
+    </div>
+    <div class="card orange">
+      <span class="pill">🔥 Fuzzing</span>
+      <h4>ffuf</h4>
+      <p>Fuzzer web ultrarápido. Descubre endpoints y parámetros ocultos con miles de peticiones.</p>
+    </div>
+    <div class="card accent">
+      <span class="pill">🎫 Auth</span>
+      <h4>JWT_Tool</h4>
+      <p>Toolkit específico para JWT: firma débil, alg=none, kid traversal, falsificación.</p>
+    </div>
+  </div>
+  <div class="slide-footer"><span>Toolkit DAST seleccionado</span><span>OWASP WSTG v4.2</span></div>
+</section>
+
+<!-- 5. ESTRATEGIA EN 4 CAPAS -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="brand"><div class="brand-dot"></div>ISO SECURE</div>
+    <div class="slide-num">05 / 14</div>
+  </div>
+  <h2>Estrategia: ataque en <span class="accent">4 capas</span></h2>
+  <p class="lead">No se ataca todo de golpe. Se avanza por capas, cada una asumiendo más conocimiento del sistema.</p>
+  <div class="grid grid-4" style="margin-top:36px;">
+    <div class="card green">
+      <span class="pill">CAPA 1</span>
+      <h4>Reconocimiento</h4>
+      <p style="font-size:14px;">Sin login. Lo que un atacante anónimo ve.</p>
+      <ul>
+        <li>Spider de ZAP</li>
+        <li>Archivos sensibles (.git, .env)</li>
+        <li>TLS audit</li>
+        <li>Versiones expuestas</li>
+      </ul>
+    </div>
+    <div class="card accent">
+      <span class="pill">CAPA 2</span>
+      <h4>Autenticación</h4>
+      <p style="font-size:14px;">Atacar el login.</p>
+      <ul>
+        <li>Enumeración de usuarios</li>
+        <li>Brute force</li>
+        <li>Credential stuffing</li>
+        <li>JWT (alg=none, exp)</li>
+      </ul>
+    </div>
+    <div class="card orange">
+      <span class="pill">CAPA 3</span>
+      <h4>Autorizado</h4>
+      <p style="font-size:14px;">Con cuenta válida de bajo privilegio.</p>
+      <ul>
+        <li>IDOR (cambiar IDs)</li>
+        <li>Cross-tenant</li>
+        <li>Privilege escalation</li>
+        <li>Tamper de parámetros</li>
+      </ul>
+    </div>
+    <div class="card red">
+      <span class="pill">CAPA 4</span>
+      <h4>Fuzzing</h4>
+      <p style="font-size:14px;">Peticiones masivas con datos absurdos.</p>
+      <ul>
+        <li>Strings 1MB, ints negativos</li>
+        <li>SQL/NoSQL/SSTI</li>
+        <li>Unicode/emojis</li>
+        <li>Edge cases</li>
+      </ul>
+    </div>
+  </div>
+  <div class="slide-footer"><span>Recon → Auth → Autorizado → Fuzzing</span><span>OWASP ASVS 4.0</span></div>
+</section>
+
+<!-- 6. HALLAZGOS -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="brand"><div class="brand-dot"></div>ISO SECURE</div>
+    <div class="slide-num">06 / 14</div>
+  </div>
+  <h2>Catálogo de <span class="accent">hallazgos</span> y mitigaciones</h2>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Hallazgo</th><th>Severidad</th><th>Mitigación aplicada</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="id">D-10</td><td>JWT alg=none aceptado</td><td class="sev-critica">CRÍTICA</td><td>Validación contra Supabase /auth/v1/user</td></tr>
+      <tr><td class="id">D-11</td><td>IDOR en /incidents/{id}</td><td class="sev-critica">CRÍTICA</td><td>Verificación de ownership en service layer</td></tr>
+      <tr><td class="id">D-12</td><td>Bypass cross-tenant via parámetro</td><td class="sev-critica">CRÍTICA</td><td>Helper _empresa_filter infiere del JWT</td></tr>
+      <tr><td class="id">D-01</td><td>Cookies sin HttpOnly/Secure</td><td class="sev-alta">ALTA</td><td>HttpOnly + Secure + SameSite=Lax</td></tr>
+      <tr><td class="id">D-02</td><td>CORS demasiado permisivo (*)</td><td class="sev-alta">ALTA</td><td>Whitelist explícita por entorno</td></tr>
+      <tr><td class="id">D-07</td><td>TLS 1.0 / 1.1 habilitado</td><td class="sev-alta">ALTA</td><td>Solo TLS 1.2+ (ideal 1.3)</td></tr>
+      <tr><td class="id">D-09</td><td>Brute force sin lockout</td><td class="sev-alta">ALTA</td><td>Rate limit Nginx + lockout Supabase</td></tr>
+      <tr><td class="id">D-13</td><td>SSRF en webhooks n8n</td><td class="sev-alta">ALTA</td><td>Allowlist de hosts salientes</td></tr>
+      <tr><td class="id">D-15</td><td>Falta de rate limit global</td><td class="sev-alta">ALTA</td><td>slowapi + Nginx limit_req</td></tr>
+      <tr><td class="id">D-03</td><td>Cabeceras de seguridad faltantes</td><td class="sev-media">MEDIA</td><td>Nginx con CSP, HSTS, X-Frame, X-Content-Type</td></tr>
+      <tr><td class="id">D-04</td><td>Stack traces en producción</td><td class="sev-media">MEDIA</td><td>DEBUG=False + handler genérico</td></tr>
+    </tbody>
+  </table>
+  <div class="slide-footer"><span>15 hallazgos · 3 críticos · 6 altos</span><span>Mitigación = código + config</span></div>
+</section>
+
+<!-- 7. HARDENING -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="brand"><div class="brand-dot"></div>ISO SECURE</div>
+    <div class="slide-num">07 / 14</div>
+  </div>
+  <h2>Hardening por <span class="accent">capa</span></h2>
+  <p class="lead">DAST encuentra el problema. El hardening lo previene. Endurecimos cada capa de la pila.</p>
+  <div class="layers" style="margin-top:30px;">
+    <div class="layer" style="border-color:var(--accent-blue);">
+      <div class="name">🌐 Frontend (React)</div>
+      <div class="desc">Sin source maps en prod · SRI en scripts externos · sólo variables VITE_* públicas</div>
+      <div class="badge">SECURE</div>
+    </div>
+    <div class="layer" style="border-color:var(--accent-cyan);">
+      <div class="name">⚡ FastAPI</div>
+      <div class="desc">DEBUG=False · docs_url=None · Trusted Hosts middleware · request_id en logs · GZip con minimum_size</div>
+      <div class="badge">SECURE</div>
+    </div>
+    <div class="layer" style="border-color:var(--accent-green);">
+      <div class="name">🔧 Nginx</div>
+      <div class="desc">TLS 1.3 · Mozilla intermediate · server_tokens off · Rate limit · CSP/HSTS/X-Frame headers</div>
+      <div class="badge">HARDENED</div>
+    </div>
+    <div class="layer" style="border-color:var(--accent-orange);">
+      <div class="name">🐳 Docker</div>
+      <div class="desc">Multi-stage · USER 10001 (no-root) · cap-drop=ALL · Read-only FS · Trivy scan obligatorio</div>
+      <div class="badge">HARDENED</div>
+    </div>
+    <div class="layer" style="border-color:var(--accent-purple);">
+      <div class="name">🗄️ PostgreSQL</div>
+      <div class="desc">sslmode=require · Roles separados (app/migrator) · RLS · PITR 7 días · Encriptación at-rest</div>
+      <div class="badge">HARDENED</div>
+    </div>
+    <div class="layer" style="border-color:var(--accent-red);">
+      <div class="name">🖥️ Sistema Operativo</div>
+      <div class="desc">Debian slim · unattended-upgrades · SSH solo claves · ufw (22/80/443) · fail2ban · auditd</div>
+      <div class="badge">HARDENED</div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>Defensa en profundidad</span><span>CIS Benchmarks</span></div>
+</section>
+
+<!-- 8. CABECERAS HTTP -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="brand"><div class="brand-dot"></div>ISO SECURE</div>
+    <div class="slide-num">08 / 14</div>
+  </div>
+  <h2>Cabeceras HTTP de <span class="accent">seguridad</span></h2>
+  <p class="lead">Aquí se ganan o pierden la mayoría de los puntos en una auditoría DAST.</p>
+  <pre style="margin-top:30px;">
+<span class="cm"># nginx.conf — extracto real</span>
+<span class="kw">add_header</span> Strict-Transport-Security <span class="str">"max-age=31536000; includeSubDomains; preload"</span> always;
+<span class="kw">add_header</span> X-Content-Type-Options <span class="str">"nosniff"</span> always;
+<span class="kw">add_header</span> X-Frame-Options          <span class="str">"DENY"</span> always;
+<span class="kw">add_header</span> Referrer-Policy          <span class="str">"strict-origin-when-cross-origin"</span> always;
+<span class="kw">add_header</span> Permissions-Policy       <span class="str">"geolocation=(), microphone=(), camera=()"</span> always;
+<span class="kw">add_header</span> Content-Security-Policy  <span class="str">"default-src 'self';
+   script-src 'self' 'unsafe-inline';
+   connect-src 'self' https://*.supabase.co;
+   frame-ancestors 'none';"</span> always;
+
+<span class="cm"># Ocultar versión del servidor</span>
+<span class="kw">server_tokens</span> off;</pre>
+  <div class="slide-footer"><span>HSTS · CSP · X-Frame · X-Content-Type</span><span>Mozilla SSL Generator (intermediate)</span></div>
+</section>
+
+<!-- 9. SECRETS + BLUE-GREEN -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="brand"><div class="brand-dot"></div>ISO SECURE</div>
+    <div class="slide-num">09 / 14</div>
+  </div>
+  <h2>Secretos & Despliegue <span class="accent">blue-green</span></h2>
+  <div class="grid grid-2" style="margin-top:20px;">
+    <div class="card accent">
+      <span class="pill">🔐 Gestión de secretos</span>
+      <h4>Reglas estrictas</h4>
+      <ul>
+        <li>Nunca en el código (detect-secrets en pre-commit)</li>
+        <li>Nunca en logs (filtros de redacción)</li>
+        <li>Rotación cada 90 días</li>
+        <li>Mínimo privilegio por servicio</li>
+        <li>Vault del proveedor (Supabase, Coolify)</li>
+      </ul>
+    </div>
+    <div class="card green">
+      <span class="pill">🚀 Blue-Green</span>
+      <h4>Despliegue sin downtime</h4>
+      <ul>
+        <li>Coolify levanta versión "green" en paralelo</li>
+        <li>Healthcheck /health debe pasar</li>
+        <li>Swap automático de tráfico blue→green</li>
+        <li>Rollback si falla healthcheck</li>
+        <li>Cero downtime, cero riesgo</li>
+      </ul>
+    </div>
+  </div>
+  <p class="lead" style="margin-top:40px; text-align:center; font-size:24px;">
+    <strong style="color:var(--accent-cyan);">git push origin main</strong> → Coolify detecta → build → healthcheck → swap → URL viva
+  </p>
+  <div class="slide-footer"><span>Continuous Deployment seguro</span><span>Coolify · self-hosted</span></div>
+</section>
+
+<!-- 10. IR -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="brand"><div class="brand-dot"></div>ISO SECURE</div>
+    <div class="slide-num">10 / 14</div>
+  </div>
+  <h2>Respuesta a <span class="accent">incidentes</span></h2>
+  <p class="lead">Por bien que esté todo, hay que asumir que un día algo falla. Plan documentado con SLA por severidad.</p>
+  <div class="grid grid-4" style="margin-top:30px;">
+    <div class="card red"><span class="pill">P0</span><h4>Crítico</h4><p style="font-size:14px;">Brecha activa · indisponibilidad total · fuga de datos</p><div style="font-size:32px; font-weight:900; color:var(--accent-red);">15 min</div></div>
+    <div class="card orange"><span class="pill">P1</span><h4>Alto</h4><p style="font-size:14px;">Vuln explotable confirmada · degradación severa</p><div style="font-size:32px; font-weight:900; color:var(--accent-orange);">1 h</div></div>
+    <div class="card accent"><span class="pill">P2</span><h4>Medio</h4><p style="font-size:14px;">Vuln sin exploit público · función no crítica caída</p><div style="font-size:32px; font-weight:900; color:var(--accent-blue);">4 h</div></div>
+    <div class="card green"><span class="pill">P3</span><h4>Bajo</h4><p style="font-size:14px;">Hardening pendiente · hallazgo informativo</p><div style="font-size:32px; font-weight:900; color:var(--accent-green);">5 días</div></div>
+  </div>
+  <h3 style="margin-top:40px;">Procedimiento (6 pasos)</h3>
+  <div style="display:flex; gap:14px;">
+    <div style="background:var(--bg-card); border:1px solid var(--border); padding:14px 18px; border-radius:10px; flex:1; text-align:center;"><strong style="color:var(--accent-blue);">1. Detección</strong></div>
+    <div style="background:var(--bg-card); border:1px solid var(--border); padding:14px 18px; border-radius:10px; flex:1; text-align:center;"><strong style="color:var(--accent-blue);">2. Triaje</strong></div>
+    <div style="background:var(--bg-card); border:1px solid var(--border); padding:14px 18px; border-radius:10px; flex:1; text-align:center;"><strong style="color:var(--accent-blue);">3. Contención</strong></div>
+    <div style="background:var(--bg-card); border:1px solid var(--border); padding:14px 18px; border-radius:10px; flex:1; text-align:center;"><strong style="color:var(--accent-blue);">4. Erradicación</strong></div>
+    <div style="background:var(--bg-card); border:1px solid var(--border); padding:14px 18px; border-radius:10px; flex:1; text-align:center;"><strong style="color:var(--accent-blue);">5. Recuperación</strong></div>
+    <div style="background:var(--bg-card); border:1px solid var(--border); padding:14px 18px; border-radius:10px; flex:1; text-align:center;"><strong style="color:var(--accent-blue);">6. Lecciones</strong></div>
+  </div>
+  <div class="slide-footer"><span>ISO/IEC 27001:2022 · A.5.24–A.5.28</span><span>Post-mortem en 48h</span></div>
+</section>
+
+<!-- 11. ISO -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="brand"><div class="brand-dot"></div>ISO SECURE</div>
+    <div class="slide-num">11 / 14</div>
+  </div>
+  <h2>Cumplimiento <span class="accent">ISO/IEC 27001:2022</span></h2>
+  <p class="lead">La Etapa 4 cubre técnicamente estos controles del Anexo A.</p>
+  <div class="grid grid-2" style="margin-top:30px;">
+    <table>
+      <thead><tr><th>Control</th><th>Cubierto por</th></tr></thead>
+      <tbody>
+        <tr><td class="id">A.5.24-A.5.28</td><td>Procedimiento IR + SLAs</td></tr>
+        <tr><td class="id">A.5.30</td><td>PITR + RPO 1h / RTO 2h</td></tr>
+        <tr><td class="id">A.8.7</td><td>Trivy en CI</td></tr>
+        <tr><td class="id">A.8.8</td><td>DAST ZAP + Nuclei</td></tr>
+        <tr><td class="id">A.8.9</td><td>Coolify + vault</td></tr>
+        <tr><td class="id">A.8.13</td><td>Backup diario + PITR</td></tr>
+        <tr><td class="id">A.8.15</td><td>Logs JSON · 90d retención</td></tr>
+      </tbody>
+    </table>
+    <table>
+      <thead><tr><th>Control</th><th>Cubierto por</th></tr></thead>
+      <tbody>
+        <tr><td class="id">A.8.16</td><td>Prometheus + alertas</td></tr>
+        <tr><td class="id">A.8.20</td><td>TLS 1.3 + ufw + rate limit</td></tr>
+        <tr><td class="id">A.8.23</td><td>CSP estricto + CORS allowlist</td></tr>
+        <tr><td class="id">A.8.24</td><td>TLS 1.3 + JWT RS256</td></tr>
+        <tr><td class="id">A.8.26</td><td>DAST como gate de release</td></tr>
+        <tr><td class="id">A.8.27</td><td>Hardening por capa</td></tr>
+        <tr><td class="id">A.8.29</td><td>DAST automatizado</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="margin-top:30px; text-align:center; font-size:22px; color:var(--text-secondary);">
+    <strong style="color:var(--accent-green);">~14 controles</strong> del Anexo A cubiertos sólo en esta etapa.
+  </p>
+  <div class="slide-footer"><span>Anexo A · A.5 (organizacionales) + A.8 (tecnológicos)</span><span>Etapa 4</span></div>
+</section>
+
+<!-- 12. VER EN VIVO 1 -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="brand"><div class="brand-dot"></div>ISO SECURE</div>
+    <div class="slide-num">12 / 14</div>
+  </div>
+  <h2>Modelado de <span class="accent">amenazas</span> en vivo</h2>
+  <p class="lead">Las páginas de documentación están desplegadas y son públicas. Capturas reales del sitio:</p>
+  <div class="grid grid-2" style="margin-top:30px;">
+    <div class="frame">
+      <img src="img/threat-modeling.png" alt="Threat Modeling STRIDE">
+      <div class="cap"><strong>/threat-modeling.html</strong> — STRIDE con 24 amenazas, árboles de ataque, matriz P×I</div>
+    </div>
+    <div class="frame">
+      <img src="img/metodologia-amenazas.png" alt="Metodología PASTA+STRIDE">
+      <div class="cap"><strong>/metodologia-amenazas.html</strong> — PASTA+STRIDE integrado, 7 etapas aplicadas</div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>Documentación pública del proyecto</span><span>iso-secure.agustinynatalia.site</span></div>
+</section>
+
+<!-- 13. VER EN VIVO 2 -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="brand"><div class="brand-dot"></div>ISO SECURE</div>
+    <div class="slide-num">13 / 14</div>
+  </div>
+  <h2>Arquitectura y <span class="accent">API</span> en vivo</h2>
+  <div class="grid grid-2" style="margin-top:30px;">
+    <div class="frame">
+      <img src="img/arquitectura.png" alt="Arquitectura">
+      <div class="cap"><strong>/arquitectura.html</strong> — capas, backend, frontend, stack, despliegue, RBAC, ER</div>
+    </div>
+    <div class="frame">
+      <img src="img/docs.png" alt="Docs API">
+      <div class="cap"><strong>/docs.html</strong> — documentación interactiva de los 39 endpoints REST</div>
+    </div>
+  </div>
+  <div style="margin-top:40px; text-align:center;">
+    <div class="url-bar">https://iso-secure.agustinynatalia.site</div>
+  </div>
+  <div class="slide-footer"><span>Frontend SPA + Backend FastAPI</span><span>Coolify · TLS 1.3</span></div>
+</section>
+
+<!-- 14. CIERRE -->
+<section class="slide closing">
+  <div class="slide-header">
+    <div class="brand"><div class="brand-dot"></div>ISO SECURE</div>
+    <div class="slide-num">14 / 14</div>
+  </div>
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+    <h1>Seguridad <span style="background:linear-gradient(135deg,var(--accent-green),var(--accent-cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">en runtime</span></h1>
+    <div class="subtitle">La seguridad no se decide al elegir framework.<br>Se decide en runtime, en la infraestructura y en los procesos.</div>
+    <div class="quote">
+      "Si no probaste el sistema en producción <strong>atacándolo tú mismo</strong>, no sabés qué tan seguro es. Lo demás es opinión."
+    </div>
+    <div class="authors" style="margin-top:40px;">
+      <div class="author"><div class="author-name">Agustín Peralta</div><div class="author-role">Backend & Arquitectura</div></div>
+      <div class="author"><div class="author-name">Natalia Moncaleano</div><div class="author-role">Modelo de amenazas</div></div>
+      <div class="author"><div class="author-name">Johan Salazar</div><div class="author-role">Hardening & DevSecOps</div></div>
+    </div>
+    <div style="margin-top:50px;">
+      <div class="url-bar">https://iso-secure.agustinynatalia.site</div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>Universidad de San Buenaventura · Mayo 2026</span><span>ISO/IEC 27001:2022</span></div>
+</section>
+
+</body>
+</html>
