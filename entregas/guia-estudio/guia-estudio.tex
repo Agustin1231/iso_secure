@@ -15,6 +15,7 @@
 \usepackage{fancyhdr}
 \usepackage{lastpage}
 \usepackage{longtable}
+\usepackage{listings}
 \usepackage{tcolorbox}
 \tcbuselibrary{breakable,skins}
 
@@ -27,11 +28,31 @@
 \definecolor{danger}{RGB}{239,68,68}
 \definecolor{lightgray}{RGB}{240,242,247}
 \definecolor{boxbg}{RGB}{246,249,255}
+\definecolor{codebg}{RGB}{248,249,252}
+\definecolor{codekw}{RGB}{109,40,217}
+\definecolor{codestr}{RGB}{16,120,40}
+\definecolor{codecom}{RGB}{120,120,120}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  keywordstyle=\color{codekw}\bfseries,
+  stringstyle=\color{codestr},
+  commentstyle=\color{codecom}\itshape,
+  showstringspaces=false,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{lightgray},
+  numbers=left,
+  numberstyle=\tiny\color{codecom},
+  xleftmargin=2em,
+  framexleftmargin=1.5em
+}
 
 \pagestyle{fancy}
 \fancyhf{}
 \rhead{\textcolor{accent}{ISO SECURE}}
-\lhead{\textcolor{accent}{Guía Didáctica}}
+\lhead{\textcolor{accent}{Guía de Análisis de Seguridad}}
 \cfoot{Página \thepage\ de \pageref{LastPage}}
 \renewcommand{\headrulewidth}{0.5pt}
 \renewcommand{\headrule}{\color{accent}\hrule}
@@ -40,16 +61,20 @@
   colback=boxbg, colframe=accent, fonttitle=\bfseries,
   title=#1, breakable, sharp corners, boxrule=0.5pt
 }
-\newtcolorbox{warningbox}[1]{
+\newtcolorbox{warnbox}[1]{
   colback=warning!10, colframe=warning, fonttitle=\bfseries,
+  title=#1, breakable, sharp corners, boxrule=0.5pt
+}
+\newtcolorbox{dangerbox}[1]{
+  colback=danger!10, colframe=danger, fonttitle=\bfseries,
   title=#1, breakable, sharp corners, boxrule=0.5pt
 }
 
 \title{
   {\Huge \textbf{ISO SECURE}}\\
-  {\LARGE Guía Didáctica del Proyecto}\\[2ex]
-  {\Large \textcolor{accent}{Cómo entender lo que hicimos}}\\[1ex]
-  {\small Material de estudio --- técnico pero accesible}
+  {\LARGE Guía de Estudio: Análisis de Seguridad}\\[2ex]
+  {\Large \textcolor{accent}{Pruebas dinámicas (DAST) y Configuración Segura}}\\[1ex]
+  {\small Material didáctico --- técnico pero accesible}
 }
 \author{Agustín Peralta --- Universidad de San Buenaventura}
 \date{Mayo de 2026}
@@ -59,279 +84,425 @@
 \maketitle
 
 \begin{abstract}
-Esta guía explica el proyecto \textbf{ISO SECURE} en lenguaje claro pero técnico. Está pensada para que cualquier persona con conocimientos básicos de software entienda \textit{qué hicimos}, \textit{por qué lo hicimos así} y \textit{cómo verlo funcionando}. Las URLs reales del producto desplegado aparecen al final.
+Esta guía profundiza en la \textbf{Etapa 4 del proyecto ISO SECURE}: el análisis de seguridad dinámico (DAST) y la configuración segura del sistema en producción. Está pensada para que cualquier persona con conocimientos básicos entienda \textit{cómo se le hacen pruebas de seguridad a una aplicación web ya construida} y \textit{cómo se endurece la infraestructura} para reducir el área de ataque. Las primeras etapas (requerimientos, diseño, codificación) aparecen sólo como contexto. El foco está en \textbf{cómo atacar el propio sistema antes que lo haga un externo} y en \textbf{cómo configurar cada capa para que aguante}.
 \end{abstract}
 
 \tableofcontents
 \newpage
 
 % ============================================================================
-\section{¿Qué es ISO SECURE? (en 3 párrafos)}
+\section{Contexto en una página}
 
-\textbf{En palabras simples:} ISO SECURE es una página web donde una empresa puede llevar el control de su seguridad informática siguiendo la norma internacional \textbf{ISO/IEC 27001:2022}. Esa norma es la guía mundial sobre cómo proteger la información: qué controles aplicar, cómo medir incidentes, cómo capacitar al personal, etc.
+\textbf{ISO SECURE} es una aplicación web para gestión del SGSI bajo ISO/IEC 27001:2022, ya construida. Stack: \textbf{FastAPI (Python) + React + PostgreSQL Supabase}, desplegada en \textbf{Coolify} en \url{https://iso-secure.agustinynatalia.site/}.
 
-\textbf{Para quién:} la plataforma sirve a empresas que quieren certificarse en ISO 27001 o que ya lo están y necesitan demostrar que mantienen el sistema vivo. Hay cuatro tipos de usuario: \textbf{admin} (gestiona todo), \textbf{auditor} (revisa transversalmente), \textbf{supervisor} (mira reportes históricos) y \textbf{analista} (carga datos del día a día).
+Antes de llegar a esta guía hicimos:
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Etapa 1} — Requerimientos (qué tenía que hacer).
+  \item \textbf{Etapa 2} — Arquitectura + modelado de amenazas STRIDE/PASTA (24 amenazas catalogadas, 15 riesgos).
+  \item \textbf{Etapa 3} — Codificación con SAST (análisis estático del código: ruff, bandit, semgrep).
+\end{itemize}
 
-\textbf{Qué ofrece concretamente:} el sistema viene cargado con los 93 controles del Anexo A de la norma, un módulo para registrar incidentes de seguridad, una matriz de riesgos, una sección de capacitaciones con videos y un dashboard ejecutivo con KPIs. Cada empresa que se registra ve sólo sus propios datos (\textbf{multi-tenant}), aunque corra sobre la misma base.
+\textbf{Ahora, en esta guía, el foco es la Etapa 4:} probar la app corriendo \textit{como si fuéramos atacantes} (DAST) y endurecer la configuración de toda la pila para que aguante esas pruebas y las del mundo real.
 
-\begin{infobox}{Resumen visual del producto}
-Página \texttt{/} con login $\rightarrow$ Dashboard con métricas $\rightarrow$ Módulos: Incidentes, Controles ISO, Riesgo, Empresas, Usuarios, Capacitaciones, Implementación, Auditoría.
+\begin{infobox}{Diferencia clave: SAST vs. DAST}
+\textbf{SAST (Static Application Security Testing):} analizar el código fuente \emph{sin} correr el programa. Es como leer una receta para detectar errores.\\[1ex]
+\textbf{DAST (Dynamic Application Security Testing):} \emph{ejecutar} el programa y atacarlo con peticiones reales. Es como cocinar la receta y probarla.\\[1ex]
+Ambos son obligatorios. Detectan cosas distintas. SAST encuentra problemas en el código (ej. SQL concatenado); DAST encuentra problemas de configuración y comportamiento que sólo aparecen en runtime (ej. una cabecera HTTP que no estaba puesta, una sesión que se reutiliza).
 \end{infobox}
 
 % ============================================================================
-\section{Cómo está construido (la cocina)}
+\section{¿Por qué hacemos análisis dinámico?}
 
-\subsection{Las tres partes principales}
+Imaginemos un edificio recién construido. El SAST sería revisar los planos para ver si las paredes tienen el grosor reglamentario. El DAST sería entrar al edificio con un martillo y golpear paredes a ver qué pasa.
 
-Una aplicación web siempre tiene tres pedazos. ISO SECURE no es la excepción:
+Las paredes pueden estar bien dibujadas en el plano y haberse construido mal. O peor: la puerta principal puede estar bien pero alguien dejó la ventana del baño abierta. \textbf{Sólo atacando el edificio terminado descubrimos esas cosas.}
 
-\begin{enumerate}[leftmargin=*]
-  \item \textbf{Frontend} — lo que el usuario ve en el navegador. Hecho con \textbf{React 19} (la librería más popular para interfaces interactivas) y empaquetado con \textbf{Vite} (un compilador rápido). Es una \textit{Single Page Application} (SPA): una sola página que cambia su contenido sin recargar el navegador.
-
-  \item \textbf{Backend} — el cerebro que vive en el servidor. Hecho con \textbf{FastAPI}, un framework de Python pensado para construir APIs modernas. El backend expone 39 \textit{endpoints} (puntos de entrada) organizados en 9 routers temáticos: \texttt{/auth}, \texttt{/incidents}, \texttt{/controls}, \texttt{/risk}, \texttt{/dashboard}, \texttt{/empresas}, \texttt{/capacitaciones}, \texttt{/implementacion}, \texttt{/auditoria}.
-
-  \item \textbf{Base de datos} — donde se guarda la información. Usamos \textbf{PostgreSQL 15} hospedado en \textbf{Supabase} (un proveedor en la nube). Son 9 tablas: empresas, perfiles de usuario, incidentes, controles, niveles de riesgo, snapshots, cursos, progreso de cursos y ítems de auditoría.
-\end{enumerate}
-
-\subsection{Cómo conversan entre sí}
-
-\begin{infobox}{Flujo de un click típico}
-1. El usuario hace clic en \textit{"ver incidentes"}.\\
-2. React envía una petición \texttt{GET /api/v1/incidents} con su token JWT.\\
-3. FastAPI valida el token contra Supabase Auth.\\
-4. Si es válido, consulta PostgreSQL filtrando por la empresa del usuario.\\
-5. Devuelve la lista en JSON.\\
-6. React la pinta en la pantalla.
-\end{infobox}
-
-\subsection{Decisiones que tomamos y por qué}
-
-\textbf{¿Por qué FastAPI y no Django o Flask?} FastAPI es asíncrono por defecto (puede manejar muchas peticiones en paralelo) y tiene tipado fuerte vía Pydantic, lo que reduce muchos errores comunes.
-
-\textbf{¿Por qué Supabase y no una DB propia?} Supabase nos da Auth (login, MFA, recuperación de contraseña) ya resuelto, backups automáticos y certificación de seguridad. Acelera el desarrollo y reduce superficie de ataque.
-
-\textbf{¿Por qué multi-tenant en una sola base?} Comparte recursos entre empresas y baja costos. El riesgo (que una empresa vea datos de otra) se mitiga aplicando un filtro estricto por \texttt{empresa\_id} en cada consulta.
+\textbf{Cosas que SAST no puede ver y DAST sí:}
+\begin{itemize}[leftmargin=*]
+  \item Cabeceras HTTP que faltan en producción aunque estén configuradas en código (porque Nginx las elimina).
+  \item Endpoints que olvidaste poner detrás de autenticación.
+  \item Cookies sin atributo \texttt{Secure} o \texttt{HttpOnly}.
+  \item Cifrados débiles activos en el servidor TLS.
+  \item Versiones expuestas del servidor (ej. \texttt{Server: nginx/1.18}).
+  \item Mensajes de error con stack traces en producción.
+  \item Configuraciones incorrectas que no están en el código de la app sino en la infraestructura.
+  \item Bugs de lógica que sólo se reproducen con secuencias específicas de peticiones.
+\end{itemize}
 
 % ============================================================================
-\section{Las 5 etapas del trabajo (qué fuimos haciendo)}
+\section{Las herramientas que usamos (y para qué sirve cada una)}
 
-El proyecto siguió un ciclo formal llamado \textbf{SSDLC} (Secure Software Development Lifecycle) en 5 etapas. Cada una con un PDF entregable.
-
-\subsection{Etapa 1 --- Requerimientos (qué tiene que hacer el sistema)}
-
-Antes de escribir una sola línea de código, listamos todo lo que el sistema debía hacer. En total:
-
-\begin{itemize}[leftmargin=*]
-  \item Requisitos de seguridad (Confidencialidad, Integridad, Disponibilidad).
-  \item Requerimientos funcionales (qué hace el sistema: login, listar incidentes, etc.).
-  \item Requerimientos no funcionales (qué tan rápido, qué tan escalable, qué tan mantenible).
-  \item Historias de usuario por rol.
-  \item Casos de uso \textit{y casos de abuso} (cómo alguien podría usarlo mal).
-\end{itemize}
-
-\textbf{Lección:} pensar primero qué se va a construir evita rehacer cosas después.
-
-\subsection{Etapa 2 --- Arquitectura y Diseño}
-
-Acá decidimos \textit{cómo} se iba a construir y modelamos los ataques posibles. Tres componentes clave:
-
-\begin{enumerate}[leftmargin=*]
-  \item \textbf{Análisis de riesgos:} identificamos 15 riesgos, los calificamos con probabilidad $\times$ impacto y armamos una matriz de colores (verde/amarillo/rojo). Resultó 1 riesgo crítico (rojo) y 7 altos.
-  \item \textbf{Patrones de diseño:} elegimos cómo organizar el código (capas, inyección de dependencias, factories, etc.) y por qué.
-  \item \textbf{Modelado de ataques:} usamos dos metodologías combinadas, \textbf{PASTA} (proceso) + \textbf{STRIDE} (taxonomía). Catalogamos 24 amenazas y armamos 3 árboles de ataque (cómo un atacante podría llegar a su objetivo).
-\end{enumerate}
-
-\begin{infobox}{¿Qué es STRIDE? (truco para acordarse)}
-Cada letra es una categoría de amenaza:\\
-\textbf{S}poofing (suplantar), \textbf{T}ampering (modificar), \textbf{R}epudiation (negar haber actuado), \textbf{I}nformation Disclosure (filtrar), \textbf{D}enial of Service (tirar el servicio), \textbf{E}levation of Privilege (escalar permisos).
-\end{infobox}
-
-\subsection{Etapa 3 --- Codificación e Integración}
-
-Acá efectivamente \textit{programamos}, pero siguiendo reglas estrictas:
-
-\begin{itemize}[leftmargin=*]
-  \item Mapeamos cada vulnerabilidad común (\textbf{OWASP Top 10}) a una práctica concreta del código.
-  \item Usamos un flujo de Git con \textit{Pull Requests} obligatorios y revisión por pares.
-  \item Configuramos \textbf{análisis estático (SAST)} automático: herramientas que leen el código y avisan si hay patrones peligrosos (ruff, bandit, semgrep).
-  \item Configuramos \textbf{análisis de dependencias (SCA)}: revisa que ninguna librería que usemos tenga vulnerabilidades conocidas (pip-audit, npm audit, Trivy).
-\end{itemize}
-
-\textbf{Por qué importa:} la mayoría de las vulnerabilidades se introducen al codificar. Detectarlas en CI/CD evita que lleguen a producción.
-
-\subsection{Etapa 4 --- Pruebas y Despliegue}
-
-Con el código corriendo, lo atacamos a propósito:
-
-\begin{itemize}[leftmargin=*]
-  \item \textbf{Análisis dinámico (DAST):} herramientas como \textbf{OWASP ZAP} y \textbf{Nuclei} disparan ataques reales contra el sitio y reportan lo que pasa.
-  \item \textbf{Configuración segura:} endurecimos cada capa (sistema operativo, Docker, Nginx, base de datos, aplicación, frontend). Por ejemplo: TLS 1.3 obligatorio, cabeceras de seguridad HTTP, contenedores como usuario no-root.
-  \item \textbf{Gestión de secretos:} contraseñas y tokens nunca en el código, siempre en un vault con rotación cada 90 días.
-  \item \textbf{Despliegue blue-green:} si la nueva versión falla, automáticamente vuelve a la versión anterior.
-  \item \textbf{Plan de respuesta a incidentes} con tiempos de respuesta por severidad (P0 = 15 minutos, P3 = 5 días).
-\end{itemize}
-
-\subsection{Etapa 5 SUMATIVA --- Entrega Final (20\%)}
-
-Documento maestro que consolida las 4 etapas anteriores + un ZIP con todos los soportes (PDFs, código, diagramas, anexos ISO).
-
-% ============================================================================
-\section{Glosario rápido (palabras técnicas que sí o sí aparecen)}
-
-\begin{table}[h]
-\centering
-\small
-\begin{tabularx}{\textwidth}{lX}
+\begin{longtable}{p{3cm}p{8.5cm}p{2cm}}
 \toprule
-\textbf{Término} & \textbf{Qué significa en este proyecto} \\
+\textbf{Herramienta} & \textbf{Qué hace} & \textbf{Tipo} \\
 \midrule
-SGSI & Sistema de Gestión de Seguridad de la Información (lo que ISO 27001 pide). \\
-ISO 27001:2022 & Norma internacional para gestionar seguridad de la información. \\
-Anexo A & Lista de 93 controles concretos que la norma sugiere implementar. \\
-JWT & Token corto que prueba quién es el usuario sin guardarlo en la sesión del servidor. \\
-RBAC & Control de acceso basado en roles (admin, auditor, supervisor, analista). \\
-Multi-tenant & Una sola aplicación atiende a varias empresas sin que se vean entre sí. \\
-SAST & Análisis estático: leer el código en busca de problemas. \\
-DAST & Análisis dinámico: atacar la app corriendo para encontrar problemas. \\
-SCA & Análisis de dependencias: revisar librerías de terceros. \\
-CI/CD & Integración y despliegue continuo: automatización de pruebas y deploy. \\
-OWASP & Organización mundial que mantiene los catálogos de vulnerabilidades web. \\
-STRIDE & Método para clasificar amenazas en 6 categorías. \\
-PASTA & Proceso de 7 etapas para modelar amenazas alineado al negocio. \\
-TLS 1.3 & Versión moderna del cifrado que usa todo HTTPS. \\
-CSP & Cabecera HTTP que limita de qué orígenes puede cargar recursos el navegador. \\
-PITR & Point-in-Time Recovery: restaurar la base de datos a cualquier momento del pasado reciente. \\
-PDCA & Ciclo de mejora continua: Plan-Do-Check-Act. Lo exige ISO 27001. \\
+\endhead
+OWASP ZAP & Proxy interceptor + spider que recorre la app + scan activo con cientos de payloads. Es el "todo en uno" del DAST. & General \\
+Nuclei & Ejecuta plantillas YAML mantenidas por la comunidad. Cada plantilla busca una vulnerabilidad o configuración específica (CVE, panel expuesto, default credential). & Plantillas \\
+sqlmap & Especializado en inyección SQL. Detecta y explota automáticamente todos los tipos: error-based, blind, time-based. & Especializado \\
+nikto & Escáner clásico de servidor web. Busca archivos sensibles (\texttt{.git}, \texttt{backup.sql}), cabeceras inseguras y versiones. & Servidor \\
+testssl.sh & Auditoría completa de la configuración TLS/SSL: protocolos, suites de cifrado, certificados, vulnerabilidades conocidas (HEARTBLEED, ROBOT, POODLE). & TLS \\
+ffuf & "Fuzzer" web ultrarápido. Sirve para descubrir endpoints y parámetros ocultos disparando miles de peticiones contra un diccionario. & Fuzzing \\
+JWT\_Tool & Toolkit específico para tokens JWT: detecta firma débil, \texttt{alg=none}, kid traversal, falsificación. & API/Auth \\
+Burp Suite Community & Equivalente a ZAP. Más usado en pentesting manual; tiene proxy interceptor y repeater. & Manual \\
+Trivy & Escanea imágenes Docker en busca de CVEs en paquetes del sistema operativo de la imagen y dependencias. & Contenedores \\
 \bottomrule
-\end{tabularx}
-\end{table}
+\end{longtable}
 
 % ============================================================================
-\section{Cómo está conectado todo (diagrama mental)}
+\section{Estrategia: el ataque en 4 capas}
 
+No se ataca todo a la vez. Se va por capas, cada una asumiendo más conocimiento del sistema:
+
+\subsection{Capa 1 --- Reconocimiento (sin login)}
+
+Es lo que un atacante anónimo en internet puede ver. Sólo navegando la URL pública.
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{ZAP Spider:} recorre el sitio automáticamente y mapea todas las URLs visibles.
+  \item \textbf{nikto:} busca archivos comunes sensibles. ¿Hay un \texttt{/.git/}? ¿Un \texttt{/backup.sql}? ¿Un \texttt{/.env}?
+  \item \textbf{testssl.sh:} validar que sólo TLS 1.2+ esté activo y los cifrados sean modernos.
+  \item \textbf{Nuclei templates de exposures:} comprobar paneles administrativos expuestos, repos de código, archivos de configuración.
+\end{itemize}
+
+\begin{infobox}{Comando real que ejecutamos}
+\texttt{nuclei -u https://iso-secure.agustinynatalia.site -t exposures/ -t misconfiguration/ -severity critical,high -o reporte-nuclei.txt}
+\end{infobox}
+
+\subsection{Capa 2 --- Autenticación}
+
+Ahora atacamos el login.
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Enumeración de usuarios:} ¿el mensaje "usuario no existe" es distinto a "contraseña incorrecta"? Si lo es, un atacante puede sacar la lista de usuarios.
+  \item \textbf{Brute force:} ¿hay throttle o lockout después de N intentos?
+  \item \textbf{Credential stuffing:} probar credenciales filtradas en otras brechas (Have I Been Pwned).
+  \item \textbf{Pruebas de JWT:} validar que el sistema rechaza tokens con \texttt{alg=none}, firmas modificadas, \texttt{exp} vencido o futuras.
+\end{itemize}
+
+\subsection{Capa 3 --- Autorizado (con cuenta de prueba)}
+
+Con una cuenta válida (rol \textit{supervisor} o \textit{analista}, con bajos privilegios), atacamos la lógica.
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{IDOR (Insecure Direct Object Reference):} cambiar el ID en una URL. ¿Si abro \texttt{/incidents/123} y cambio a \texttt{/incidents/124} veo datos ajenos?
+  \item \textbf{Cross-tenant:} con un token de la empresa A, ¿puedo ver datos de la empresa B?
+  \item \textbf{Privilege escalation:} con rol supervisor, ¿puedo ejecutar acciones de admin?
+  \item \textbf{Tamper de parámetros:} mandar payloads modificados al body de la petición.
+\end{itemize}
+
+\begin{dangerbox}{Tres riesgos críticos para multi-tenant}
+1. \textbf{Bypass de filtro por empresa:} si el código se confía de un \texttt{empresa\_id} en el body de la petición, el atacante lo cambia y ve datos de otra empresa.\\
+2. \textbf{Predicción de IDs:} si los IDs son secuenciales (1, 2, 3...), un atacante puede iterar.\\
+3. \textbf{Endpoints olvidados sin \texttt{require\_role()}:} basta uno sin el guard para abrir el sistema.\\[1ex]
+\textbf{Mitigaciones aplicadas en ISO SECURE:} el \texttt{empresa\_id} se infiere del JWT, nunca del request; los IDs son UUID; cada endpoint tiene \texttt{require\_role()} declarado.
+\end{dangerbox}
+
+\subsection{Capa 4 --- Fuzzing}
+
+Disparamos peticiones masivas con datos absurdos:
+
+\begin{itemize}[leftmargin=*]
+  \item Strings de 1MB en campos pensados para 100 caracteres.
+  \item Enteros negativos donde se esperan positivos.
+  \item Fechas de año 9999 o año -1.
+  \item Inyecciones: SQL, NoSQL, comandos del sistema, plantilla (SSTI), LDAP, XPath.
+  \item Caracteres Unicode, emojis, bytes nulos.
+\end{itemize}
+
+% ============================================================================
+\section{Catálogo de hallazgos esperados (con su mitigación)}
+
+Esta tabla sintetiza qué vulnerabilidades buscamos, qué severidad tienen y cómo las mitigamos:
+
+\begin{longtable}{p{1cm}p{4.5cm}cp{6.5cm}}
+\toprule
+\textbf{ID} & \textbf{Hallazgo} & \textbf{Sev.} & \textbf{Mitigación aplicada} \\
+\midrule
+\endhead
+D-01 & Cookies sin HttpOnly/Secure & Alta & Atributos \texttt{HttpOnly; Secure; SameSite=Lax} \\
+D-02 & CORS demasiado permisivo (\texttt{*}) & Alta & Whitelist explícita por entorno (sólo dominio propio) \\
+D-03 & Cabeceras de seguridad faltantes & Media & Nginx con CSP, HSTS, X-Frame-Options, X-Content-Type-Options \\
+D-04 & Stack traces en producción & Media & \texttt{DEBUG=False} + handler genérico \\
+D-05 & Robots.txt expone rutas internas & Baja & Quitar referencias internas \\
+D-06 & \texttt{Server: nginx/1.x} revela versión & Baja & \texttt{server\_tokens off;} \\
+D-07 & TLS 1.0 / 1.1 habilitado & Alta & Solo TLS 1.2+ (ideal 1.3) \\
+D-08 & Suites RC4 / 3DES activas & Alta & Suite Mozilla intermediate \\
+D-09 & Brute force sin lockout & Alta & Rate limit Nginx + lockout Supabase \\
+D-10 & JWT \texttt{alg=none} aceptado & Crítica & Validación contra Supabase \texttt{/auth/v1/user} \\
+D-11 & IDOR en \texttt{/incidents/\{id\}} & Crítica & Verificación de ownership en service layer \\
+D-12 & Bypass cross-tenant via parámetro & Crítica & Helper \texttt{\_empresa\_filter} infiere del JWT \\
+D-13 & SSRF en webhooks n8n & Alta & Allowlist de hosts salientes \\
+D-14 & Open redirect en \texttt{/login?return\_to} & Media & Validar dominio destino \\
+D-15 & Falta de rate limit global & Alta & slowapi + Nginx \texttt{limit\_req} \\
+\bottomrule
+\end{longtable}
+
+% ============================================================================
+\section{Configuración Segura --- el "hardening"}
+
+Análisis dinámico encuentra el problema; el hardening lo previene. Endurecimos capa por capa.
+
+\subsection{Sistema operativo del host}
+
+\begin{itemize}[leftmargin=*]
+  \item Distribución mínima (Debian slim o Alpine): menos software = menos vulnerabilidades.
+  \item Actualizaciones automáticas de seguridad (\texttt{unattended-upgrades}).
+  \item SSH endurecido: sólo claves, no contraseñas, puerto no estándar, \texttt{fail2ban}.
+  \item Firewall \texttt{ufw}: sólo 22, 80 y 443 abiertos. Todo lo demás bloqueado.
+  \item Sin servicios innecesarios; auditoría con \texttt{systemd-analyze}.
+\end{itemize}
+
+\subsection{Docker y contenedores}
+
+\begin{itemize}[leftmargin=*]
+  \item Imágenes base \textbf{oficiales y versionadas} (no usar \texttt{latest}, que cambia bajo los pies).
+  \item Multi-stage builds: la imagen final no contiene compiladores ni código fuente, sólo lo necesario para correr.
+  \item Usuario \textbf{no-root} dentro del contenedor: si te lo comprometen, no tiene privilegios.
+  \item \texttt{--cap-drop=ALL}: quitar todas las "capabilities" de Linux y devolver sólo las indispensables.
+  \item Read-only filesystem cuando se puede.
+  \item Escaneo con \textbf{Trivy} antes de promover una imagen a producción.
+\end{itemize}
+
+\begin{infobox}{Dockerfile endurecido (extracto)}
 \begin{verbatim}
-[ Navegador ]
-     |
-     | HTTPS + JWT
-     v
-[ Nginx + TLS 1.3 ]  <-- reverse proxy con headers de seguridad
-     |
-     v
-[ FastAPI (Python) ]
-     |       |
-     |       +--> [ Supabase Auth ] (valida cada token)
-     |
-     v
-[ PostgreSQL ]  <-- filtro empresa_id en CADA query
-     |
-     +--> backups diarios + PITR 7 dias
-     +--> RLS (Row Level Security) activado
+FROM python:3.13-slim AS builder
+RUN pip install --user -r requirements.txt
 
-[ n8n self-hosted ]  <-- webhooks para reportes
+FROM python:3.13-slim
+RUN groupadd -r app && useradd -r -g app -u 10001 app
+COPY --from=builder /root/.local /home/app/.local
+COPY --chown=app:app . /app
+USER app
+HEALTHCHECK --interval=30s CMD python -c "..."
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0"]
 \end{verbatim}
+\end{infobox}
+
+\subsection{Nginx (reverse proxy + TLS)}
+
+Aquí se ganan o pierden la mayoría de los puntos en una auditoría DAST. Lo que aplicamos:
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{TLS 1.2 mínimo, TLS 1.3 preferido.}
+  \item Suite de cifrados según \textbf{Mozilla SSL Configuration Generator} (perfil intermediate).
+  \item \texttt{server\_tokens off;} para no revelar la versión de Nginx.
+  \item Rate limiting por IP en endpoints sensibles (login).
+  \item Buffer sizes ajustados para mitigar ataques tipo Slowloris.
+\end{itemize}
+
+\textbf{Cabeceras HTTP de seguridad obligatorias:}
+
+\begin{lstlisting}[language=bash]
+add_header Strict-Transport-Security
+    "max-age=31536000; includeSubDomains; preload" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header X-Frame-Options "DENY" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+add_header Permissions-Policy
+    "geolocation=(), microphone=(), camera=()" always;
+add_header Content-Security-Policy
+    "default-src 'self';
+     script-src 'self' 'unsafe-inline';
+     connect-src 'self' https://*.supabase.co;
+     frame-ancestors 'none';" always;
+\end{lstlisting}
+
+\subsection{PostgreSQL (Supabase)}
+
+\begin{itemize}[leftmargin=*]
+  \item Conexiones solo con \texttt{sslmode=require}.
+  \item Roles separados: \texttt{app\_user} (sólo CRUD) y \texttt{migrator} (sólo DDL para migraciones).
+  \item \textbf{Sin SUPERUSER} en la cadena de conexión de la aplicación.
+  \item \textbf{Row Level Security (RLS)} en tablas multi-tenant: la propia DB rechaza la consulta si el filtro no corresponde.
+  \item Backups automáticos diarios + \textbf{Point-in-Time Recovery 7 días} (puedes restaurar a cualquier segundo de la última semana).
+  \item Encriptación en reposo activa por defecto en Supabase.
+\end{itemize}
+
+\subsection{Aplicación FastAPI}
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{DEBUG=False} en producción.
+  \item \texttt{docs\_url=None} (o detrás de auth admin) para no exponer la documentación OpenAPI.
+  \item Trusted Hosts middleware con whitelist de dominios.
+  \item Middleware de logging estructurado con \texttt{request\_id}.
+  \item GZip middleware con \texttt{minimum\_size} para evitar el ataque BREACH.
+\end{itemize}
+
+\subsection{Frontend React}
+
+\begin{itemize}[leftmargin=*]
+  \item Source maps desactivados en producción (no se entrega código original al navegador).
+  \item Subresource Integrity (SRI) en scripts externos.
+  \item Sólo variables \texttt{VITE\_*} (públicas por diseño); ningún secreto en el bundle.
+\end{itemize}
 
 % ============================================================================
-\section{Cumplimiento normativo (lo que la norma dice y cómo lo cumplimos)}
+\section{Gestión de secretos en producción}
 
-ISO 27001:2022 tiene cláusulas obligatorias (4 a 10) y un Anexo A con controles sugeridos. ISO SECURE cubre técnicamente alrededor de 30 controles del Anexo A. Algunos ejemplos:
+Un secreto en el código fuente es un boleto para la brecha. Las reglas que aplicamos:
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Nunca en el código.} Detección automática con \texttt{detect-secrets} en pre-commit y CI.
+  \item \textbf{Nunca en logs.} Filtros que enmascaran campos sensibles.
+  \item \textbf{Rotación periódica}: 90 días para credenciales operativas.
+  \item \textbf{Mínimo privilegio}: cada servicio con su propio set de credenciales.
+  \item \textbf{Cifrado en reposo}: vault del proveedor (Supabase Vault, GitHub Secrets, Coolify Secrets).
+\end{enumerate}
+
+% ============================================================================
+\section{Despliegue seguro: blue-green con rollback}
+
+Toda la estrategia anterior se rompe si un mal release tira el sistema. Por eso usamos despliegue \textbf{blue-green}:
+
+\begin{enumerate}[leftmargin=*]
+  \item Coolify levanta una versión nueva del contenedor (\textit{green}) en paralelo a la actual (\textit{blue}).
+  \item Healthcheck \texttt{/health} debe pasar antes de aceptar tráfico.
+  \item Si pasa, se hace swap del tráfico desde \textit{blue} a \textit{green}.
+  \item Si falla, se descarta \textit{green} y \textit{blue} sigue sirviendo. \textbf{Cero downtime, cero riesgo}.
+\end{enumerate}
+
+% ============================================================================
+\section{Respuesta a Incidentes (cuando algo igual sale mal)}
+
+Por bien que esté todo, hay que asumir que un día algo falla. Por eso tenemos plan de respuesta a incidentes (IR) con \textbf{niveles de severidad y SLA por nivel}:
 
 \begin{table}[h]
 \centering
 \small
-\begin{tabularx}{\textwidth}{llX}
+\begin{tabularx}{\textwidth}{lXl}
 \toprule
-\textbf{Control} & \textbf{Qué pide} & \textbf{Cómo lo cumplimos} \\
+\textbf{Nivel} & \textbf{Descripción} & \textbf{Tiempo respuesta} \\
 \midrule
-A.5.15 & Control de acceso & RBAC con 4 roles + guards en backend y frontend \\
-A.5.17 & Información de autenticación & Supabase Auth con JWT corto + MFA \\
-A.5.24 & Planificación de IR & Procedimiento documentado con SLAs por severidad \\
-A.8.2 & Privilegios & Principio de mínimo privilegio en cada endpoint \\
-A.8.8 & Gestión de vulnerabilidades & SAST + DAST + SCA en CI \\
-A.8.13 & Backups & PITR de 7 días + snapshot diario externo \\
-A.8.15 & Logging & Logs JSON estructurados con 90 días de retención \\
-A.8.24 & Criptografía & TLS 1.3 + JWT firmado RS256 \\
-A.8.28 & Codificación segura & Mapeo OWASP Top 10 + reglas internas \\
-A.8.29 & Pruebas de seguridad & DAST automatizado por release \\
+P0 (Crítico) & Brecha activa, indisponibilidad total, fuga de datos & 15 min \\
+P1 (Alto) & Vulnerabilidad explotable confirmada, degradación severa & 1 h \\
+P2 (Medio) & Vulnerabilidad sin exploit público, función no crítica caída & 4 h \\
+P3 (Bajo) & Hardening pendiente, hallazgo informativo & 5 días hábiles \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
+\textbf{Procedimiento (6 pasos, alineado a A.5.24-A.5.28 de ISO 27001:2022):}
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Detección} — alerta automática o reporte manual.
+  \item \textbf{Triaje} — asignar severidad y propietario.
+  \item \textbf{Contención} — aislar (revocar tokens, bloquear IP, deshabilitar usuario, rollback blue-green).
+  \item \textbf{Erradicación} — corregir causa raíz, parchear, actualizar.
+  \item \textbf{Recuperación} — restaurar servicio + validar integridad.
+  \item \textbf{Lecciones aprendidas} — post-mortem en 48 hrs + actualización del catálogo de amenazas.
+\end{enumerate}
+
 % ============================================================================
-\section{URLs del producto desplegado (¡aquí está todo!)}
-
-El sistema completo está desplegado y accesible. \textbf{Coolify} (la plataforma que usamos para desplegar) hace deploy automático cada vez que se sube código a la rama \texttt{main} del repositorio.
-
-\subsection{URL principal de la aplicación}
-
-\begin{center}
-\colorbox{success!20}{\Large\textbf{\url{https://iso-secure.agustinynatalia.site/}}}
-\end{center}
-
-\noindent Esta es la página de login. Desde acá se entra a todos los módulos según el rol del usuario.
-
-\subsection{Páginas de documentación y diagramas (todas accesibles públicamente)}
+\section{Glosario rápido}
 
 \begin{table}[h]
 \centering
 \small
 \begin{tabularx}{\textwidth}{lX}
 \toprule
-\textbf{URL} & \textbf{Qué contiene} \\
+\textbf{Término} & \textbf{Significado} \\
 \midrule
-\href{https://iso-secure.agustinynatalia.site/}{\texttt{/}} & SPA principal: login + módulos del SGSI. \\
-\href{https://iso-secure.agustinynatalia.site/docs.html}{\texttt{/docs.html}} & Documentación interactiva v2.0: 39 endpoints, 9 routers, modelo de datos. \\
-\href{https://iso-secure.agustinynatalia.site/arquitectura.html}{\texttt{/arquitectura.html}} & Arquitectura completa en 7 secciones: capas, backend, frontend, stack, despliegue, autenticación/RBAC, ER. \\
-\href{https://iso-secure.agustinynatalia.site/threat-modeling.html}{\texttt{/threat-modeling.html}} & Modelado de amenazas STRIDE: 9 secciones, 24 amenazas, árboles de ataque, matriz de riesgo. \\
-\href{https://iso-secure.agustinynatalia.site/metodologia-amenazas.html}{\texttt{/metodologia-amenazas.html}} & Metodología híbrida PASTA + STRIDE: comparativa de 6 metodologías, 7 etapas PASTA aplicadas. \\
-\href{https://iso-secure.agustinynatalia.site/manual.html}{\texttt{/manual.html}} & Manual de usuario con videos por módulo + anexos descargables. \\
+DAST & Dynamic Application Security Testing: atacar la app corriendo. \\
+SAST & Static Application Security Testing: leer el código fuente. \\
+SCA & Software Composition Analysis: revisar dependencias de terceros. \\
+CVE & Common Vulnerabilities and Exposures: identificador único de cada vulnerabilidad conocida. \\
+CVSS & Common Vulnerability Scoring System: puntaje 0-10 que mide gravedad de un CVE. \\
+WAF & Web Application Firewall: filtra tráfico HTTP malicioso antes de llegar a la app. \\
+TLS & Transport Layer Security: el "candadito" del HTTPS. \\
+HSTS & HTTP Strict Transport Security: cabecera que obliga al navegador a usar HTTPS siempre. \\
+CSP & Content Security Policy: cabecera que limita de qué orígenes carga el navegador. \\
+CORS & Cross-Origin Resource Sharing: política que permite o niega peticiones entre dominios. \\
+IDOR & Insecure Direct Object Reference: ver datos ajenos cambiando un ID en la URL. \\
+SSRF & Server-Side Request Forgery: hacer que el servidor haga peticiones a destinos no autorizados. \\
+JWT & JSON Web Token: token firmado que prueba quién es el usuario. \\
+PITR & Point-in-Time Recovery: restaurar la DB a cualquier momento del pasado reciente. \\
+IR & Incident Response: respuesta a incidentes. \\
+SLA & Service Level Agreement: compromiso de tiempos. \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\subsection{Repositorio de código}
+% ============================================================================
+\section{Cómo ver todo esto en el sistema desplegado}
 
-\begin{center}
-\colorbox{accent!20}{\textbf{\url{https://github.com/Agustin1231/iso_secure}}}
-\end{center}
+El producto está en línea y se puede consultar la documentación técnica sin login:
 
-\noindent Ramas:
-\begin{itemize}[leftmargin=*]
-  \item \texttt{main} --- rama productiva (se despliega automáticamente a Coolify).
-  \item \texttt{entrega-final} --- rama con todos los PDFs de las 5 etapas y el ZIP de soportes.
-\end{itemize}
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{URL pública} & \textbf{Qué contiene} \\
+\midrule
+\href{https://iso-secure.agustinynatalia.site/}{\texttt{/}} & App principal (requiere login). \\
+\href{https://iso-secure.agustinynatalia.site/threat-modeling.html}{\texttt{/threat-modeling.html}} & \textbf{Modelado STRIDE} interactivo: 24 amenazas, árboles de ataque, matriz de riesgo, mitigaciones priorizadas. \\
+\href{https://iso-secure.agustinynatalia.site/metodologia-amenazas.html}{\texttt{/metodologia-amenazas.html}} & \textbf{PASTA + STRIDE} integrado: comparativa de 6 metodologías, 7 etapas PASTA aplicadas, 12 vulnerabilidades mapeadas a OWASP Top 10, 15 mitigaciones priorizadas. \\
+\href{https://iso-secure.agustinynatalia.site/arquitectura.html}{\texttt{/arquitectura.html}} & Arquitectura completa: capas, despliegue, autenticación/RBAC, modelo de datos. \\
+\href{https://iso-secure.agustinynatalia.site/docs.html}{\texttt{/docs.html}} & Documentación de la API: 39 endpoints en 9 routers. \\
+\href{https://iso-secure.agustinynatalia.site/manual.html}{\texttt{/manual.html}} & Manual de usuario con videos por módulo. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Repositorio} con el código y los PDFs de las 5 etapas: \url{https://github.com/Agustin1231/iso_secure}.
 
 % ============================================================================
-\section{Cómo estudiar el proyecto en orden}
+\section{Cumplimiento ISO 27001:2022 (la parte que importa para la certificación)}
 
-Para quien quiera entenderlo bien, este es el camino recomendado:
+El trabajo de la Etapa 4 cubre técnicamente los siguientes controles del Anexo A:
 
-\begin{enumerate}[leftmargin=*]
-  \item Leer esta guía completa (estás en eso ahora mismo).
-  \item Abrir \href{https://iso-secure.agustinynatalia.site/arquitectura.html}{\texttt{/arquitectura.html}} y recorrer las 7 secciones.
-  \item Ver \href{https://iso-secure.agustinynatalia.site/threat-modeling.html}{\texttt{/threat-modeling.html}} para ver cómo se identifican amenazas.
-  \item Leer el PDF \textbf{etapa-2-arquitectura.pdf} (es el más conceptual).
-  \item Si interesa la parte normativa: \textbf{etapa-5-entrega-final.pdf}, sección de cumplimiento.
-  \item Si interesa la parte técnica: \textbf{etapa-3-codificacion.pdf} (OWASP, SAST) y \textbf{etapa-4-pruebas-despliegue.pdf} (DAST, hardening).
-  \item Para profundizar en el código: clonar el repo de GitHub y leer \texttt{CONTEXT.md} + \texttt{README.md}.
-\end{enumerate}
-
-\begin{warningbox}{Importante para los evaluadores}
-La aplicación corre con base de datos Supabase. Para hacer pruebas en producción se requiere un usuario válido (registro habilitado o credencial entregada por el autor). Las páginas \texttt{/arquitectura.html}, \texttt{/threat-modeling.html}, \texttt{/metodologia-amenazas.html}, \texttt{/docs.html} y \texttt{/manual.html} son \textbf{públicas} y no requieren login.
-\end{warningbox}
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Control} & \textbf{Evidencia en el proyecto} \\
+\midrule
+A.5.24--A.5.28 IR & Procedimiento documentado con SLAs por severidad \\
+A.5.30 Continuidad TIC & PITR 7 días + RPO 1h / RTO 2h \\
+A.8.7 Antimalware & Trivy en CI sobre imágenes Docker \\
+A.8.8 Gestión vulnerabilidades técnicas & DAST con ZAP + Nuclei recurrente \\
+A.8.9 Gestión configuración & Coolify + IaC + secretos en vault \\
+A.8.13 Backups & Backup diario + PITR \\
+A.8.15 Logging & JSON estructurado + retención 90d \\
+A.8.16 Monitoreo & Prometheus + alertas en latencia y error rate \\
+A.8.20 Seguridad redes & TLS 1.3 + ufw + rate limiting \\
+A.8.23 Filtrado web & CSP estricto + CORS allowlist \\
+A.8.24 Criptografía & TLS 1.3 + JWT firmado RS256 \\
+A.8.26 Requisitos de seguridad de aplicaciones & DAST como gate de release \\
+A.8.27 Arquitectura segura & Hardening por capa \\
+A.8.29 Pruebas de seguridad & DAST automatizado documentado \\
+\bottomrule
+\end{tabularx}
+\end{table}
 
 % ============================================================================
 \section{Cierre}
 
-Este proyecto demuestra que es posible construir software pensando en seguridad desde el primer día, no como un parche al final. El ciclo SSDLC en 5 etapas nos obligó a:
+\textbf{La idea fuerza:} la seguridad de una aplicación web no se decide cuando se elige el framework. Se decide en runtime, en la infraestructura y en los procesos. Por eso esta etapa (DAST + Configuración Segura) suele ser la que más vulnerabilidades reales detecta.
 
+\textbf{La cadena que aplicamos en ISO SECURE:}
+
+\begin{enumerate}[leftmargin=*]
+  \item Atacamos la propia aplicación con herramientas profesionales antes que un externo.
+  \item Endurecimos cada capa siguiendo CIS Benchmarks y guías oficiales.
+  \item Automatizamos el escaneo en cada release.
+  \item Diseñamos el despliegue para tolerar fallos (blue-green + rollback).
+  \item Documentamos cómo responder cuando algo falle (procedimiento IR + SLAs).
+\end{enumerate}
+
+\textbf{La regla de oro:} si no probaste el sistema en producción atacándolo tú mismo, no sabés qué tan seguro es. Lo demás es opinión.
+
+\section*{Referencias}
 \begin{itemize}[leftmargin=*]
-  \item Definir bien qué se quería antes de programar.
-  \item Modelar las amenazas antes de exponerse a ellas.
-  \item Automatizar la detección de problemas en lugar de confiar en revisión manual.
-  \item Atacar nuestro propio sistema antes que un externo.
-  \item Documentar todo en formato auditable.
+  \item OWASP Web Security Testing Guide (WSTG) v4.2.
+  \item OWASP Application Security Verification Standard (ASVS) 4.0.3.
+  \item OWASP Top 10:2021.
+  \item CIS Docker Benchmark v1.6 y CIS Nginx Benchmark v2.0.
+  \item Mozilla SSL Configuration Generator.
+  \item NIST SP 800-61 Rev. 2 — Computer Security Incident Handling Guide.
+  \item ISO/IEC 27001:2022 — Anexo A.5 y A.8.
 \end{itemize}
-
-El resultado: una plataforma funcional, cumpliendo $\sim$30 controles del Anexo A de ISO 27001:2022, desplegada y accesible, con todo el rastro técnico y documental disponible públicamente.
 
 \end{document}
