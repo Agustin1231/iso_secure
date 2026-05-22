@@ -1,0 +1,533 @@
+\documentclass[12pt,a4paper,oneside]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-noshorthands]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{colortbl}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{longtable}
+\usepackage{listings}
+
+\hypersetup{colorlinks=true,urlcolor=blue,linkcolor=black}
+
+\definecolor{darkblue}{RGB}{31,56,100}
+\definecolor{accent}{RGB}{79,143,247}
+\definecolor{success}{RGB}{16,185,129}
+\definecolor{warning}{RGB}{245,158,11}
+\definecolor{danger}{RGB}{239,68,68}
+\definecolor{lightgray}{RGB}{240,242,247}
+\definecolor{codebg}{RGB}{248,249,252}
+\definecolor{codekw}{RGB}{109,40,217}
+\definecolor{codestr}{RGB}{16,120,40}
+\definecolor{codecom}{RGB}{120,120,120}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  keywordstyle=\color{codekw}\bfseries,
+  stringstyle=\color{codestr},
+  commentstyle=\color{codecom}\itshape,
+  showstringspaces=false,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{lightgray},
+  numbers=left,
+  numberstyle=\tiny\color{codecom},
+  xleftmargin=2em,
+  framexleftmargin=1.5em
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\textcolor{accent}{ISO SECURE}}
+\lhead{\textcolor{accent}{Etapa 3 - Codificación e Integración}}
+\cfoot{Página \thepage\ de \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\color{accent}\hrule}
+
+\title{
+  {\Huge \textbf{ISO SECURE}}\\
+  {\LARGE Plataforma de Cumplimiento ISO 27001}\\[2ex]
+  {\Large \textcolor{accent}{Etapa 3: Codificación e Integración}}\\[1ex]
+  {\small Actividad Formativa 3 - 5\%}
+}
+\author{Agustín Peralta --- Universidad de San Buenaventura}
+\date{Entrega: 11 de Mayo de 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Este documento consolida las prácticas de codificación segura aplicadas en el proyecto ISO SECURE, el flujo de integración continua, la estrategia de control de versiones, los análisis estáticos y de dependencias, y las pruebas unitarias/integración que sustentan la fase de construcción del SDLC seguro. Se mapean las prácticas a OWASP ASVS 4.0 y a los controles del Anexo A de ISO/IEC 27001:2022 (cláusula A.8 — controles tecnológicos).
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% ============================================================================
+\section{Introducción}
+
+La Etapa 3 traduce las decisiones de arquitectura y diseño (Etapa 2) en código de producción siguiendo los principios del \textbf{Secure Software Development Lifecycle (SSDLC)} de OWASP SAMM y NIST SP 800-218. Esta fase es donde la mayor parte de las vulnerabilidades se introducen \textemdash{} y donde se previenen.
+
+\textbf{Objetivos de la fase:}
+\begin{itemize}[leftmargin=*]
+  \item Codificar respetando las guías OWASP Secure Coding Practices.
+  \item Establecer un flujo de Git con revisión obligatoria por pares.
+  \item Automatizar análisis estático (SAST) y de dependencias (SCA) en CI.
+  \item Garantizar cobertura mínima de pruebas (>70\% líneas críticas).
+  \item Integrar los componentes (backend, frontend, base de datos) en entornos reproducibles.
+\end{itemize}
+
+% ============================================================================
+\section{Prácticas de Codificación Segura}
+
+\subsection{Mapeo a OWASP Top 10:2021}
+
+\begin{longtable}{p{1cm}p{4cm}p{8cm}}
+\toprule
+\textbf{ID} & \textbf{Riesgo OWASP} & \textbf{Práctica aplicada en ISO SECURE} \\
+\midrule
+\endhead
+A01 & Broken Access Control & \texttt{require\_role()} factory + helper \texttt{\_empresa\_filter} en todos los routers \\
+A02 & Cryptographic Failures & TLS 1.3 obligatorio; secretos vía variables de entorno; tokens JWT firmados RS256 \\
+A03 & Injection & ORM SQLAlchemy parametrizado; validación Pydantic v2 estricta; sin string concatenation en queries \\
+A04 & Insecure Design & Modelado de amenazas previo (Etapa 2); revisión arquitectónica antes de codificar \\
+A05 & Security Misconfiguration & Headers CSP, HSTS, X-Content-Type-Options en Nginx; \texttt{DEBUG=False} en producción \\
+A06 & Vulnerable Components & Dependabot + \texttt{pip-audit} + \texttt{npm audit} en CI \\
+A07 & Auth Failures & Supabase Auth gestiona contraseñas, MFA y bloqueo; tokens de corta vida \\
+A08 & Data Integrity Failures & Hash de integridad en releases; verificación de firmas en webhooks n8n \\
+A09 & Logging Failures & Logs estructurados JSON; mask de campos sensibles; envío a sink externo \\
+A10 & SSRF & Whitelist de URLs salientes; sin proxy abierto; n8n con allowlist de hosts \\
+\bottomrule
+\end{longtable}
+
+\subsection{Reglas internas de código seguro}
+
+\textbf{Backend (Python):}
+\begin{enumerate}[leftmargin=*]
+  \item Nunca aceptar \texttt{empresa\_id} desde el body del request; inferirlo del usuario autenticado.
+  \item Toda función pública en \texttt{routers/} declara dependencias \texttt{Depends()} explícitas (sesión + usuario).
+  \item Schemas Pydantic separados por dirección: \texttt{XCreate}, \texttt{XUpdate}, \texttt{XResponse} (no reutilizar el modelo ORM como schema HTTP).
+  \item Errores genéricos hacia el cliente en producción; detalles sólo en logs internos.
+  \item \texttt{require\_role()} declarado al nivel del endpoint, no dentro de la función.
+\end{enumerate}
+
+\textbf{Frontend (React):}
+\begin{enumerate}[leftmargin=*]
+  \item Tokens en \texttt{localStorage} encapsulados en un adapter; no \texttt{innerHTML} ni \texttt{dangerouslySetInnerHTML}.
+  \item Validación en cliente \textbf{además} de la del servidor; nunca como reemplazo.
+  \item Interceptor Axios añade el JWT y captura 401 para redirigir al login.
+  \item Variables de entorno con prefijo \texttt{VITE\_} y nunca incluir secretos en el bundle.
+  \item Render condicional con guards de rol antes de renderizar acciones sensibles.
+\end{enumerate}
+
+\subsection{Ejemplos de implementación}
+
+\textbf{Listado seguro de incidentes (backend):}
+
+\begin{lstlisting}[language=Python]
+@router.get("/incidents", response_model=List[IncidentResponse])
+async def list_incidents(
+    db: AsyncSession = Depends(get_db),
+    user: UserProfile = Depends(get_current_user),
+):
+    # empresa_id se infiere del usuario, NUNCA del request
+    empresa_id = _empresa_filter(user)
+    return await incident_service.list_for(db, empresa_id=empresa_id)
+\end{lstlisting}
+
+\textbf{Guard de rol como factory (backend):}
+
+\begin{lstlisting}[language=Python]
+def require_role(allowed: list[str]):
+    async def _guard(user: UserProfile = Depends(get_current_user)):
+        if user.role not in allowed:
+            raise HTTPException(403, detail="forbidden")
+        return user
+    return _guard
+
+# Uso:
+@router.put("/auth/role")
+async def change_role(
+    payload: ChangeRoleSchema,
+    admin: UserProfile = Depends(require_role(["admin"])),
+):
+    ...
+\end{lstlisting}
+
+\textbf{Interceptor Axios (frontend):}
+
+\begin{lstlisting}[language=JavaScript]
+import axios from "axios";
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL + "/api/v1",
+});
+
+api.interceptors.request.use((config) => {
+  const token = sessionStore.getToken();
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+api.interceptors.response.use(
+  (r) => r,
+  (err) => {
+    if (err.response?.status === 401) sessionStore.logout();
+    return Promise.reject(err);
+  }
+);
+\end{lstlisting}
+
+% ============================================================================
+\section{Control de Versiones y Flujo Git}
+
+\subsection{Estrategia de ramas}
+
+Se adopta una variante de \textbf{Trunk-Based Development} adaptada al tamaño del equipo:
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{main}: rama protegida; sólo merges vía PR aprobado y CI verde.
+  \item \textbf{feature/<slug>}: ramas de corta vida (<3 días); se mergean a main y se eliminan.
+  \item \textbf{hotfix/<slug>}: parches urgentes desde main, mergeados con prioridad.
+\end{itemize}
+
+\subsection{Convención de commits}
+
+Se usa \textbf{Conventional Commits} para habilitar changelog automático:
+
+\begin{lstlisting}
+<tipo>(<scope>): <descripcion>
+
+tipos: feat, fix, docs, refactor, test, chore, perf, security
+\end{lstlisting}
+
+Ejemplos reales del repositorio:
+\begin{itemize}
+  \item \texttt{feat(etapa-1): Análisis e Ingeniería de Requerimientos - PDF entregable}
+  \item \texttt{feat: agregar \_headers con CSP y cabeceras de seguridad}
+  \item \texttt{docs: agregar metodologia PASTA + STRIDE para modelamiento de amenazas}
+\end{itemize}
+
+\subsection{Política de Pull Requests}
+
+\begin{enumerate}[leftmargin=*]
+  \item Toda PR debe pasar el pipeline de CI (lint, tests, SAST, SCA).
+  \item Al menos un revisor humano aprueba antes del merge.
+  \item No se mergean PRs con conflictos sin resolver.
+  \item Squash & merge para mantener historial lineal.
+  \item Los commits a main quedan bloqueados sin PR (branch protection).
+\end{enumerate}
+
+% ============================================================================
+\section{Pipeline de Integración Continua}
+
+\subsection{Etapas del pipeline}
+
+\begin{center}
+\begin{tabular}{|l|l|l|}
+\hline
+\rowcolor{accent!20}
+\textbf{Etapa} & \textbf{Herramienta} & \textbf{Falla si} \\
+\hline
+Lint Python & ruff & errores E/F \\
+\hline
+Lint JS/JSX & ESLint + prettier & cualquier error \\
+\hline
+SAST Python & bandit & severidad >= medium \\
+\hline
+SAST JS & semgrep & regla bloqueante \\
+\hline
+SCA Python & pip-audit & CVE crítica/alta \\
+\hline
+SCA JS & npm audit + Snyk & CVE crítica \\
+\hline
+Tests unitarios & pytest + jest & cualquier fallo \\
+\hline
+Cobertura & coverage.py + jest --coverage & < 70\% backend \\
+\hline
+Build Docker & docker build & error de build \\
+\hline
+Scan imagen & Trivy & CVE crítica \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Configuración de ejemplo (GitHub Actions)}
+
+\begin{lstlisting}[language=bash,morekeywords={name,on,jobs,runs,uses,steps,with}]
+name: ci
+on: [push, pull_request]
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.13" }
+      - run: pip install -r requirements.txt -r requirements-dev.txt
+      - run: ruff check .
+      - run: bandit -r app -lll
+      - run: pip-audit --strict
+      - run: pytest --cov=app --cov-fail-under=70
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - working-directory: frontend
+        run: |
+          npm ci
+          npm run lint
+          npm audit --audit-level=high
+          npm test -- --coverage
+          npm run build
+\end{lstlisting}
+
+% ============================================================================
+\section{Análisis Estático (SAST) y de Dependencias (SCA)}
+
+\subsection{Herramientas seleccionadas}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lll}
+\toprule
+\textbf{Herramienta} & \textbf{Tipo} & \textbf{Cobertura} \\
+\midrule
+ruff & Linter & estilo + bugs comunes Python \\
+bandit & SAST & vulnerabilidades comunes Python \\
+semgrep & SAST multilenguaje & reglas custom + community rules \\
+pip-audit & SCA Python & CVE en dependencias \\
+npm audit & SCA Node & CVE registry \\
+Trivy & Scanner contenedores & CVE en imagen Docker \\
+Dependabot & Actualizaciones & PRs automáticas \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Hallazgos típicos y política de fix}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lXl}
+\toprule
+\textbf{Hallazgo} & \textbf{Acción} & \textbf{SLA} \\
+\midrule
+CVE crítica (CVSS >= 9.0) & Fix obligatorio antes del merge & 0 días \\
+CVE alta (7.0-8.9) & Fix antes del próximo release & 7 días \\
+CVE media (4.0-6.9) & Backlog priorizado & 30 días \\
+Bandit MEDIUM/HIGH & Análisis manual + fix o supresión justificada & 14 días \\
+ruff/eslint & Auto-fix vía pre-commit hook & 0 días \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Pre-commit hooks}
+
+Se usa \texttt{pre-commit} con la siguiente configuración mínima para que los problemas se detecten antes del push:
+
+\begin{lstlisting}[language=bash]
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.0
+    hooks: [{ id: ruff, args: [--fix] }, { id: ruff-format }]
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.9
+    hooks: [{ id: bandit, args: [-r, app] }]
+  - repo: local
+    hooks:
+      - id: no-secrets
+        name: detect-secrets
+        entry: detect-secrets-hook
+        language: system
+\end{lstlisting}
+
+% ============================================================================
+\section{Estrategia de Pruebas}
+
+\subsection{Pirámide de pruebas}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Base (70\%):} Unitarias — services y utils aislados.
+  \item \textbf{Medio (20\%):} Integración — routers contra DB de prueba.
+  \item \textbf{Top (10\%):} End-to-end — flujos críticos vía Playwright.
+\end{itemize}
+
+\subsection{Tipos de prueba}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lXl}
+\toprule
+\textbf{Tipo} & \textbf{Foco} & \textbf{Herramienta} \\
+\midrule
+Unitaria & Lógica pura de servicios, validaciones, helpers & pytest \\
+Integración & Router + DB + Auth real & pytest-asyncio + httpx \\
+Contrato & Compatibilidad de schemas Pydantic & schemathesis \\
+Seguridad & RBAC, multi-tenancy, JWT inválido & pytest + scenarios \\
+E2E & Login + listado + creación de incidente & Playwright \\
+Carga & Throughput de /dashboard/summary & Locust o k6 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Ejemplo: prueba de RBAC multi-tenant}
+
+\begin{lstlisting}[language=Python]
+@pytest.mark.asyncio
+async def test_supervisor_solo_ve_su_empresa(client, db, empresas, users):
+    # Arrange: 2 empresas con 1 incidente cada una
+    sup_token = await login(users.supervisor_emp_a)
+
+    # Act
+    r = await client.get(
+        "/api/v1/incidents",
+        headers={"Authorization": f"Bearer {sup_token}"},
+    )
+
+    # Assert
+    assert r.status_code == 200
+    ids = {i["empresa_id"] for i in r.json()}
+    assert ids == {str(empresas.a.id)}, "Filtro empresa_id falló"
+\end{lstlisting}
+
+\subsection{Cobertura mínima exigida}
+
+\begin{itemize}[leftmargin=*]
+  \item Backend global: $\geq$ 70\% líneas.
+  \item Módulos críticos (auth, multi-tenant filter): $\geq$ 90\%.
+  \item Frontend: $\geq$ 60\% líneas; 80\% en componentes con lógica de negocio.
+\end{itemize}
+
+% ============================================================================
+\section{Integración de Componentes}
+
+\subsection{Stack de integración}
+
+Se usa \textbf{Docker Compose} para orquestar el entorno de desarrollo y staging:
+
+\begin{lstlisting}[language=bash,morekeywords={services,build,ports,environment,depends_on,volumes}]
+# docker-compose.yml (extracto real del repo)
+version: "3.8"
+services:
+  api:
+    build: .
+    ports: ["8000:8000"]
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+    depends_on: [postgres]
+  postgres:
+    image: postgres:15-alpine
+    ports: ["5432:5432"]
+    environment:
+      - POSTGRES_PASSWORD=devpass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
+\end{lstlisting}
+
+\subsection{Migración determinística}
+
+El script \texttt{migrate.py} ejecuta los pasos de esquema en orden idempotente, evitando que dos despliegues lleguen a estados divergentes. Incluye:
+
+\begin{enumerate}[leftmargin=*]
+  \item Rename de enums legados (\texttt{partial $\rightarrow$ en\_proceso}).
+  \item Creación de tipos enum nuevos.
+  \item Creación de tablas (empresas, user\_profiles, cursos, etc.).
+  \item Seed de cursos iniciales con URLs validadas.
+  \item Adición de FK \texttt{empresa\_id} a incidents, controls, risk\_levels.
+  \item Seed automático de los 93 controles ISO por sector detectado.
+\end{enumerate}
+
+\subsection{Entornos}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Entorno} & \textbf{Propósito} & \textbf{Datos} \\
+\midrule
+dev local & Desarrollo personal & PostgreSQL en Docker + seed \\
+staging & QA, demos, UAT & Supabase staging + datos sintéticos \\
+producción & Usuarios reales & Supabase prod + backups diarios \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ============================================================================
+\section{Gestión de Secretos}
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{.env} en \texttt{.gitignore}; nunca commiteado.
+  \item \texttt{.env.example} en el repo con placeholders.
+  \item Producción: secretos en el gestor del proveedor (Supabase Vault, GitHub Actions Secrets).
+  \item Rotación de la \texttt{SUPABASE\_ANON\_KEY} y \texttt{SERVICE\_ROLE\_KEY} cada 90 días.
+  \item Hook \texttt{detect-secrets} en pre-commit bloquea pushes con tokens accidentales.
+\end{itemize}
+
+% ============================================================================
+\section{Trazabilidad: Diseño $\rightarrow$ Implementación}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{llX}
+\toprule
+\textbf{Decisión Etapa 2} & \textbf{Implementación} & \textbf{Validación} \\
+\midrule
+Filtro empresa\_id server-side & \texttt{\_empresa\_filter} en routers & Test \texttt{test\_multitenant\_isolation} \\
+JWT validado vs Supabase & \texttt{auth.py::get\_current\_user} & Test \texttt{test\_jwt\_invalid\_rejected} \\
+RBAC factory & \texttt{require\_role()} & Test \texttt{test\_supervisor\_no\_puede\_borrar} \\
+ORM parametrizado & SQLAlchemy 2.0 async & SAST bandit sin findings \\
+Migraciones idempotentes & \texttt{migrate.py} con guards \texttt{IF NOT EXISTS} & CI corre migrate dos veces \\
+Logs sin secretos & Mask en \texttt{logging.Filter} & Grep en logs de staging \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ============================================================================
+\section{Conclusiones}
+
+La Etapa 3 materializa la arquitectura en código siguiendo prácticas de codificación segura mapeadas a OWASP Top 10:2021 y a OWASP ASVS 4.0. Los puntos clave del cierre de esta fase son:
+
+\begin{enumerate}[leftmargin=*]
+  \item Pipeline CI con SAST, SCA y tests es \textbf{bloqueante}: ningún merge sin CI verde.
+  \item Cobertura mínima 70\% global y 90\% en módulos críticos (auth, multi-tenant).
+  \item Convención Conventional Commits + branch protection en \texttt{main}.
+  \item Pre-commit hooks llevan el shift-left al máximo: el desarrollador ve los problemas antes del push.
+  \item Cada decisión arquitectónica de la Etapa 2 tiene su contrapartida verificable en código y prueba.
+\end{enumerate}
+
+La fase de codificación no termina con el primer release: las prácticas, hooks y políticas descritas son parte del ciclo de mejora continua exigido por ISO 27001:2022 (cláusulas 9 y 10).
+
+\section*{Referencias}
+\begin{itemize}[leftmargin=*]
+  \item OWASP Top 10:2021.
+  \item OWASP Application Security Verification Standard (ASVS) 4.0.3.
+  \item OWASP Secure Coding Practices Quick Reference Guide v2.0.
+  \item NIST SP 800-218: Secure Software Development Framework (SSDF).
+  \item ISO/IEC 27001:2022 — Anexo A.8 (Controles tecnológicos).
+  \item Conventional Commits 1.0.0 — \url{https://www.conventionalcommits.org/}.
+\end{itemize}
+
+\end{document}
