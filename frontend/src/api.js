@@ -56,6 +56,21 @@ export const authApi = {
   updateUserRole: (userId, data) => api.put(`/auth/users/${userId}/role`, data).then(res => res.data),
 };
 
+// RBAC — permisos, roles y asignación de roles a usuarios
+export const rbacApi = {
+  listPermissions: () => api.get('/rbac/permissions').then(res => res.data),
+  createPermission: (data) => api.post('/rbac/permissions', data).then(res => res.data),
+  updatePermission: (id, data) => api.put(`/rbac/permissions/${id}`, data).then(res => res.data),
+  deletePermission: (id) => api.delete(`/rbac/permissions/${id}`),
+  listRoles: () => api.get('/rbac/roles').then(res => res.data),
+  createRole: (data) => api.post('/rbac/roles', data).then(res => res.data),
+  updateRole: (id, data) => api.put(`/rbac/roles/${id}`, data).then(res => res.data),
+  deleteRole: (id) => api.delete(`/rbac/roles/${id}`),
+  listUserRoles: (userProfileId) => api.get(`/rbac/users/${userProfileId}/roles`).then(res => res.data),
+  assignRole: (userProfileId, roleId) => api.post(`/rbac/users/${userProfileId}/roles`, { role_id: roleId }).then(res => res.data),
+  removeRole: (userProfileId, roleId) => api.delete(`/rbac/users/${userProfileId}/roles/${roleId}`),
+};
+
 export const capacitacionApi = {
   getAll: () => api.get('/capacitaciones/').then(res => res.data),
   getById: (id) => api.get(`/capacitaciones/${id}`).then(res => res.data),

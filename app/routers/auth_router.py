@@ -36,7 +36,7 @@ async def list_users(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_role(["admin"])),
 ):
-    """Listar todos los perfiles de usuario (solo admin)"""
+    """Listar todos los perfiles de usuario (admin y super_admin)"""
     result = await db.execute(select(UserProfile).order_by(UserProfile.created_at.desc()))
     profiles = result.scalars().all()
     return {
@@ -62,7 +62,15 @@ async def update_user_role(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_role(["admin"])),
 ):
-    """Actualizar rol y empresa de un usuario (solo admin)"""
+    """Actualizar rol y empresa de un usuario (admin y super_admin).
+
+    Solo un super_admin puede otorgar o revocar el rol `super_admin`."""
+    if role_update.role == UserRoleEnum.super_admin and current_user["role"] != "super_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo un super administrador puede asignar el rol super_admin.",
+        )
+
     result = await db.execute(
         select(UserProfile).where(UserProfile.user_id == uuid.UUID(user_id))
     )
@@ -77,6 +85,12 @@ async def update_user_role(
         )
         db.add(profile)
     else:
+        # Solo un super_admin puede degradar a otro super_admin.
+        if profile.role == UserRoleEnum.super_admin and current_user["role"] != "super_admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Solo un super administrador puede modificar el rol de un super_admin.",
+            )
         profile.role = role_update.role
         if role_update.empresa_id is not None:
             profile.empresa_id = role_update.empresa_id

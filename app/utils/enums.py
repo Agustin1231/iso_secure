@@ -23,6 +23,7 @@ class RiskLevelEnum(str, enum.Enum):
     critical = "critical"
 
 class UserRoleEnum(str, enum.Enum):
+    super_admin = "super_admin"
     admin = "admin"
     auditor = "auditor"
     supervisor = "supervisor"

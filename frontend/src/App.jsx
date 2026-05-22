@@ -29,6 +29,7 @@ import {
   Circle,
   ChevronDown,
   ChevronUp,
+  KeyRound,
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -47,6 +48,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { authApi, empresaApi, capacitacionApi, implementacionApi, auditoriaApi } from './api.js';
 import ChatWidget from './ChatWidget.jsx';
+import RolesView from './RolesView.jsx';
 
 // Supabase config (anon key is public by design)
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://rhvzjqvyimaavkdjxcvj.supabase.co';
@@ -80,6 +82,7 @@ const ALL_NAV_ITEMS = [
   { id: 'history', icon: <History size={20} />, label: 'Historial', roles: ['admin', 'supervisor'] },
   { id: 'empresas', icon: <Building2 size={20} />, label: 'Empresas', roles: ['admin', 'auditor'] },
   { id: 'usuarios', icon: <Users size={20} />, label: 'Usuarios', roles: ['admin'] },
+  { id: 'roles', icon: <KeyRound size={20} />, label: 'Roles y Permisos', roles: ['admin', 'super_admin'] },
   { id: 'capacitaciones', icon: <BookOpen size={20} />, label: 'Capacitaciones', roles: ['admin', 'auditor', 'supervisor', 'analista'] },
   { id: 'implementacion', icon: <Wrench size={20} />, label: 'Implementación ISO', roles: ['admin', 'auditor'] },
   { id: 'auditoria', icon: <ClipboardCheck size={20} />, label: 'Auditoría', roles: ['admin', 'auditor'] },
@@ -93,6 +96,7 @@ const viewTitles = {
   history: 'Historial de Snapshots',
   empresas: 'Registro de Empresas',
   usuarios: 'Gestión de Usuarios',
+  roles: 'Roles y Permisos',
   capacitaciones: 'Capacitaciones SGSI',
   implementacion: 'Implementación ISO 27001',
   auditoria: 'Auditoría Interna',
@@ -107,6 +111,7 @@ const VIEW_ROLES = {
   history: ['admin', 'supervisor'],
   empresas: ['admin', 'auditor'],
   usuarios: ['admin'],
+  roles: ['admin', 'super_admin'],
   capacitaciones: ['admin', 'auditor', 'supervisor', 'analista'],
   implementacion: ['admin', 'auditor'],
   auditoria: ['admin', 'auditor'],
@@ -341,7 +346,8 @@ const LoginPage = ({ onLogin }) => {
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 const Sidebar = ({ currentView, setView, theme, toggleTheme, isOpen, onClose, userRole, onLogout, userEmail }) => {
-  const navItems = ALL_NAV_ITEMS.filter(item => !userRole || item.roles.includes(userRole));
+  // super_admin es superusuario: ve todos los módulos.
+  const navItems = ALL_NAV_ITEMS.filter(item => !userRole || userRole === 'super_admin' || item.roles.includes(userRole));
 
   const handleNavClick = (id) => {
     setView(id);
@@ -1018,10 +1024,12 @@ const EmpresasView = ({ empresas, loading, userRole, onRefresh }) => {
 
 // ─── UsersView ────────────────────────────────────────────────────────────────
 const ROLES = ['admin', 'auditor', 'supervisor', 'analista'];
-const ROLE_LABELS = { admin: 'Administrador', auditor: 'Auditor', supervisor: 'Supervisor', analista: 'Analista' };
-const ROLE_COLORS = { admin: 'var(--danger)', auditor: 'var(--primary)', supervisor: 'var(--warning)', analista: 'var(--success)' };
+const ROLE_LABELS = { super_admin: 'Super Administrador', admin: 'Administrador', auditor: 'Auditor', supervisor: 'Supervisor', analista: 'Analista' };
+const ROLE_COLORS = { super_admin: '#a855f7', admin: 'var(--danger)', auditor: 'var(--primary)', supervisor: 'var(--warning)', analista: 'var(--success)' };
 
-const UsersView = ({ users, empresas, loading, onRefresh }) => {
+const UsersView = ({ users, empresas, loading, onRefresh, userRole }) => {
+  // El rol super_admin solo lo puede asignar otro super_admin.
+  const roleOptions = userRole === 'super_admin' ? ['super_admin', ...ROLES] : ROLES;
   const [savingId, setSavingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [pendingChanges, setPendingChanges] = useState({}); // { user_id: { role, empresa_id } }
@@ -1117,7 +1125,7 @@ const UsersView = ({ users, empresas, loading, onRefresh }) => {
                         onChange={(e) => handleChange(user.user_id, 'role', e.target.value)}
                         style={{ padding: '0.5rem 0.75rem', background: 'var(--color-bg-elevated)', border: `1px solid ${isDirty && changes.role ? 'var(--primary)' : 'var(--glass-border)'}`, borderRadius: '6px', color: 'var(--text-main)', fontSize: '0.85rem', cursor: 'pointer', outline: 'none' }}
                       >
-                        {ROLES.map(r => (
+                        {roleOptions.map(r => (
                           <option key={r} value={r}>{ROLE_LABELS[r]}</option>
                         ))}
                       </select>
@@ -1856,11 +1864,21 @@ function App() {
 
   // ── Role metadata ──────────────────────────────────────────────────────────
   const ROLE_META = {
+    super_admin: {
+      label: 'Super Administrador', color: '#a855f7', bg: 'rgba(168,85,247,0.1)',
+      description: 'Superusuario del sistema — define permisos y roles, y administra todos los módulos.',
+      modules: [
+        { id: 'roles', icon: <KeyRound size={22} />, label: 'Roles y Permisos', accent: '#a855f7', desc: 'Crea permisos, define roles y asígnalos a cualquier usuario.' },
+        { id: 'usuarios', icon: <Users size={22} />, label: 'Usuarios', accent: '#fb923c', desc: 'Asigna roles base y empresas a los usuarios registrados.' },
+        { id: 'empresas', icon: <Building2 size={22} />, label: 'Empresas', accent: '#a78bfa', desc: 'Registra y administra las empresas clientes del sistema.' },
+        { id: 'auditoria', icon: <ClipboardCheck size={22} />, label: 'Auditoría', accent: 'var(--success)', desc: 'Supervisa el checklist de auditoría interna de cada empresa.' },
+      ],
+    },
     admin: {
       label: 'Administrador', color: '#ef4444', bg: 'rgba(239,68,68,0.1)',
       description: 'Acceso total al sistema — gestión de empresas, usuarios, controles y auditorías.',
       modules: [
-        { id: 'capacitaciones', icon: <BookOpen size={22} />, label: 'Capacitaciones', accent: 'var(--primary)', desc: 'Gestiona y accede a todos los cursos de formación ISO 27001.' },
+        { id: 'roles', icon: <KeyRound size={22} />, label: 'Roles y Permisos', accent: '#a855f7', desc: 'Asigna y quita roles a los usuarios de tu empresa.' },
         { id: 'implementacion', icon: <Wrench size={22} />, label: 'Implementación ISO', accent: 'var(--warning)', desc: 'Asigna dominios ISO a empresas según su actividad económica.' },
         { id: 'auditoria', icon: <ClipboardCheck size={22} />, label: 'Auditoría', accent: 'var(--success)', desc: 'Supervisa el checklist de auditoría interna de cada empresa.' },
         { id: 'empresas', icon: <Building2 size={22} />, label: 'Empresas', accent: '#a78bfa', desc: 'Registra y administra las empresas clientes del sistema.' },
@@ -2143,7 +2161,7 @@ function App() {
             <button className="glass-card" style={{ padding: '0.75rem', color: 'var(--text-main)', cursor: 'pointer' }} onClick={fetchData} title="Actualizar datos">
               <RefreshCcw size={20} className={loading ? 'animate-spin' : ''} />
             </button>
-            {['admin', 'auditor', 'supervisor'].includes(userProfile?.role) && (
+            {['super_admin', 'admin', 'auditor', 'supervisor'].includes(userProfile?.role) && (
               <button className="glass-card desktop-only" style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)', cursor: 'pointer' }} onClick={exportReport}>
                 <Download size={20} /><span>Exportar Reporte</span>
               </button>
@@ -2152,7 +2170,7 @@ function App() {
         </header>
 
         {/* Role access guard */}
-        {VIEW_ROLES[view] && !VIEW_ROLES[view].includes(userProfile?.role) ? (
+        {VIEW_ROLES[view] && !VIEW_ROLES[view].includes(userProfile?.role) && userProfile?.role !== 'super_admin' ? (
           <AccessDenied userRole={userProfile?.role} viewId={view} onBack={() => setView('dashboard')} />
         ) : loading && !summary && view === 'dashboard' ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '5rem' }}>
@@ -2167,7 +2185,8 @@ function App() {
               {view === 'risk' && <RiskView riskCurrent={riskCurrent} riskDomains={riskDomains} loading={loading} />}
               {view === 'history' && <HistoryView snapshots={snapshots} loading={loading} />}
               {view === 'empresas' && <EmpresasView empresas={empresas} loading={loading} userRole={userProfile?.role} onRefresh={fetchData} />}
-              {view === 'usuarios' && <UsersView users={usuarios} empresas={empresas} loading={loading} onRefresh={fetchData} />}
+              {view === 'usuarios' && <UsersView users={usuarios} empresas={empresas} loading={loading} onRefresh={fetchData} userRole={userProfile?.role} />}
+              {view === 'roles' && <RolesView userRole={userProfile?.role} empresaId={userProfile?.empresa_id} />}
               {view === 'capacitaciones' && <CapacitacionesView cursos={cursos} loading={loading} onRefresh={fetchData} userRole={userProfile?.role} />}
               {view === 'implementacion' && <ImplementacionView empresas={implementacionEmpresas} loading={loading} />}
               {view === 'auditoria' && <AuditoriaView empresas={auditoriaEmpresas} loading={loading} />}

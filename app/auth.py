@@ -76,13 +76,15 @@ async def get_current_user(
 
 
 def require_role(allowed_roles: list[str]):
-    """Dependency factory: solo permite acceso a los roles indicados."""
+    """Dependency factory: solo permite acceso a los roles indicados.
+
+    El rol `super_admin` siempre tiene acceso (superusuario del sistema)."""
     async def checker(
         credentials: HTTPAuthorizationCredentials = Depends(security),
         db: AsyncSession = Depends(get_db),
     ) -> dict:
         user = await get_current_user(credentials, db)
-        if user["role"] not in allowed_roles:
+        if user["role"] != "super_admin" and user["role"] not in allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Acceso denegado. Requiere rol: {', '.join(allowed_roles)}",

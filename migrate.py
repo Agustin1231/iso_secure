@@ -494,6 +494,150 @@ async def run_migrations():
             WHERE titulo = 'Auditoría Interna del SGSI';
             """
         ),
+
+        # ── 17. userroleenum: agregar valor 'super_admin' ────────────────────
+        (
+            "Agregar valor 'super_admin' a userroleenum",
+            "ALTER TYPE userroleenum ADD VALUE IF NOT EXISTS 'super_admin';"
+        ),
+
+        # ── 18. Tabla permissions ────────────────────────────────────────────
+        (
+            "Crear tabla permissions",
+            """
+            CREATE TABLE IF NOT EXISTS permissions (
+                id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                codigo      VARCHAR(100) NOT NULL UNIQUE,
+                nombre      VARCHAR(150) NOT NULL,
+                descripcion VARCHAR(400),
+                modulo      VARCHAR(60) NOT NULL DEFAULT 'general',
+                created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            """
+        ),
+
+        # ── 19. Tabla roles ──────────────────────────────────────────────────
+        (
+            "Crear tabla roles",
+            """
+            CREATE TABLE IF NOT EXISTS roles (
+                id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                nombre      VARCHAR(80) NOT NULL UNIQUE,
+                descripcion VARCHAR(300),
+                es_sistema  BOOLEAN NOT NULL DEFAULT FALSE,
+                created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            """
+        ),
+
+        # ── 20. Tabla role_permissions ───────────────────────────────────────
+        (
+            "Crear tabla role_permissions",
+            """
+            CREATE TABLE IF NOT EXISTS role_permissions (
+                role_id       UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+                permission_id UUID NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
+                PRIMARY KEY (role_id, permission_id)
+            );
+            """
+        ),
+
+        # ── 21. Tabla user_roles ─────────────────────────────────────────────
+        (
+            "Crear tabla user_roles",
+            """
+            CREATE TABLE IF NOT EXISTS user_roles (
+                id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_profile_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
+                role_id         UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+                empresa_id      UUID REFERENCES empresas(id) ON DELETE SET NULL,
+                assigned_by     UUID,
+                created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                CONSTRAINT uq_user_role UNIQUE (user_profile_id, role_id)
+            );
+            """
+        ),
+
+        # ── 22. Seed de permisos base ────────────────────────────────────────
+        (
+            "Seed de permisos base del sistema",
+            """
+            INSERT INTO permissions (codigo, nombre, descripcion, modulo) VALUES
+              ('incidents.view',       'Ver incidentes',          'Consultar el centro de incidentes de seguridad.',           'incidentes'),
+              ('incidents.manage',     'Gestionar incidentes',    'Registrar y actualizar incidentes de seguridad.',           'incidentes'),
+              ('controls.view',        'Ver controles ISO',       'Consultar los controles del Anexo A.',                      'controles'),
+              ('controls.manage',      'Gestionar controles ISO', 'Actualizar el estado de los controles ISO 27001.',          'controles'),
+              ('risk.view',            'Ver riesgos',             'Consultar la matriz y el nivel de riesgo.',                 'riesgos'),
+              ('risk.manage',          'Gestionar riesgos',       'Registrar y actualizar evaluaciones de riesgo.',            'riesgos'),
+              ('empresas.view',        'Ver empresas',            'Consultar el directorio de empresas.',                      'empresas'),
+              ('empresas.manage',      'Gestionar empresas',      'Registrar, editar y eliminar empresas.',                    'empresas'),
+              ('auditoria.view',       'Ver auditoría',           'Consultar el checklist de auditoría interna.',              'auditoria'),
+              ('auditoria.manage',     'Gestionar auditoría',     'Completar y actualizar el checklist de auditoría.',         'auditoria'),
+              ('capacitaciones.view',  'Ver capacitaciones',      'Acceder a los cursos de formación ISO.',                    'capacitaciones'),
+              ('capacitaciones.manage','Gestionar capacitaciones','Crear y editar cursos de formación.',                       'capacitaciones'),
+              ('usuarios.view',        'Ver usuarios',            'Consultar el directorio de usuarios.',                      'usuarios'),
+              ('roles.assign',         'Asignar roles',           'Asignar y quitar roles a los usuarios de la empresa.',      'roles'),
+              ('rbac.manage',          'Administrar roles y permisos', 'Crear permisos y definir roles del sistema.',          'roles')
+            ON CONFLICT (codigo) DO NOTHING;
+            """
+        ),
+
+        # ── 23. Seed de roles de ejemplo ─────────────────────────────────────
+        (
+            "Seed de roles de ejemplo",
+            """
+            DO $$
+            DECLARE r_id UUID;
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM roles WHERE nombre = 'Operador de Incidentes') THEN
+                    INSERT INTO roles (nombre, descripcion, es_sistema)
+                    VALUES ('Operador de Incidentes',
+                            'Registra y da seguimiento a incidentes de seguridad.', FALSE)
+                    RETURNING id INTO r_id;
+                    INSERT INTO role_permissions (role_id, permission_id)
+                    SELECT r_id, id FROM permissions
+                    WHERE codigo IN ('incidents.view', 'incidents.manage', 'controls.view');
+                    RAISE NOTICE 'Rol de ejemplo "Operador de Incidentes" creado.';
+                END IF;
+
+                IF NOT EXISTS (SELECT 1 FROM roles WHERE nombre = 'Auditor Interno') THEN
+                    INSERT INTO roles (nombre, descripcion, es_sistema)
+                    VALUES ('Auditor Interno',
+                            'Evalúa controles y completa la auditoría interna del SGSI.', FALSE)
+                    RETURNING id INTO r_id;
+                    INSERT INTO role_permissions (role_id, permission_id)
+                    SELECT r_id, id FROM permissions
+                    WHERE codigo IN ('controls.view', 'auditoria.view', 'auditoria.manage', 'risk.view');
+                    RAISE NOTICE 'Rol de ejemplo "Auditor Interno" creado.';
+                END IF;
+            END $$;
+            """
+        ),
+
+        # ── 24. Bootstrap: garantizar un super_admin ─────────────────────────
+        (
+            "Bootstrap de super_admin (promover al admin más antiguo si no existe)",
+            """
+            DO $$
+            DECLARE first_admin UUID;
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM user_profiles WHERE role = 'super_admin') THEN
+                    SELECT id INTO first_admin FROM user_profiles
+                    WHERE role = 'admin' ORDER BY created_at ASC LIMIT 1;
+                    IF first_admin IS NOT NULL THEN
+                        UPDATE user_profiles SET role = 'super_admin' WHERE id = first_admin;
+                        RAISE NOTICE 'Usuario % promovido a super_admin (bootstrap).', first_admin;
+                    ELSE
+                        RAISE NOTICE 'No hay ningun admin para promover a super_admin.';
+                    END IF;
+                ELSE
+                    RAISE NOTICE 'Ya existe un super_admin, omitiendo bootstrap.';
+                END IF;
+            END $$;
+            """
+        ),
     ]
 
     all_ok = True
