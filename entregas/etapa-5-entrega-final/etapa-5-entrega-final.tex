@@ -1,0 +1,364 @@
+\documentclass[12pt,a4paper,oneside]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-noshorthands]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{colortbl}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{longtable}
+\usepackage{listings}
+
+\hypersetup{colorlinks=true,urlcolor=blue,linkcolor=black}
+
+\definecolor{darkblue}{RGB}{31,56,100}
+\definecolor{accent}{RGB}{79,143,247}
+\definecolor{success}{RGB}{16,185,129}
+\definecolor{warning}{RGB}{245,158,11}
+\definecolor{danger}{RGB}{239,68,68}
+\definecolor{lightgray}{RGB}{240,242,247}
+\definecolor{codebg}{RGB}{248,249,252}
+\definecolor{codekw}{RGB}{109,40,217}
+\definecolor{codestr}{RGB}{16,120,40}
+\definecolor{codecom}{RGB}{120,120,120}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  keywordstyle=\color{codekw}\bfseries,
+  stringstyle=\color{codestr},
+  commentstyle=\color{codecom}\itshape,
+  showstringspaces=false,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{lightgray},
+  numbers=left,
+  numberstyle=\tiny\color{codecom},
+  xleftmargin=2em,
+  framexleftmargin=1.5em
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\textcolor{accent}{ISO SECURE}}
+\lhead{\textcolor{accent}{Entrega Final - Sumativa}}
+\cfoot{Página \thepage\ de \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\color{accent}\hrule}
+
+\title{
+  {\Huge \textbf{ISO SECURE}}\\
+  {\LARGE Plataforma de Cumplimiento ISO 27001}\\[2ex]
+  {\Large \textcolor{accent}{Entrega Final del Proyecto}}\\[1ex]
+  {\small Actividad Sumativa 1 - 20\% - Etapa 5}
+}
+\author{Agustín Peralta --- Universidad de San Buenaventura}
+\date{Entrega: 25 de Mayo de 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Este documento es la \textbf{entrega final consolidada} del proyecto ISO SECURE: una plataforma web para la gestión del Sistema de Gestión de Seguridad de la Información (SGSI) bajo el estándar ISO/IEC 27001:2022. Consolida los cuatro entregables previos (Actividades Formativas 1 a 4) y suma el resumen ejecutivo, evidencias técnicas, mapeo de cumplimiento al Anexo A de ISO 27001:2022 y conclusiones. Adjunto al ZIP de soportes encontrará: los cinco PDFs por etapa, el código fuente íntegro (backend FastAPI + frontend React), diagramas de arquitectura y modelado de amenazas, configuraciones de despliegue y evidencias gráficas del producto en producción.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% ============================================================================
+\section{Resumen Ejecutivo}
+
+\textbf{ISO SECURE} es una plataforma web full-stack que permite a organizaciones de distintos sectores gestionar su SGSI conforme a \textbf{ISO/IEC 27001:2022}. El sistema cubre:
+
+\begin{itemize}[leftmargin=*]
+  \item Auditoría y seguimiento de los \textbf{93 controles del Anexo A} (dominios A.5 a A.8).
+  \item Gestión de \textbf{incidentes de seguridad} con tipificación y métricas.
+  \item Evaluación de \textbf{riesgos} mediante matriz Probabilidad × Impacto.
+  \item Capacitación del personal (cursos con video, progreso, certificados).
+  \item Implementación táctica de mejoras (tareas, responsables, fechas).
+  \item \textbf{Reportes ejecutivos} y dashboards de cumplimiento por empresa.
+\end{itemize}
+
+\textbf{Diferenciadores:}
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Multi-tenant} con aislamiento por \texttt{empresa\_id} a nivel de servicio.
+  \item \textbf{Catálogo sectorial} de controles (7 sectores predefinidos: finanzas, salud, tecnología, educación, manufactura, retail, gobierno).
+  \item \textbf{Diseño seguro de origen}: modelado de amenazas STRIDE + PASTA antes del primer commit de producción.
+  \item \textbf{Roles diferenciados} (admin, auditor, supervisor, analista) con guards en backend y frontend.
+\end{enumerate}
+
+\textbf{Stack tecnológico:}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lXl}
+\toprule
+\textbf{Capa} & \textbf{Tecnología} & \textbf{Versión} \\
+\midrule
+Frontend & React + Vite + Axios & 19 / 8 / 1.13 \\
+Backend & FastAPI + Python & 0.111+ / 3.13 \\
+ORM & SQLAlchemy async + Alembic & 2.0+ \\
+Base de datos & PostgreSQL (Supabase) & 15+ \\
+Auth & Supabase JWT + RBAC factory & OAuth 2.0 \\
+Validación & Pydantic v2 & latest \\
+Reverse proxy & Nginx alpine & latest \\
+Orquestador & n8n self-hosted & latest \\
+Despliegue & Docker Compose + Coolify & latest \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Métricas del producto:}
+
+\begin{itemize}[leftmargin=*]
+  \item 39 endpoints REST repartidos en 9 routers.
+  \item 9 tablas PostgreSQL multi-tenant.
+  \item 4 roles + 10 vistas con guards RBAC.
+  \item 93 controles ISO 27001 Anexo A precargados.
+  \item 24 amenazas catalogadas (modelo STRIDE) con mitigaciones.
+  \item 15 riesgos identificados y tratados conforme a ISO 27005.
+\end{itemize}
+
+% ============================================================================
+\section{Trayectoria del Proyecto (Etapas 1-4)}
+
+\subsection{Etapa 1 — Análisis e Ingeniería de Requerimientos (27 abr 2026)}
+
+\textbf{Entregable:} \texttt{entregas/etapa-1-requerimientos/etapa-1.pdf}
+
+\textbf{Contenido:} requisitos de seguridad alineados a CIA (confidencialidad, integridad, disponibilidad); requerimientos funcionales (CRUDs de empresas, incidentes, controles, capacitaciones, auditoría) y no funcionales (escalabilidad, mantenibilidad, usabilidad, observabilidad); historias de usuario por rol; casos de uso (login, generación de controles, reporte) y casos de abuso (suplantación, cross-tenant, escalamiento de privilegios); matriz de trazabilidad.
+
+\subsection{Etapa 2 — Arquitectura y Diseño (04 may 2026)}
+
+\textbf{Entregable:} \texttt{entregas/etapa-2-arquitectura/etapa-2.pdf}
+
+\textbf{Contenido:} arquitectura por capas (presentación, lógica, datos, persistencia); 4 Architecture Decision Records (ADR); análisis de riesgos con metodología cualitativa P×I (15 riesgos identificados, 1 crítico, 7 altos); patrones de diseño aplicados (Layered, Dependency Injection, Factory, Repository implícito, Strategy, Adapter, Container/Presentational); modelado de ataques híbrido \textbf{PASTA + STRIDE} con 24 amenazas catalogadas, 3 árboles de ataque y hoja de ruta de mitigaciones priorizada.
+
+\subsection{Etapa 3 — Codificación e Integración (11 may 2026)}
+
+\textbf{Entregable:} \texttt{entregas/etapa-3-codificacion/etapa-3.pdf}
+
+\textbf{Contenido:} prácticas de codificación segura mapeadas a OWASP Top 10:2021; ejemplos reales de implementación (RBAC factory, interceptor Axios, multi-tenant filter); control de versiones con Conventional Commits y branch protection; pipeline de CI con \textbf{análisis estático (SAST)}: ruff, bandit, semgrep; análisis de dependencias (SCA): pip-audit, npm audit, Trivy; revisión de código obligatoria (PR review + pre-commit hooks); estrategia de pruebas con pirámide unitaria/integración/E2E y cobertura mínima 70\%/90\% para módulos críticos.
+
+\subsection{Etapa 4 — Pruebas y Despliegue (18 may 2026)}
+
+\textbf{Entregable:} \texttt{entregas/etapa-4-pruebas-despliegue/etapa-4.pdf}
+
+\textbf{Contenido:} \textbf{análisis dinámico (DAST)} con OWASP ZAP (baseline + autenticado), Nuclei (CVEs/misconfig), testssl.sh, ffuf, JWT\_Tool; catálogo de 15 hallazgos esperados con severidad y mitigación; \textbf{configuración segura} por capa: SO (Debian slim + ufw + auditd), Docker (multi-stage + USER 10001 + cap-drop), Nginx (TLS 1.3 + HSTS + CSP + rate limit), PostgreSQL (SSL + RLS + PITR), aplicación (DEBUG=False + middleware), frontend (sin source maps en prod, SRI); gestión de secretos con vault y rotación 90 días; estrategia de despliegue blue-green con Coolify y rollback automático; backups con RPO 1h / RTO 2h; respuesta a incidentes con SLA por severidad.
+
+% ============================================================================
+\section{Arquitectura Final del Sistema}
+
+\subsection{Vista de despliegue}
+
+\begin{center}
+\begin{tabular}{|p{3cm}|p{5cm}|p{4cm}|}
+\hline
+\rowcolor{accent!20}
+\textbf{Componente} & \textbf{Función} & \textbf{Host} \\
+\hline
+SPA React & UI multi-rol & Coolify static \\
+\hline
+API FastAPI & 39 endpoints REST & Coolify container \\
+\hline
+PostgreSQL & 9 tablas multi-tenant & Supabase managed \\
+\hline
+Supabase Auth & JWT + RBAC & Supabase managed \\
+\hline
+Nginx & TLS + reverse proxy & Coolify (auto Traefik) \\
+\hline
+n8n & Webhooks reportes & Self-hosted \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Modelo de datos resumen}
+
+\textbf{Tablas principales:}
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{empresas} — tenant raíz; clave de aislamiento.
+  \item \texttt{user\_profiles} — usuarios con rol y empresa\_id.
+  \item \texttt{incidents}, \texttt{controls}, \texttt{risk\_levels} — datos operativos por empresa.
+  \item \texttt{snapshots} — historiales para tendencias.
+  \item \texttt{cursos}, \texttt{curso\_progreso} — capacitaciones y avance.
+  \item \texttt{auditoria\_items} — checklist por empresa.
+\end{itemize}
+
+\subsection{Endpoints clave}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lXl}
+\toprule
+\textbf{Router} & \textbf{Propósito} & \textbf{N° endpoints} \\
+\midrule
+/auth & register, me, users, role & 5 \\
+/incidents & CRUD + stats & 5 \\
+/controls & CRUD + compliance & 4 \\
+/risk & current, create, history, by-domain & 4 \\
+/dashboard & summary, kpis, export & 3 \\
+/empresas & CRUD + generar-controles & 4 \\
+/capacitaciones & cursos + progreso & 4 \\
+/implementacion & tareas ISO & 3 \\
+/auditoria & checklist & 4 \\
+/snapshots & históricos & 2 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ============================================================================
+\section{Postura de Seguridad Consolidada}
+
+\subsection{Defensas implementadas (defensa en profundidad)}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{llX}
+\toprule
+\textbf{Capa} & \textbf{Defensa} & \textbf{Ataque mitigado} \\
+\midrule
+Red & TLS 1.3 + HSTS preload & MITM, downgrade attacks \\
+Red & Nginx rate limit + ufw & DoS, brute force \\
+Aplicación & JWT validado vs Supabase & Token forgery, alg=none \\
+Aplicación & require\_role() & Privilege escalation \\
+Aplicación & \_empresa\_filter() & Cross-tenant leakage \\
+Aplicación & Pydantic v2 strict & Tampering, injection \\
+Datos & SQLAlchemy parametrizado & SQL injection \\
+Datos & RLS Postgres + sslmode=require & Lateral movement DB \\
+Logging & JSON estructurado + mask & Info disclosure en logs \\
+Build & SAST (bandit/semgrep) + SCA (pip-audit/Trivy) & Componentes vulnerables \\
+Runtime & DAST (ZAP/Nuclei) & Misconfig, CVEs en runtime \\
+Operación & Backups + PITR + IR procedure & Pérdida de datos, brechas \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Riesgos residuales aceptados}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{R-12 Fallo en rotación de claves Supabase}: dependencia del proveedor; mitigado por SLA del proveedor.
+  \item \textbf{R-15 Indisponibilidad de Supabase}: SLA 99.9\%; sin redundancia multi-cloud por costo.
+\end{itemize}
+
+% ============================================================================
+\section{Mapeo de Cumplimiento ISO/IEC 27001:2022}
+
+\begin{longtable}{p{2.5cm}p{4cm}p{7.5cm}}
+\toprule
+\textbf{Cláusula / Control} & \textbf{Requerimiento} & \textbf{Evidencia en ISO SECURE} \\
+\midrule
+\endhead
+4.3 Alcance del SGSI & Definir alcance & CONTEXT.md + tabla de roles \\
+6.1.2 Análisis de riesgos & Identificar y evaluar & Etapa 2: 15 riesgos con P×I \\
+6.1.3 Tratamiento de riesgos & Plan de tratamiento & Etapa 2: estrategias por riesgo \\
+8.1 Operación & Planificar y controlar & Etapa 4: despliegue blue-green \\
+9.1 Monitoreo & Medir desempeño & Etapa 4: Prometheus + alertas \\
+A.5.15 Control de acceso & Política y reglas & RBAC factory + 4 roles \\
+A.5.17 Información de autenticación & Gestión segura & Supabase Auth + JWT corto \\
+A.5.23 Servicios en la nube & Seguridad en uso & ADR Supabase + revisión SLA \\
+A.5.24-A.5.28 IR & Gestión incidentes & Etapa 4: procedimiento + SLAs \\
+A.5.30 Continuidad & TIC continuidad & Backups + PITR + RPO/RTO \\
+A.6.3 Concienciación & Formación & Módulo Capacitaciones \\
+A.8.2 Privilegios & Mínimo privilegio & require\_role + RLS \\
+A.8.3 Acceso a información & Restricción & \_empresa\_filter \\
+A.8.5 Autenticación segura & MFA & Supabase MFA \\
+A.8.7 Antimalware & Protección & Trivy en CI \\
+A.8.8 Gestión vulnerabilidades & SCA + DAST & Etapas 3 y 4 \\
+A.8.9 Gestión configuración & IaC + secretos & Coolify + vault \\
+A.8.11 Enmascaramiento datos & Logs & Mask filter en logger \\
+A.8.13 Backups & Respaldos & Etapa 4 \\
+A.8.15 Logging & Trazabilidad & Logs JSON + 90d retención \\
+A.8.16 Monitoreo & Detección & Prometheus + Grafana \\
+A.8.20 Seguridad red & TLS, firewall & Etapa 4 \\
+A.8.23 Filtrado web & CSP/CORS & Etapa 4 \\
+A.8.24 Criptografía & Uso seguro & TLS 1.3 + JWT RS256 \\
+A.8.25-A.8.28 Desarrollo seguro & Ciclo de desarrollo & Etapas 1-4 completas \\
+A.8.29 Pruebas de seguridad & SAST + DAST & Etapas 3 y 4 \\
+\bottomrule
+\end{longtable}
+
+% ============================================================================
+\section{Contenido del ZIP de Soportes}
+
+El archivo \texttt{soportes-iso-secure.zip} adjunto contiene:
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Entregables PDF} (5 archivos):
+  \begin{itemize}
+    \item \texttt{etapa-1-requerimientos.pdf}
+    \item \texttt{etapa-2-arquitectura.pdf}
+    \item \texttt{etapa-3-codificacion.pdf}
+    \item \texttt{etapa-4-pruebas-despliegue.pdf}
+    \item \texttt{etapa-5-entrega-final.pdf} (este documento)
+  \end{itemize}
+  \item \textbf{Código fuente} completo del repositorio \texttt{Agustin1231/iso\_secure}.
+  \item \textbf{Diagramas} (HTML interactivos):
+  \begin{itemize}
+    \item \texttt{arquitectura.html} — 7 secciones de arquitectura
+    \item \texttt{threat-modeling.html} — STRIDE completo (24 amenazas)
+    \item \texttt{metodologia-amenazas.html} — PASTA + STRIDE integrado
+  \end{itemize}
+  \item \textbf{Documentación}: \texttt{README.md}, \texttt{CONTEXT.md}, \texttt{ISO\_SECURE\_AI\_CONTEXT.md}.
+  \item \textbf{Anexos ISO}: \texttt{Anexo+A+-+ISO+27001.xlsx}, \texttt{Declaración+de+aplicabilidad.xlsx}, \texttt{Lista+Maestra+de+Documentos+del+SGSI.xlsx}.
+  \item \textbf{Despliegue}: \texttt{Dockerfile}, \texttt{docker-compose.yml}, \texttt{migrate.py}, \texttt{alembic.ini}.
+\end{enumerate}
+
+\section{Acceso al Producto y Repositorio}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Repositorio Git:} \url{https://github.com/Agustin1231/iso_secure}
+  \item \textbf{Branch de entrega:} \texttt{entrega-final}
+  \item \textbf{URL de despliegue:} pendiente de confirmación (despliegue automático vía Coolify al hacer push a \texttt{main}).
+  \item \textbf{Credenciales de prueba:} ver \texttt{.env.example}; el evaluador debe configurar Supabase propio o solicitar credenciales temporales al autor.
+\end{itemize}
+
+% ============================================================================
+\section{Conclusiones Generales}
+
+ISO SECURE demuestra la aplicación de un \textbf{ciclo SDLC seguro completo} sobre un caso de negocio real:
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Etapa 1} ancla el proyecto en requisitos verificables y traceables.
+  \item \textbf{Etapa 2} adopta decisiones arquitectónicas con análisis de riesgo y modelado de amenazas previo al código.
+  \item \textbf{Etapa 3} traduce el diseño en código con prácticas OWASP, SAST y revisión obligatoria.
+  \item \textbf{Etapa 4} valida en runtime con DAST y endurece toda la infraestructura.
+  \item \textbf{Etapa 5} consolida el ciclo y deja al SGSI cumpliendo $\sim$30 controles del Anexo A de ISO 27001:2022 desde el diseño técnico, listo para la auditoría documental que falte en el ámbito organizacional.
+\end{enumerate}
+
+El proyecto evidencia que es posible construir software con seguridad de origen (\textbf{Security by Design}) sin sacrificar velocidad de desarrollo, usando herramientas open source y prácticas DevSecOps maduras. La continuidad del SGSI no termina con la entrega: las prácticas, pipelines, dashboards y procedimientos descritos forman parte del ciclo PDCA exigido por ISO 27001:2022 (cláusulas 9 y 10) y deben mantenerse activos durante toda la vida del producto.
+
+\section*{Anexos}
+\begin{itemize}[leftmargin=*]
+  \item Anexo I — PDFs de las Etapas 1 a 4 (incluidos en el ZIP).
+  \item Anexo II — Código fuente (incluido en el ZIP).
+  \item Anexo III — Diagramas HTML interactivos (incluidos en el ZIP).
+  \item Anexo IV — Anexo A de ISO 27001 + Declaración de aplicabilidad + Lista maestra del SGSI (Excel).
+\end{itemize}
+
+\section*{Referencias normativas}
+\begin{itemize}[leftmargin=*]
+  \item ISO/IEC 27001:2022 — Information security management systems — Requirements.
+  \item ISO/IEC 27002:2022 — Information security controls.
+  \item ISO/IEC 27005:2022 — Guidance on managing information security risks.
+  \item OWASP Top 10:2021 y OWASP ASVS 4.0.3.
+  \item OWASP Web Security Testing Guide v4.2.
+  \item NIST SP 800-218 — Secure Software Development Framework (SSDF).
+  \item NIST SP 800-61 Rev. 2 — Computer Security Incident Handling Guide.
+\end{itemize}
+
+\end{document}

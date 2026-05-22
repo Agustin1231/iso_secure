@@ -1,58 +1,47 @@
-# FALTANTE.md — Trabajo pendiente
+# FALTANTE.md — Estado de entregables
 
-> Estado al **22 de mayo de 2026** — generado por Rocky para Agustín.
+> Actualizado: **22 de mayo de 2026** — Rocky para Agustín.
 
-## ✅ Entregado
+## ✅ Brief completo (recibido del usuario)
 
-| Etapa | Actividad Formativa | Fecha entrega | Estado | PDF |
-|-------|---------------------|---------------|--------|-----|
-| 1 | AF-1 (5%) — Análisis e Ingeniería de Requerimientos | 27 Abr 2026 | ✅ Entregado | `entregas/etapa-1-requerimientos/etapa-1.pdf` |
-| 2 | AF-2 (5%) — Arquitectura y Diseño | 04 May 2026 | ✅ Entregado | `entregas/etapa-2-arquitectura/etapa-2.pdf` |
-| 3 | AF-3 (5%) — Codificación e Integración | 11 May 2026 | ✅ Entregado | `entregas/etapa-3-codificacion/etapa-3.pdf` |
+| Etapa | Actividad | Fecha | % | Estado |
+|-------|-----------|-------|---|--------|
+| 1 | AF-1 — Análisis e Ingeniería de Requerimientos | 27 Abr 2026 | 5% | ✅ Entregado |
+| 2 | AF-2 — Arquitectura y Diseño | 04 May 2026 | 5% | ✅ Entregado |
+| 3 | AF-3 — Codificación e Integración (Rev código + SAST) | 11 May 2026 | 5% | ✅ Entregado |
+| 4 | AF-4 — Pruebas y Despliegue (DAST + Config Segura) | 18 May 2026 | 5% | ✅ Entregado |
+| 5 | **AS-1 SUMATIVA — Entrega Final** | 25 May 2026 | **20%** | ✅ Documento listo |
 
-## ⚠️ Pendiente (mensaje original truncado en Telegram)
-
-El brief original llegó cortado en el mensaje #4238. Solo se alcanzan a leer las etapas 1, 2 y 3. **Faltan las etapas 4, 5 y 6 (Actividades Formativas 4, 5 y 6).**
-
-### Datos que necesito de Agustín para continuar
-
-Para cada etapa pendiente:
-
-- **Nombre exacto** de la etapa (ej. "Pruebas de Seguridad")
-- **Subtemas obligatorios** (lo que viene entre paréntesis en el enunciado, como ya está para 1, 2 y 3)
-- **Fecha de entrega** (semana 4, 5, 6)
-- **Porcentaje** de la actividad formativa
-
-### Hipótesis (estructura típica del SDLC seguro — a confirmar)
-
-| Etapa | Hipótesis de contenido | Confianza |
-|-------|------------------------|-----------|
-| 4 (Semana 4 — ~18 May 2026) | Pruebas de Seguridad (SAST/DAST, pentest, fuzzing, revisión de código) | Media |
-| 5 (Semana 5 — ~25 May 2026) | Despliegue, Operación y Monitoreo (hardening, IR, observabilidad) | Media |
-| 6 (Semana 6 — ~01 Jun 2026) | Mantenimiento y Mejora Continua (PDCA, gestión de vulnerabilidades, retiro seguro) | Media |
-
-> ⚠️ **Estas son suposiciones.** No arranco hasta que Agustín confirme el brief real.
-
-## 📦 Estructura del entregable
+## 📦 Entregables generados
 
 ```
 entregas/
-├── etapa-1-requerimientos/
-│   ├── etapa-1.tex           ← fuente LaTeX
-│   ├── etapa-1.pdf           ← documento final
-│   └── figuras/              ← assets
-├── etapa-2-arquitectura/
-│   ├── etapa-2.tex
-│   ├── etapa-2.pdf
-│   └── figuras/
-├── etapa-3-codificacion/
-│   ├── etapa-3.tex
-│   └── etapa-3.pdf
-├── etapa-4-*/                ← PENDIENTE
-├── etapa-5-*/                ← PENDIENTE
-└── etapa-6-*/                ← PENDIENTE
+├── etapa-1-requerimientos/etapa-1.pdf            ✅
+├── etapa-2-arquitectura/etapa-2.pdf              ✅
+├── etapa-3-codificacion/etapa-3.pdf              ✅
+├── etapa-4-pruebas-despliegue/etapa-4.pdf        ✅
+└── etapa-5-entrega-final/
+    ├── etapa-5-entrega-final.pdf                 ✅
+    └── soportes-iso-secure.zip                   ✅
 ```
 
-## 🔄 Siguiente acción
+## 🎯 Pendiente (Agustín)
 
-**Agustín:** pasar el listado completo de las etapas 4, 5 y 6 (con subtemas) por Telegram. Rocky genera los PDFs, hace commit + push y manda los archivos al chat.
+1. **Sustentación grabada** — video del estudiante explicando el proyecto.
+2. **Subir al Aula Virtual** antes de las **23:55 del lunes 25 de mayo 2026**.
+3. **URL de despliegue Coolify** se completa cuando el push a `main` dispare el deploy.
+
+## 🔗 URLs
+
+- **Repo:** https://github.com/Agustin1231/iso_secure
+- **Branch entrega:** `entrega-final` (mergeada a `main` para deploy automático)
+- **Despliegue:** auto vía Coolify al push a `main` (URL se notifica por Telegram)
+
+## 🎬 Guion sugerido para la sustentación (5-10 min)
+
+1. **(1 min) Contexto del problema** — por qué un SGSI ISO 27001 y por qué multi-tenant.
+2. **(1 min) Demo del producto** — login, dashboard, control de incidentes, riesgo, capacitaciones.
+3. **(2 min) Arquitectura** — capas, stack, decisiones clave (ADR-01..04).
+4. **(2 min) Seguridad de origen** — modelo de amenazas STRIDE+PASTA, riesgos P×I.
+5. **(2 min) SDLC seguro** — SAST + DAST + hardening + IR.
+6. **(1 min) Cierre** — cumplimiento ISO 27001:2022 (≈30 controles del Anexo A) y próximos pasos.

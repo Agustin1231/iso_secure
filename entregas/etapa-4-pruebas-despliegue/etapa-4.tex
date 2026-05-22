@@ -1,0 +1,490 @@
+\documentclass[12pt,a4paper,oneside]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-noshorthands]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{colortbl}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{longtable}
+\usepackage{listings}
+
+\hypersetup{colorlinks=true,urlcolor=blue,linkcolor=black}
+
+\definecolor{darkblue}{RGB}{31,56,100}
+\definecolor{accent}{RGB}{79,143,247}
+\definecolor{success}{RGB}{16,185,129}
+\definecolor{warning}{RGB}{245,158,11}
+\definecolor{danger}{RGB}{239,68,68}
+\definecolor{lightgray}{RGB}{240,242,247}
+\definecolor{codebg}{RGB}{248,249,252}
+\definecolor{codekw}{RGB}{109,40,217}
+\definecolor{codestr}{RGB}{16,120,40}
+\definecolor{codecom}{RGB}{120,120,120}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  keywordstyle=\color{codekw}\bfseries,
+  stringstyle=\color{codestr},
+  commentstyle=\color{codecom}\itshape,
+  showstringspaces=false,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{lightgray},
+  numbers=left,
+  numberstyle=\tiny\color{codecom},
+  xleftmargin=2em,
+  framexleftmargin=1.5em
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\textcolor{accent}{ISO SECURE}}
+\lhead{\textcolor{accent}{Etapa 4 - Pruebas y Despliegue}}
+\cfoot{Página \thepage\ de \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\color{accent}\hrule}
+
+\title{
+  {\Huge \textbf{ISO SECURE}}\\
+  {\LARGE Plataforma de Cumplimiento ISO 27001}\\[2ex]
+  {\Large \textcolor{accent}{Etapa 4: Pruebas y Despliegue}}\\[1ex]
+  {\small Actividad Formativa 4 - 5\%}
+}
+\author{Agustín Peralta --- Universidad de San Buenaventura}
+\date{Entrega: 18 de Mayo de 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Este documento presenta las pruebas de seguridad dinámicas (DAST) y la configuración segura aplicadas en el proyecto ISO SECURE durante la fase de pruebas y despliegue. Cubre la estrategia DAST con OWASP ZAP, Nuclei y pruebas de fuzzing; el hardening de infraestructura (Nginx, Docker, PostgreSQL, sistema operativo); las cabeceras de seguridad HTTP; la gestión de secretos en producción; la estrategia de backups y los procedimientos de respuesta a incidentes. Las prácticas se alinean con OWASP ASVS 4.0, CIS Benchmarks y los controles A.8 (controles tecnológicos) y A.5 (organizacionales) de ISO/IEC 27001:2022.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% ============================================================================
+\section{Introducción}
+
+La Etapa 4 cierra el ciclo de construcción con dos focos complementarios:
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Análisis Dinámico de Seguridad (DAST):} ejecutar la aplicación y atacarla deliberadamente para descubrir vulnerabilidades que el análisis estático no puede detectar (problemas de configuración, lógica de negocio, sesiones, autenticación).
+  \item \textbf{Configuración Segura:} endurecer cada capa del stack (sistema operativo, contenedores, servidor web, base de datos, aplicación) siguiendo CIS Benchmarks y guías oficiales del proveedor.
+\end{enumerate}
+
+A diferencia del SAST (Etapa 3), que analiza código fuente, el DAST analiza el sistema corriendo. Ambos son complementarios y obligatorios para una cobertura de seguridad madura (DevSecOps).
+
+% ============================================================================
+\section{Análisis Dinámico (DAST)}
+
+\subsection{Herramientas seleccionadas}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lXl}
+\toprule
+\textbf{Herramienta} & \textbf{Propósito} & \textbf{Tipo} \\
+\midrule
+OWASP ZAP & Scan automatizado + proxy interceptor + spider & DAST general \\
+Nuclei & Plantillas YAML para CVEs conocidas y misconfigs & DAST plantillas \\
+sqlmap & Pruebas dirigidas de inyección SQL & Especializado \\
+nikto & Server scan: archivos comunes, headers, versiones & Web server \\
+testssl.sh & Auditoría de TLS (ciphers, versiones, certs) & TLS/SSL \\
+ffuf & Fuzzing de endpoints y parámetros & Fuzzing \\
+JWT\_Tool & Pruebas específicas contra tokens JWT & API/Auth \\
+Burp Suite Community & Análisis manual asistido & Manual \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Estrategia DAST por capas}
+
+\subsubsection{Capa 1 — Reconocimiento (sin login)}
+
+\begin{itemize}[leftmargin=*]
+  \item Spider de ZAP sobre la URL pública: descubrir endpoints expuestos.
+  \item nikto: archivos sensibles (\texttt{.git}, \texttt{.env}, \texttt{backup.sql}).
+  \item testssl.sh: validar TLS 1.3, sin cifrados débiles, HSTS.
+\end{itemize}
+
+\subsubsection{Capa 2 — Autenticación}
+
+\begin{itemize}[leftmargin=*]
+  \item Enumeración de usuarios vía login (mensajes diferenciados).
+  \item Brute force con throttle/lockout.
+  \item Resistencia a credential stuffing (Have I Been Pwned).
+  \item Validación de JWT: firma, alg=none, kid traversal, exp, nbf.
+\end{itemize}
+
+\subsubsection{Capa 3 — Autorizado (con cuenta de prueba)}
+
+\begin{itemize}[leftmargin=*]
+  \item ZAP Active Scan con contexto autenticado (script de re-auth).
+  \item Tests de IDOR: cambiar IDs en URL/body.
+  \item Tests multi-tenant: con token de empresa A intentar leer/escribir en empresa B.
+  \item Privilege escalation: con rol supervisor intentar acciones de admin.
+\end{itemize}
+
+\subsubsection{Capa 4 — Fuzzing}
+
+\begin{itemize}[leftmargin=*]
+  \item ffuf sobre parámetros JSON con payloads de OWASP juice-shop.
+  \item Pruebas de límites: strings de 1MB, enteros negativos, fechas inválidas.
+  \item Inyecciones: SQL, NoSQL, comandos, plantilla (SSTI), LDAP, XPath.
+\end{itemize}
+
+\subsection{Plan de ejecución}
+
+\begin{lstlisting}[language=bash]
+# 1. Scan baseline ZAP en CI (cada PR)
+docker run --rm -v $(pwd):/zap/wrk owasp/zap2docker-stable \
+  zap-baseline.py -t https://staging.iso-secure.app -r zap-report.html
+
+# 2. Nuclei contra staging diariamente
+nuclei -u https://staging.iso-secure.app \
+  -t cves/ -t misconfiguration/ -t exposures/ \
+  -severity critical,high -o nuclei-report.txt
+
+# 3. testssl.sh contra produccion (semanal)
+testssl.sh --severity HIGH https://iso-secure.app
+
+# 4. ZAP autenticado (release)
+zap-full-scan.py -t https://staging.iso-secure.app \
+  -z "-config replacer.full_list(0).description=auth \
+       -config replacer.full_list(0).enabled=true \
+       -config replacer.full_list(0).matchtype=REQ_HEADER \
+       -config replacer.full_list(0).matchstr=Authorization \
+       -config replacer.full_list(0).replacement=Bearer $TOKEN"
+\end{lstlisting}
+
+\subsection{Catálogo esperado de hallazgos y mitigaciones}
+
+\begin{longtable}{p{1cm}p{4cm}cp{6cm}}
+\toprule
+\textbf{ID} & \textbf{Hallazgo} & \textbf{Sev.} & \textbf{Mitigación} \\
+\midrule
+\endhead
+D-01 & Cookies sin flag HttpOnly/Secure & Alta & Configurar atributos cookie + SameSite=Lax \\
+D-02 & CORS demasiado permisivo (\texttt{*}) & Alta & Whitelist explícita por entorno \\
+D-03 & Headers de seguridad faltantes (CSP, X-Frame) & Media & Añadir en Nginx (sección Hardening) \\
+D-04 & Mensajes de error con stack trace en prod & Media & \texttt{DEBUG=False} + handler genérico \\
+D-05 & Robots.txt expone rutas internas & Baja & Eliminar referencias internas \\
+D-06 & Server: nginx/1.x revela versión & Baja & \texttt{server\_tokens off;} \\
+D-07 & TLS 1.0/1.1 habilitado & Alta & Solo TLS 1.2+ (ideal 1.3) \\
+D-08 & Cifrados RC4/3DES soportados & Alta & Suite de cifrados modernos (Mozilla intermediate) \\
+D-09 & Brute force sin lockout & Alta & Rate limit + lockout temporal en Supabase \\
+D-10 & JWT alg=none aceptado & Crítica & Validar contra Supabase /auth/v1/user (ya implementado) \\
+D-11 & IDOR en \texttt{/incidents/\{id\}} & Crítica & Verificar ownership en service layer \\
+D-12 & Cross-tenant via parámetro & Crítica & Helper \texttt{\_empresa\_filter} (ya implementado) \\
+D-13 & SSRF en webhooks n8n & Alta & Allowlist de hosts salientes \\
+D-14 & Open redirect en /login?return\_to & Media & Validar dominio destino \\
+D-15 & Falta de rate limit global & Alta & slowapi + Nginx limit\_req \\
+\bottomrule
+\end{longtable}
+
+% ============================================================================
+\section{Configuración Segura — Hardening por capa}
+
+\subsection{Sistema Operativo (host)}
+
+\begin{itemize}[leftmargin=*]
+  \item Distribución mínima (Debian slim o Alpine).
+  \item Actualizaciones automáticas de seguridad (\texttt{unattended-upgrades}).
+  \item Usuario no-root para correr servicios.
+  \item SSH: solo claves, sin password, puerto no estándar, fail2ban.
+  \item Firewall ufw: permitir 22, 80, 443; denegar resto.
+  \item Auditd habilitado para eventos sensibles.
+  \item Sin servicios innecesarios; \texttt{systemd-analyze} review.
+\end{itemize}
+
+\subsection{Docker / Contenedores}
+
+\begin{itemize}[leftmargin=*]
+  \item Imágenes base oficiales y versionadas (no \texttt{latest}).
+  \item Multi-stage builds para reducir superficie de ataque.
+  \item Usuario no-root en el \texttt{Dockerfile} (\texttt{USER 10001}).
+  \item Capabilities mínimas (\texttt{--cap-drop=ALL}).
+  \item Read-only filesystem cuando sea posible.
+  \item Healthchecks declarados.
+  \item Escaneo con Trivy antes de promover a producción.
+\end{itemize}
+
+\textbf{Ejemplo Dockerfile hardened:}
+
+\begin{lstlisting}[language=bash]
+FROM python:3.13-slim AS builder
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --user --no-cache-dir -r requirements.txt
+
+FROM python:3.13-slim
+RUN groupadd -r app && useradd -r -g app -u 10001 app
+COPY --from=builder /root/.local /home/app/.local
+COPY --chown=app:app . /app
+WORKDIR /app
+USER app
+ENV PATH=/home/app/.local/bin:$PATH
+HEALTHCHECK --interval=30s --timeout=3s CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+\end{lstlisting}
+
+\subsection{Nginx (reverse proxy + TLS termination)}
+
+\begin{itemize}[leftmargin=*]
+  \item TLS 1.2+ obligatorio; 1.3 preferido.
+  \item Suite de cifrados Mozilla intermediate.
+  \item HSTS con \texttt{max-age=31536000; includeSubDomains; preload}.
+  \item \texttt{server\_tokens off;} para ocultar versión.
+  \item Rate limiting por IP en endpoints sensibles (login).
+  \item Buffer sizes para mitigar Slowloris.
+  \item Logs en formato JSON con IP, user-agent, status, latencia.
+\end{itemize}
+
+\textbf{Headers de seguridad obligatorios:}
+
+\begin{lstlisting}[language=bash]
+# nginx headers (extracto)
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header X-Frame-Options "DENY" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
+add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co; frame-ancestors 'none';" always;
+\end{lstlisting}
+
+\subsection{PostgreSQL (Supabase managed)}
+
+Aunque Supabase gestiona muchos controles, las prácticas que aplicamos del lado cliente son:
+
+\begin{itemize}[leftmargin=*]
+  \item Solo conexiones SSL (\texttt{sslmode=require}).
+  \item Roles separados: \texttt{app\_user} (CRUD) y \texttt{migrator} (DDL).
+  \item Sin \texttt{SUPERUSER} para conexiones de aplicación.
+  \item Row Level Security (RLS) habilitado en tablas multi-tenant.
+  \item Backups automáticos diarios + Point-in-Time Recovery 7 días.
+  \item Encriptación at-rest activa por defecto.
+  \item Audit logging habilitado para DDL y privilegios.
+\end{itemize}
+
+\subsection{Aplicación FastAPI}
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{DEBUG=False} y \texttt{docs\_url=None} en producción (o tras auth admin).
+  \item Workers Uvicorn $\geq 2 \times$ vCPU para tolerancia.
+  \item Timeouts: \texttt{--timeout-keep-alive=5}, \texttt{--limit-concurrency=1000}.
+  \item Middleware de logging estructurado con request\_id.
+  \item Trusted Hosts middleware con whitelist explícita.
+  \item GZip middleware con \texttt{minimum\_size} para evitar BREACH.
+\end{itemize}
+
+\subsection{Frontend React (build estático)}
+
+\begin{itemize}[leftmargin=*]
+  \item Source maps solo en staging; deshabilitados en prod.
+  \item Subresource Integrity (SRI) en scripts externos.
+  \item Variables sólo \texttt{VITE\_} (públicas por diseño); nada sensible en bundle.
+  \item Sentry/Posthog desactivados en preview branches.
+\end{itemize}
+
+% ============================================================================
+\section{Gestión de Secretos en Producción}
+
+\subsection{Principios}
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Nunca en el código.} Detección con \texttt{detect-secrets} en pre-commit y CI.
+  \item \textbf{Nunca en logs.} Filtros de redacción en el logger.
+  \item \textbf{Rotación periódica.} 90 días para credenciales operativas.
+  \item \textbf{Mínimo privilegio.} Cada servicio con sus propias credenciales.
+  \item \textbf{Cifrado en reposo.} Vault del proveedor (Supabase Vault, GitHub Secrets, Coolify Secrets).
+\end{enumerate}
+
+\subsection{Inventario de secretos}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lXl}
+\toprule
+\textbf{Secreto} & \textbf{Uso} & \textbf{Rotación} \\
+\midrule
+DATABASE\_URL & Conexión PostgreSQL & 90 días \\
+SUPABASE\_URL & Endpoint del proveedor & estática \\
+SUPABASE\_ANON\_KEY & Auth cliente (pública por diseño) & 180 días \\
+SUPABASE\_SERVICE\_ROLE\_KEY & Operaciones server-side & 90 días \\
+JWT\_VALIDATION\_URL & Endpoint de validación & estática \\
+N8N\_WEBHOOK\_SECRET & HMAC de webhooks salientes & 90 días \\
+SMTP\_PASSWORD & Emails transaccionales & 90 días \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ============================================================================
+\section{Estrategia de Despliegue}
+
+\subsection{Pipeline de promoción}
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+\rowcolor{accent!20}
+\textbf{Entorno} & \textbf{Trigger} & \textbf{Pruebas} & \textbf{Aprobación} \\
+\hline
+PR preview & abrir PR & smoke + ZAP baseline & automática \\
+\hline
+staging & merge a \texttt{develop} & full ZAP + e2e Playwright & automática \\
+\hline
+producción & merge a \texttt{main} & smoke post-deploy & manual (1 reviewer) \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Estrategia blue-green simplificada (Coolify)}
+
+\begin{itemize}[leftmargin=*]
+  \item Coolify levanta nueva versión del contenedor.
+  \item Healthcheck \texttt{/health} debe pasar.
+  \item Si pasa, swap de tráfico en el reverse proxy interno.
+  \item Si falla, rollback automático a la versión previa (último commit verde).
+\end{itemize}
+
+\subsection{Plan de rollback}
+
+\begin{enumerate}[leftmargin=*]
+  \item Detectar regresión vía healthcheck, monitoreo o reporte de usuario.
+  \item Coolify: re-deploy del último commit etiquetado como \texttt{stable}.
+  \item Si involucra migración de DB: ejecutar \texttt{alembic downgrade -1}.
+  \item Post-mortem y RCA dentro de 48 hrs (control A.5.27).
+\end{enumerate}
+
+% ============================================================================
+\section{Backups y Continuidad}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lXl}
+\toprule
+\textbf{Activo} & \textbf{Estrategia} & \textbf{RPO / RTO} \\
+\midrule
+Base de datos & PITR Supabase 7 días + snapshot diario externo & 1h / 2h \\
+Código & Git remoto (GitHub) + mirror en repo URPE & 0 / 30min \\
+Configuración (Coolify) & Export semanal del project a S3 cifrado & 24h / 1h \\
+Secretos & Backup cifrado del vault en cold storage & 24h / 4h \\
+Logs & Retención 90d + agregación off-site & 1h / N/A \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ============================================================================
+\section{Respuesta a Incidentes}
+
+\subsection{Niveles de severidad}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lXl}
+\toprule
+\textbf{Nivel} & \textbf{Descripción} & \textbf{SLA respuesta} \\
+\midrule
+P0 (Crítico) & Brecha activa, indisponibilidad total, fuga de datos & 15 min \\
+P1 (Alto) & Vulnerabilidad explotable confirmada, degradación severa & 1 h \\
+P2 (Medio) & Vulnerabilidad sin exploit público, función no crítica caída & 4 h \\
+P3 (Bajo) & Hardening pendiente, hallazgo informativo & 5 días hábiles \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Procedimiento IR (control A.5.24-A.5.28)}
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Detección} → alerta automática o reporte manual.
+  \item \textbf{Triaje} → asignar severidad y propietario.
+  \item \textbf{Contención} → aislar (revocar tokens, bloquear IP, deshabilitar usuario, blue-green rollback).
+  \item \textbf{Erradicación} → corregir causa raíz, parchear, actualizar.
+  \item \textbf{Recuperación} → restaurar servicio + validar integridad.
+  \item \textbf{Lecciones aprendidas} → post-mortem + actualización de catálogo de amenazas (Etapa 2).
+\end{enumerate}
+
+% ============================================================================
+\section{Monitoreo y Observabilidad}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Logs:} salida JSON estructurada → agregador (Loki/Grafana o Better Stack).
+  \item \textbf{Métricas:} CPU, RAM, latencia p95, error rate (Prometheus + Grafana).
+  \item \textbf{Traces:} OpenTelemetry para request flow end-to-end.
+  \item \textbf{Alertas:} error rate $> 1\%$ por 5min, latencia p95 $> 2$s, healthcheck fallido.
+  \item \textbf{Dashboard ejecutivo:} disponibilidad mensual (SLA 99.5\%), MTTR, número de incidentes por severidad.
+\end{itemize}
+
+% ============================================================================
+\section{Mapeo a ISO 27001:2022}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Control Anexo A} & \textbf{Implementación} \\
+\midrule
+A.5.24 Planificación de IR & Procedimiento documentado + SLAs por severidad \\
+A.5.25 Evaluación de eventos & Triaje formal en cada alerta \\
+A.5.27 Lecciones aprendidas & Post-mortem en 48h + retroalimentación al modelo de amenazas \\
+A.5.30 Continuidad TIC & RPO/RTO definidos + PITR + mirror de código \\
+A.8.7 Protección contra malware & Trivy en CI + actualizaciones de base OS \\
+A.8.8 Gestión de vulnerabilidades técnicas & DAST + Nuclei + Dependabot \\
+A.8.9 Gestión de la configuración & Coolify + IaC + secretos en vault \\
+A.8.13 Backup de información & Backups diarios + PITR \\
+A.8.15 Logging & Logs JSON estructurados + retención 90d \\
+A.8.16 Monitoreo de actividades & Prometheus + alertas \\
+A.8.20 Seguridad de redes & TLS 1.3 + firewall + rate limit \\
+A.8.23 Filtrado web & CSP estricto + CORS allowlist \\
+A.8.26 Requisitos de seguridad de aplicaciones & DAST regular como gate de release \\
+A.8.27 Arquitectura segura & Hardening por capa documentado \\
+A.8.28 Codificación segura & Resultados DAST retroalimentan estándares de código \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ============================================================================
+\section{Conclusiones}
+
+La Etapa 4 cierra el ciclo de aseguramiento técnico previo a la entrega final:
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{DAST automatizado} en CI (ZAP baseline en cada PR; Nuclei diario; full ZAP autenticado por release).
+  \item \textbf{Hardening por capa} documentado: SO, Docker, Nginx, PostgreSQL, FastAPI, frontend.
+  \item \textbf{Gestión de secretos} con vault, rotación 90 días y detección automática en pre-commit/CI.
+  \item \textbf{Despliegue blue-green} mediante Coolify con rollback automático.
+  \item \textbf{Backups y continuidad} con RPO 1h / RTO 2h en la base de datos.
+  \item \textbf{Respuesta a incidentes} con SLA por severidad y post-mortem obligatorio.
+\end{enumerate}
+
+Las pruebas dinámicas no son un evento puntual: son un proceso continuo que retroalimenta al modelo de amenazas (Etapa 2) y a las prácticas de codificación segura (Etapa 3), cumpliendo el ciclo PDCA exigido por ISO 27001:2022.
+
+\section*{Referencias}
+\begin{itemize}[leftmargin=*]
+  \item OWASP Web Security Testing Guide (WSTG) v4.2.
+  \item OWASP Application Security Verification Standard (ASVS) 4.0.3.
+  \item CIS Docker Benchmark v1.6 y CIS Nginx Benchmark v2.0.
+  \item Mozilla SSL Configuration Generator (Intermediate Profile).
+  \item NIST SP 800-61 Rev. 2 — Computer Security Incident Handling Guide.
+  \item ISO/IEC 27001:2022 — Anexo A.5 y A.8.
+\end{itemize}
+
+\end{document}
