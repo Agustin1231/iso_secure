@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>ISO SECURE — Presentación Completa del Proyecto</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  :root {
+    --bg-primary: #0a0e1a;
+    --bg-secondary: #111827;
+    --bg-card: #1a1f35;
+    --border: #2a3050;
+    --text-primary: #f0f4ff;
+    --text-secondary: #8892b0;
+    --accent-blue: #4f8ff7;
+    --accent-green: #10b981;
+    --accent-orange: #f59e0b;
+    --accent-red: #ef4444;
+    --accent-purple: #a78bfa;
+    --accent-cyan: #22d3ee;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  @page { size: 1600px 900px; margin: 0; }
+
+  .slide {
+    width: 1600px;
+    height: 900px;
+    padding: 56px 80px;
+    page-break-after: always;
+    background: var(--bg-primary);
+    background-image:
+      radial-gradient(ellipse at top right, rgba(79,143,247,0.10) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom left, rgba(16,185,129,0.08) 0%, transparent 50%);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    margin: 0 auto 40px;
+  }
+  .slide:last-child { page-break-after: auto; }
+
+  .slide::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 6px;
+    background: linear-gradient(90deg, var(--accent-blue) 0%, var(--accent-purple) 50%, var(--accent-cyan) 100%);
+  }
+
+  .slide-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 24px;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 12px;
+    font-weight: 800; font-size: 18px; color: var(--accent-blue);
+    letter-spacing: 1px;
+  }
+  .brand-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--accent-blue);
+    box-shadow: 0 0 16px var(--accent-blue);
+  }
+  .slide-num { color: var(--text-secondary); font-size: 14px; font-weight: 500; }
+  .stage-tag {
+    display: inline-block;
+    background: rgba(167,139,250,0.15);
+    border: 1px solid var(--accent-purple);
+    color: var(--accent-purple);
+    padding: 6px 16px; border-radius: 20px;
+    font-size: 13px; font-weight: 700; letter-spacing: 2px;
+    margin-bottom: 18px; align-self: flex-start;
+  }
+
+  h1 {
+    font-size: 84px; font-weight: 900;
+    background: linear-gradient(135deg, #f0f4ff 0%, var(--accent-blue) 60%, var(--accent-cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.05;
+    margin-bottom: 24px;
+  }
+  h2 {
+    font-size: 50px; font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.1;
+    margin-bottom: 26px;
+  }
+  h2 .accent { color: var(--accent-blue); }
+  h3 { font-size: 26px; font-weight: 700; color: var(--accent-blue); margin-bottom: 16px; }
+
+  .subtitle { font-size: 30px; color: var(--text-secondary); font-weight: 400; margin-bottom: 50px; }
+
+  .lead { font-size: 21px; color: var(--text-secondary); line-height: 1.6; max-width: 1200px; }
+  .lead strong { color: var(--text-primary); font-weight: 600; }
+
+  /* Cover */
+  .cover { justify-content: center; align-items: flex-start; }
+  .cover-tag {
+    display: inline-block;
+    background: rgba(79,143,247,0.15);
+    border: 1px solid var(--accent-blue);
+    color: var(--accent-blue);
+    padding: 8px 18px; border-radius: 24px;
+    font-size: 14px; font-weight: 600; letter-spacing: 2px;
+    margin-bottom: 36px;
+  }
+  .cover h1 { font-size: 76px; max-width: 1350px; }
+  .cover .subtitle { font-size: 28px; margin-bottom: 40px; max-width: 1250px; }
+  .authors { display: flex; gap: 50px; margin-top: 40px; flex-wrap: wrap; }
+  .author { display: flex; flex-direction: column; gap: 4px; }
+  .author-name { font-size: 21px; font-weight: 700; color: var(--text-primary); }
+  .author-role { font-size: 13px; color: var(--text-secondary); letter-spacing: 1px; text-transform: uppercase; }
+  .cover-meta { position: absolute; bottom: 56px; right: 80px; text-align: right; color: var(--text-secondary); font-size: 14px; }
+  .cover-meta strong { color: var(--accent-blue); }
+
+  /* Grids & cards */
+  .grid { display: grid; gap: 22px; flex: 1; }
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid.compact { flex: none; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .card.accent { border-color: var(--accent-blue); background: linear-gradient(135deg, rgba(79,143,247,0.10), var(--bg-card)); }
+  .card.green { border-color: var(--accent-green); background: linear-gradient(135deg, rgba(16,185,129,0.10), var(--bg-card)); }
+  .card.orange { border-color: var(--accent-orange); background: linear-gradient(135deg, rgba(245,158,11,0.10), var(--bg-card)); }
+  .card.red { border-color: var(--accent-red); background: linear-gradient(135deg, rgba(239,68,68,0.10), var(--bg-card)); }
+  .card.purple { border-color: var(--accent-purple); background: linear-gradient(135deg, rgba(167,139,250,0.10), var(--bg-card)); }
+  .card.cyan { border-color: var(--accent-cyan); background: linear-gradient(135deg, rgba(34,211,238,0.10), var(--bg-card)); }
+
+  .card h4 { font-size: 21px; font-weight: 700; color: var(--text-primary); }
+  .card .num { font-size: 32px; font-weight: 900; color: var(--accent-blue); }
+  .card.green .num { color: var(--accent-green); }
+  .card.orange .num { color: var(--accent-orange); }
+  .card.purple .num { color: var(--accent-purple); }
+  .card .pill {
+    align-self: flex-start;
+    padding: 4px 12px; border-radius: 12px;
+    background: rgba(79,143,247,0.15);
+    color: var(--accent-blue);
+    font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+  }
+  .card.green .pill { background: rgba(16,185,129,0.15); color: var(--accent-green); }
+  .card.orange .pill { background: rgba(245,158,11,0.15); color: var(--accent-orange); }
+  .card.red .pill { background: rgba(239,68,68,0.15); color: var(--accent-red); }
+  .card.purple .pill { background: rgba(167,139,250,0.15); color: var(--accent-purple); }
+  .card.cyan .pill { background: rgba(34,211,238,0.15); color: var(--accent-cyan); }
+  .card p { font-size: 15px; color: var(--text-secondary); line-height: 1.5; }
+  .card ul { list-style: none; padding: 0; }
+  .card ul li { font-size: 15px; color: var(--text-secondary); padding: 5px 0 5px 18px; position: relative; line-height: 1.4; }
+  .card ul li::before { content: "▸"; position: absolute; left: 0; color: var(--accent-blue); font-weight: 700; }
+  .card.green ul li::before { color: var(--accent-green); }
+  .card.purple ul li::before { color: var(--accent-purple); }
+
+  .stat {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px; padding: 30px; text-align: center;
+  }
+  .stat .val {
+    font-size: 60px; font-weight: 900; line-height: 1;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    margin-bottom: 8px;
+  }
+  .stat.red .val { background: linear-gradient(135deg, var(--accent-red), var(--accent-orange)); -webkit-background-clip: text; background-clip: text; }
+  .stat .lbl { font-size: 14px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1.2px; }
+
+  /* VS layout */
+  .vs { display: grid; grid-template-columns: 1fr 80px 1fr; align-items: stretch; gap: 0; flex: 1; }
+  .vs-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 30px; display: flex; flex-direction: column; gap: 12px; }
+  .vs-card.left { border-color: var(--accent-purple); }
+  .vs-card.right { border-color: var(--accent-blue); }
+  .vs-divider { display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 900; color: var(--text-secondary); }
+  .vs-card .ico { width: 54px; height: 54px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 900; }
+  .vs-card.left .ico { background: rgba(167,139,250,0.15); color: var(--accent-purple); }
+  .vs-card.right .ico { background: rgba(79,143,247,0.15); color: var(--accent-blue); }
+  .vs-card h3 { font-size: 34px; margin: 0; }
+  .vs-card.left h3 { color: var(--accent-purple); }
+  .vs-card ul { list-style: none; padding: 0; margin-top: 8px; }
+  .vs-card ul li { padding: 6px 0 6px 20px; position: relative; color: var(--text-secondary); font-size: 17px; line-height: 1.4; }
+  .vs-card.left ul li::before { content: "▸"; position: absolute; left: 0; color: var(--accent-purple); font-weight: 700; }
+  .vs-card.right ul li::before { content: "▸"; position: absolute; left: 0; color: var(--accent-blue); font-weight: 700; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; background: var(--bg-card); border-radius: 12px; overflow: hidden; font-size: 14px; }
+  th { background: rgba(79,143,247,0.1); color: var(--accent-blue); padding: 13px 14px; text-align: left; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border); }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--border); color: var(--text-secondary); vertical-align: middle; }
+  td.id { font-weight: 700; color: var(--text-primary); font-family: 'JetBrains Mono', monospace; }
+  td.strong { color: var(--text-primary); font-weight: 600; }
+  .sev-critica { color: var(--accent-red); font-weight: 700; }
+  .sev-alta { color: var(--accent-orange); font-weight: 700; }
+  .sev-media { color: var(--accent-blue); font-weight: 600; }
+  .sev-baja { color: var(--accent-green); font-weight: 600; }
+  .ok { color: var(--accent-green); font-weight: 700; }
+
+  /* Code */
+  pre { background: #060912; border: 1px solid var(--border); border-radius: 12px; padding: 22px; font-family: 'JetBrains Mono', monospace; font-size: 15px; color: var(--text-primary); line-height: 1.6; overflow: hidden; }
+  pre .kw { color: var(--accent-purple); font-weight: 600; }
+  pre .str { color: var(--accent-green); }
+  pre .cm { color: var(--text-secondary); font-style: italic; }
+  code.inline { font-family: 'JetBrains Mono', monospace; background: rgba(79,143,247,0.12); color: var(--accent-cyan); padding: 2px 7px; border-radius: 6px; font-size: 0.92em; }
+
+  /* Stack layers */
+  .layers { display: flex; flex-direction: column; gap: 10px; flex: 1; justify-content: center; }
+  .layer { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 24px; display: grid; grid-template-columns: 240px 1fr auto; align-items: center; gap: 24px; }
+  .layer .name { font-size: 19px; font-weight: 700; color: var(--accent-blue); }
+  .layer .desc { font-size: 15px; color: var(--text-secondary); line-height: 1.45; }
+  .layer .badge { padding: 4px 12px; border-radius: 10px; background: rgba(16,185,129,0.15); color: var(--accent-green); font-size: 13px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+
+  /* Flow / pipeline */
+  .flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; justify-content: center; flex: 1; }
+  .flow-node { background: var(--bg-card); border: 1px solid var(--accent-blue); border-radius: 14px; padding: 18px 24px; text-align: center; min-width: 150px; }
+  .flow-node .t { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+  .flow-node .s { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+  .flow-arrow { color: var(--accent-blue); font-size: 28px; font-weight: 900; padding: 0 14px; }
+
+  /* Timeline / agenda */
+  .agenda-list { display: flex; flex-direction: column; gap: 14px; flex: 1; justify-content: center; }
+  .agenda-item { display: grid; grid-template-columns: 70px 1fr auto; align-items: center; gap: 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 28px; }
+  .agenda-item .n { font-size: 30px; font-weight: 900; color: var(--accent-blue); font-family: 'JetBrains Mono', monospace; }
+  .agenda-item .title { font-size: 22px; font-weight: 700; color: var(--text-primary); }
+  .agenda-item .sub { font-size: 14px; color: var(--text-secondary); margin-top: 2px; }
+  .agenda-item .time { font-size: 14px; color: var(--accent-green); font-weight: 600; }
+
+  /* URL bar */
+  .url-bar { display: inline-flex; align-items: center; gap: 10px; background: rgba(16,185,129,0.10); border: 1px solid var(--accent-green); color: var(--accent-green); padding: 10px 18px; border-radius: 24px; font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 600; }
+  .url-bar::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--accent-green); box-shadow: 0 0 10px var(--accent-green); }
+
+  /* Footer */
+  .slide-footer { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-secondary); letter-spacing: 1px; }
+
+  /* Closing */
+  .closing { justify-content: center; text-align: center; align-items: center; }
+  .closing h1 { font-size: 80px; }
+  .quote { font-size: 28px; font-weight: 300; font-style: italic; color: var(--text-secondary); max-width: 1100px; line-height: 1.5; margin: 36px auto; }
+  .quote strong { color: var(--accent-blue); font-style: normal; font-weight: 700; }
+
+  .note { font-size: 14px; color: var(--text-secondary); font-style: italic; margin-top: 14px; }
+</style>
+</head>
+<body>
+
+<!-- 1. PORTADA -->
+<section class="slide cover">
+  <div class="slide-header">
+    <div class="brand"><div class="brand-dot"></div>ISO SECURE</div>
+    <div class="slide-num">01 / 32</div>
+  </div>
+  <div class="cover-tag">PROYECTO DE GRADO · INGENIERÍA DE SISTEMAS</div>
+  <h1>Aplicación Web para la Automatización de Auditorías de un SGSI</h1>
+  <div class="subtitle">Basada en la norma ISO/IEC 27001 · Metodología de desarrollo seguro S-SDLC</div>
+  <div class="authors">
+    <div class="author"><div class="author-name">Agustín Peralta Guarín</div><div class="author-role">Estudiante</div></div>
+    <div class="author"><div class="author-name">Natalia Moncaleano Montero</div><div class="author-role">Estudiante</div></div>
+    <div class="author"><div class="author-name">Johan Salazar Ibáñez</div><div class="author-role">Estudiante</div></div>
+    <div class="author"><div class="author-name">José Eduardo Patiño</div><div class="author-role">Docente</div></div>
+  </div>
+  <div class="cover-meta"><strong>Universidad de San Buenaventura</strong><br>Sede Bogotá · Facultad de Ingeniería · 2026</div>
+</section>
+
+<!-- 2. AGENDA -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">02 / 32</div></div>
+  <h2>Agenda de la <span class="accent">exposición</span></h2>
+  <div class="agenda-list">
+    <div class="agenda-item"><div class="n">01</div><div><div class="title">Introducción y planteamiento del problema</div><div class="sub">Contexto, pregunta de investigación, objetivos y alcance</div></div><div class="time">~10 min</div></div>
+    <div class="agenda-item"><div class="n">02</div><div><div class="title">Capítulo 1 — Marco conceptual</div><div class="sub">SGSI, ISO 27001, auditoría, riesgos y checklist</div></div><div class="time">~8 min</div></div>
+    <div class="agenda-item"><div class="n">03</div><div><div class="title">Capítulo 2 — Metodología S-SDLC + OWASP</div><div class="sub">Desarrollo seguro y módulos de seguridad</div></div><div class="time">~8 min</div></div>
+    <div class="agenda-item"><div class="n">04</div><div><div class="title">Requisitos, casos de uso y casos de abuso</div><div class="sub">Qué hace el sistema y cómo se protege</div></div><div class="time">~10 min</div></div>
+    <div class="agenda-item"><div class="n">05</div><div><div class="title">Arquitectura, riesgos y modelado de amenazas</div><div class="sub">Patrones de diseño, matriz de riesgos, STRIDE</div></div><div class="time">~12 min</div></div>
+    <div class="agenda-item"><div class="n">06</div><div><div class="title">Pruebas de seguridad (SAST + DAST) y demo en vivo</div><div class="sub">Semgrep, OWASP ZAP, remediaciones y aplicación real</div></div><div class="time">~12 min</div></div>
+  </div>
+  <div class="slide-footer"><span>Duración total estimada: 60 minutos</span><span>ISO/IEC 27001:2022</span></div>
+</section>
+
+<!-- 3. INTRODUCCIÓN -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">03 / 32</div></div>
+  <span class="stage-tag">INTRODUCCIÓN</span>
+  <h2>El problema que <span class="accent">resolvemos</span></h2>
+  <p class="lead">La seguridad de la información es hoy fundamental por el aumento de amenazas digitales. Los <strong>SGSI basados en ISO 27001</strong> permiten gestionar riesgos, pero su <strong>implementación y auditoría suelen ser procesos manuales, complejos y costosos</strong>, difíciles de aplicar — sobre todo en pequeñas y medianas empresas.</p>
+  <div class="grid grid-3" style="margin-top:36px;">
+    <div class="card red"><span class="pill">Manual</span><h4>Procesos lentos</h4><p>La recolección y análisis de evidencias es extensa y propensa a inconsistencias.</p></div>
+    <div class="card orange"><span class="pill">Costoso</span><h4>Dependencia de expertos</h4><p>Requiere personal especializado, generando altos costos y errores humanos.</p></div>
+    <div class="card purple"><span class="pill">Brecha</span><h4>Sin herramientas</h4><p>Faltan plataformas web accesibles que integren controles, riesgos e informes en un solo lugar.</p></div>
+  </div>
+  <div class="slide-footer"><span>Isaza Giraldo (2023) · Flores et al. (2023)</span><span>Antecedentes — Capítulo 1</span></div>
+</section>
+
+<!-- 4. ESTADÍSTICAS -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">04 / 32</div></div>
+  <span class="stage-tag">INTRODUCCIÓN</span>
+  <h2>¿Por qué <span class="accent">importa</span>?</h2>
+  <p class="lead">Las cifras justifican la necesidad de mecanismos efectivos de control, seguimiento y auditoría:</p>
+  <div class="grid grid-4" style="margin-top:40px;">
+    <div class="stat red"><div class="val">+60%</div><div class="lbl">de PyMEs sin controles de seguridad adecuados</div></div>
+    <div class="stat red"><div class="val">43%</div><div class="lbl">de ciberataques dirigidos a PyMEs (Verizon, 2023)</div></div>
+    <div class="stat red"><div class="val">$4M</div><div class="lbl">costo promedio global de una brecha (IBM, 2023)</div></div>
+    <div class="stat"><div class="val">93</div><div class="lbl">controles del Anexo A en ISO 27001:2022</div></div>
+  </div>
+  <p class="lead" style="margin-top:44px;">A pesar de esto, muchas organizaciones realizan la auditoría del SGSI <strong>de forma manual</strong>, sin monitoreo continuo. Surge la necesidad de <strong>automatizar el proceso</strong>: evaluar cumplimiento, identificar riesgos y generar informes de manera eficiente.</p>
+  <div class="slide-footer"><span>Planteamiento del problema</span><span>Verizon 2023 · IBM 2023</span></div>
+</section>
+
+<!-- 5. PREGUNTA DE INVESTIGACIÓN -->
+<section class="slide closing">
+  <div class="slide-header" style="position:absolute;top:56px;left:80px;right:80px;"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">05 / 32</div></div>
+  <span class="stage-tag" style="position:absolute;top:120px;left:80px;">PREGUNTA DE INVESTIGACIÓN</span>
+  <div class="quote" style="font-size:38px; font-style:normal; font-weight:300; color:var(--text-primary);">
+    ¿Cómo desarrollar una <strong>aplicación web</strong> que automatice la auditoría de un <strong>SGSI basado en ISO 27001</strong>, permitiendo evaluar el cumplimiento de controles, analizar riesgos y generar informes de manera eficiente?
+  </div>
+  <div class="url-bar" style="margin-top:20px;">https://iso-secure.agustinynatalia.site</div>
+</section>
+
+<!-- 6. OBJETIVOS -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">06 / 32</div></div>
+  <span class="stage-tag">OBJETIVOS</span>
+  <h2>Objetivo general y <span class="accent">específicos</span></h2>
+  <div class="card accent" style="margin-bottom:24px;">
+    <span class="pill">Objetivo general</span>
+    <p style="font-size:19px; color:var(--text-primary);">Desarrollar y fortalecer la plataforma web <strong>ISO Secure</strong> incorporando un sistema de automatización de auditorías del SGSI basado en ISO 27001, que permita evaluar el cumplimiento de controles, analizar riesgos y generar informes mediante un <strong>dashboard interactivo</strong>.</p>
+  </div>
+  <div class="grid grid-3 compact">
+    <div class="card green"><span class="pill">Específico 1</span><h4>Evaluación de controles</h4><p>Módulo basado en ISO 27001 que mide el nivel de cumplimiento del SGSI mediante un checklist automatizado.</p></div>
+    <div class="card green"><span class="pill">Específico 2</span><h4>Análisis de riesgos</h4><p>Sistema que, a partir de las respuestas, identifica y clasifica niveles de riesgo: alto, medio y bajo.</p></div>
+    <div class="card green"><span class="pill">Específico 3</span><h4>Dashboard interactivo</h4><p>Visualiza resultados: indicadores de cumplimiento, riesgos detectados y generación automática de informes.</p></div>
+  </div>
+  <div class="slide-footer"><span>Objetivos del proyecto</span><span>Capítulo 1</span></div>
+</section>
+
+<!-- 7. ALCANCE Y LIMITACIONES -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">07 / 32</div></div>
+  <span class="stage-tag">ALCANCE</span>
+  <h2>Alcances y <span class="accent">limitaciones</span></h2>
+  <div class="grid grid-2">
+    <div class="card green">
+      <span class="pill">Incluye</span>
+      <ul>
+        <li>Módulo de capacitación con guías de seguridad</li>
+        <li>Módulo de implementación de controles</li>
+        <li>Auditoría automatizada con checklists</li>
+        <li>Análisis de riesgos (alto / medio / bajo)</li>
+        <li>Dashboard interactivo de indicadores</li>
+        <li>Generación de informes con hallazgos y recomendaciones</li>
+      </ul>
+    </div>
+    <div class="card orange">
+      <span class="pill">Limitaciones</span>
+      <ul>
+        <li>No reemplaza el juicio profesional de un auditor</li>
+        <li>Depende de la veracidad de la información ingresada</li>
+        <li>No contempla integración con sistemas externos</li>
+        <li>Automatización basada en lógica predefinida (sin IA avanzada)</li>
+        <li>Gestión de evidencias básica</li>
+        <li>Enfocado en organizaciones pequeñas y medianas</li>
+      </ul>
+    </div>
+  </div>
+  <div class="slide-footer"><span>Alcances y limitaciones</span><span>Capítulo 1</span></div>
+</section>
+
+<!-- 8. CAP 1 MARCO CONCEPTUAL: SGSI + ISO -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">08 / 32</div></div>
+  <span class="stage-tag">CAPÍTULO 1 · MARCO CONCEPTUAL</span>
+  <h2>SGSI e <span class="accent">ISO/IEC 27001</span></h2>
+  <div class="grid grid-2">
+    <div class="card">
+      <h4>Seguridad de la información</h4>
+      <p>Conjunto de medidas, controles y políticas para proteger los activos de información, garantizando tres principios:</p>
+      <ul><li><strong>Confidencialidad</strong> — solo accede quien está autorizado</li><li><strong>Integridad</strong> — exactitud y completitud de los datos</li><li><strong>Disponibilidad</strong> — accesible cuando se requiere</li></ul>
+    </div>
+    <div class="card accent">
+      <h4>SGSI — ciclo PDCA</h4>
+      <p>Marco estructurado de políticas, procedimientos y controles que gestiona sistemáticamente los riesgos. Se fundamenta en el ciclo de mejora continua:</p>
+      <ul><li><strong>P</strong>lanificar → <strong>H</strong>acer → <strong>V</strong>erificar → <strong>A</strong>ctuar</li></ul>
+    </div>
+  </div>
+  <div class="card purple" style="margin-top:22px;">
+    <span class="pill">ISO/IEC 27001:2022</span>
+    <p style="font-size:17px;">Estándar internacional para establecer, implementar y mejorar un SGSI. En su versión 2022 reorganizó el Anexo A de 14 dominios / 114 controles a <strong>4 categorías temáticas (organizacionales, personas, físicos, tecnológicos) con 93 controles</strong>, incorporando inteligencia de amenazas y seguridad en la nube.</p>
+  </div>
+  <div class="slide-footer"><span>Marco conceptual</span><span>Capítulo 1</span></div>
+</section>
+
+<!-- 9. CAP 1: Auditoría, riesgos, checklist -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">09 / 32</div></div>
+  <span class="stage-tag">CAPÍTULO 1 · MARCO CONCEPTUAL</span>
+  <h2>Auditoría, riesgos y <span class="accent">checklist</span></h2>
+  <div class="grid grid-3">
+    <div class="card">
+      <h4>Auditoría del SGSI</h4>
+      <p>Proceso sistemático, independiente y documentado que evalúa el cumplimiento de los controles ISO 27001.</p>
+      <ul><li><strong>Interna</strong> — la propia organización</li><li><strong>Externa</strong> — organismo certificador</li><li>Cláusula 9.2: a intervalos regulares</li></ul>
+    </div>
+    <div class="card orange">
+      <h4>Análisis de riesgos</h4>
+      <p>Identifica, evalúa y prioriza amenazas y vulnerabilidades según probabilidad e impacto.</p>
+      <ul><li>Niveles: alto, medio, bajo</li><li>Tratamiento: mitigar, transferir, aceptar o eliminar</li><li>Documentado y revisado periódicamente</li></ul>
+    </div>
+    <div class="card green">
+      <h4>Checklist de auditoría</h4>
+      <p>Herramienta estructurada que lista los controles a verificar del Anexo A.</p>
+      <ul><li>Estados: cumple / parcial / no cumple</li><li>Estandariza y evita omisiones</li><li>Automatizado → resultados inmediatos</li></ul>
+    </div>
+  </div>
+  <div class="slide-footer"><span>Auditoría · Riesgos · Checklist</span><span>Capítulo 1</span></div>
+</section>
+
+<!-- 10. CAP 2: ¿Por qué S-SDLC? -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">10 / 32</div></div>
+  <span class="stage-tag">CAPÍTULO 2 · METODOLOGÍA</span>
+  <h2>¿Por qué <span class="accent">S-SDLC</span>?</h2>
+  <p class="lead">Se adopta el <strong>Secure Software Development Life Cycle</strong>: la seguridad no es un añadido, sino un componente desde las fases más tempranas. A diferencia de Scrum o Kanban, integra controles de seguridad explícitos y verificables en cada etapa.</p>
+  <div class="grid grid-3 compact" style="margin-top:36px;">
+    <div class="card accent"><span class="pill">Razón 1</span><h4>Alineación con el dominio</h4><p>El sistema gestiona información sensible de seguridad; los controles deben estar incorporados en cada etapa, no como verificación posterior.</p></div>
+    <div class="card accent"><span class="pill">Razón 2</span><h4>Compatible con PDCA</h4><p>Las fases del S-SDLC se corresponden naturalmente con el ciclo Planificar-Hacer-Verificar-Actuar de ISO 27001.</p></div>
+    <div class="card accent"><span class="pill">Razón 3</span><h4>Viabilidad académica</h4><p>A diferencia de DevSecOps, no requiere infraestructura de CI/CD ni roles especializados; es estructurado y verificable.</p></div>
+  </div>
+  <div class="slide-footer"><span>Metodología de desarrollo seguro</span><span>Capítulo 2</span></div>
+</section>
+
+<!-- 11. CAP 2: Fases S-SDLC -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">11 / 32</div></div>
+  <span class="stage-tag">CAPÍTULO 2 · METODOLOGÍA</span>
+  <h2>Las 7 fases del <span class="accent">S-SDLC</span></h2>
+  <table>
+    <thead><tr><th style="width:200px;">Fase</th><th>Actividades clave</th><th>Entregables</th></tr></thead>
+    <tbody>
+      <tr><td class="strong">1. Planificación</td><td>Alcance, objetivos y riesgos iniciales de seguridad</td><td>Plan del proyecto · matriz de riesgos inicial</td></tr>
+      <tr><td class="strong">2. Análisis de requisitos</td><td>Requisitos funcionales, no funcionales y de seguridad (ISO 27001)</td><td>Documento de requisitos · casos de uso</td></tr>
+      <tr><td class="strong">3. Diseño seguro</td><td>Arquitectura, módulos y modelado de amenazas (OWASP)</td><td>Arquitectura · modelo de amenazas · diagramas UML</td></tr>
+      <tr><td class="strong">4. Codificación</td><td>Desarrollo de módulos, dashboard y programación segura</td><td>Módulos funcionales · código documentado</td></tr>
+      <tr><td class="strong">5. Pruebas de seguridad</td><td>Pruebas funcionales, OWASP Top 10, validación de controles ISO</td><td>Plan de pruebas · informe de vulnerabilidades</td></tr>
+      <tr><td class="strong">6. Despliegue</td><td>Configuración segura del servidor, control de accesos, logs</td><td>App desplegada · manual de usuario</td></tr>
+      <tr><td class="strong">7. Mantenimiento</td><td>Monitoreo, corrección de errores y actualizaciones de seguridad</td><td>Registro de incidentes · versión actualizada</td></tr>
+    </tbody>
+  </table>
+  <div class="slide-footer"><span>Tabla 1 — Fases del S-SDLC</span><span>Capítulo 2</span></div>
+</section>
+
+<!-- 12. CAP 2: OWASP Top 10 -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">12 / 32</div></div>
+  <span class="stage-tag">CAPÍTULO 2 · MÓDULOS OWASP</span>
+  <h2>Seguridad por <span class="accent">diseño</span> — OWASP Top 10</h2>
+  <p class="lead">Cada amenaza crítica se mapea a un control OWASP implementado en la plataforma:</p>
+  <div class="grid grid-2 compact" style="margin-top:28px;">
+    <div class="card red"><span class="pill">A01 · Broken Access Control</span><p>Control de acceso roto. Mitigado con <strong>RBAC y validación de permisos en cada endpoint</strong> del backend (aislamiento por organización).</p></div>
+    <div class="card orange"><span class="pill">A05 · Security Misconfiguration</span><p>Configuración insegura. Mitigado con <strong>consultas parametrizadas (ORM), sanitización de entradas y CSP</strong>.</p></div>
+    <div class="card purple"><span class="pill">A07 · Identification & Auth Failures</span><p>Fallos de autenticación. Mitigado con <strong>MFA, bloqueo por intentos y JWT con expiración</strong>.</p></div>
+    <div class="card accent"><span class="pill">A09 · Logging & Monitoring Failures</span><p>Fallos de registro. Mitigado con <strong>logs inmutables</strong> de toda acción (fecha, usuario, módulo).</p></div>
+  </div>
+  <div class="slide-footer"><span>Módulos OWASP aplicados</span><span>Capítulo 2</span></div>
+</section>
+
+<!-- 13. LA APLICACIÓN -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">13 / 32</div></div>
+  <span class="stage-tag">LA PLATAFORMA</span>
+  <h2>¿Qué es <span class="accent">ISO SECURE</span>?</h2>
+  <p class="lead">Plataforma web <strong>multi-tenant</strong> para gestionar el SGSI conforme a ISO/IEC 27001:2022. Centraliza evaluación de controles, análisis de riesgos y generación de informes en un solo lugar.</p>
+  <div class="grid grid-4" style="margin-top:36px;">
+    <div class="stat"><div class="val">93</div><div class="lbl">controles ISO precargados</div></div>
+    <div class="stat"><div class="val">39</div><div class="lbl">endpoints API REST</div></div>
+    <div class="stat"><div class="val">3</div><div class="lbl">roles diferenciados (RBAC)</div></div>
+    <div class="stat"><div class="val">10</div><div class="lbl">requisitos funcionales</div></div>
+  </div>
+  <div style="margin-top:44px;"><div class="url-bar">https://iso-secure.agustinynatalia.site</div></div>
+  <div class="slide-footer"><span>FastAPI + React + PostgreSQL · Coolify</span><span>Demo en vivo</span></div>
+</section>
+
+<!-- 14. MÓDULOS DE LA PLATAFORMA -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">14 / 32</div></div>
+  <span class="stage-tag">LA PLATAFORMA</span>
+  <h2>Módulos y <span class="accent">roles</span></h2>
+  <div class="grid grid-3 compact">
+    <div class="card purple"><span class="pill">Rol</span><h4>Administrador</h4><p>Gestiona usuarios, asigna roles, reabre auditorías y configura la organización.</p></div>
+    <div class="card accent"><span class="pill">Rol</span><h4>Auditor</h4><p>Ejecuta auditorías, responde checklists, adjunta evidencias y genera reportes.</p></div>
+    <div class="card green"><span class="pill">Rol</span><h4>Visualizador</h4><p>Solo consulta indicadores y resultados; no puede modificar datos.</p></div>
+  </div>
+  <div class="grid grid-4 compact" style="margin-top:22px;">
+    <div class="card"><h4 style="font-size:18px;">🔐 Autenticación</h4><p>Login con MFA, JWT y bloqueo por intentos.</p></div>
+    <div class="card"><h4 style="font-size:18px;">✅ Checklist ISO</h4><p>Evaluación de los 93 controles del Anexo A.</p></div>
+    <div class="card"><h4 style="font-size:18px;">⚠️ Análisis de riesgos</h4><p>Clasificación alto / medio / bajo.</p></div>
+    <div class="card"><h4 style="font-size:18px;">📊 Dashboard + informes</h4><p>Indicadores en tiempo real y reportes PDF/Excel.</p></div>
+  </div>
+  <div class="slide-footer"><span>Control de acceso basado en roles (RBAC)</span><span>ISO A.5.15 · A.5.18</span></div>
+</section>
+
+<!-- 15. REQUISITOS FUNCIONALES -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">15 / 32</div></div>
+  <span class="stage-tag">REQUISITOS</span>
+  <h2>Requisitos <span class="accent">funcionales</span></h2>
+  <table style="font-size:13px;">
+    <thead><tr><th style="width:80px;">ID</th><th style="width:230px;">Requisito</th><th>Descripción</th><th style="width:200px;">Justificación ISO/OWASP</th></tr></thead>
+    <tbody>
+      <tr><td class="id">RF-01</td><td class="strong">Autenticación</td><td>Registro, login y logout seguro con JWT y MFA opcional</td><td>Punto de entrada al sistema</td></tr>
+      <tr><td class="id">RF-02</td><td class="strong">Gestión de roles (RBAC)</td><td>Permisos diferenciados: Admin, Auditor, Visualizador</td><td>ISO 9.1 · acceso restringido</td></tr>
+      <tr><td class="id">RF-03</td><td class="strong">Gestión de controles ISO</td><td>Crear, editar y eliminar los 93 controles del Anexo A</td><td>ISO 27001:2022 actualizable</td></tr>
+      <tr><td class="id">RF-04</td><td class="strong">Asociar controles a riesgos</td><td>Vincula controles a riesgos y activos identificados</td><td>ISO 6.1.2 · tratar riesgos</td></tr>
+      <tr><td class="id">RF-05</td><td class="strong">Carga de evidencias</td><td>Adjuntar PDF/imagen/documento asociado a controles</td><td>ISO 9.2 · evidencia documentada</td></tr>
+      <tr><td class="id">RF-08</td><td class="strong">Reportes exportables</td><td>Informes de cumplimiento en PDF y Excel</td><td>ISO 9.3 · presentar a dirección</td></tr>
+      <tr><td class="id">RF-09</td><td class="strong">Registro de auditoría (logs)</td><td>Registra automáticamente toda acción con timestamp</td><td>OWASP A09 · ISO A.12</td></tr>
+      <tr><td class="id">RF-10</td><td class="strong">Dashboard de indicadores</td><td>Visualiza cumplimiento, riesgos y no conformidades</td><td>Toma de decisiones informada</td></tr>
+    </tbody>
+  </table>
+  <div class="slide-footer"><span>10 requisitos funcionales (RF-01 a RF-10)</span><span>Etapa 1 — Requisitos</span></div>
+</section>
+
+<!-- 16. CASOS DE USO -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">16 / 32</div></div>
+  <span class="stage-tag">REQUISITOS</span>
+  <h2>Casos de <span class="accent">uso</span> principales</h2>
+  <div class="grid grid-2 compact">
+    <div class="card accent"><span class="pill">CU-1</span><h4>Iniciar sesión</h4><p>El usuario ingresa credenciales → el sistema valida contra hash (bcrypt/Argon2) → solicita MFA si aplica → genera <strong>JWT con expiración de 30 min</strong>. Tras 5 intentos fallidos, bloquea la cuenta 15 min y registra el evento.</p></div>
+    <div class="card green"><span class="pill">CU-2</span><h4>Realizar auditoría</h4><p>El auditor selecciona una auditoría planificada → el sistema carga el checklist → marca cada control (Cumple / Parcial / No cumple) y adjunta evidencia → calcula <strong>% de cumplimiento en tiempo real</strong> → cierra la auditoría (estado "finalizada").</p></div>
+    <div class="card orange"><span class="pill">CU-3</span><h4>Generar reporte</h4><p>Sobre una auditoría finalizada, el actor elige formato (PDF/Excel) → el sistema compila cumplimiento global y por categoría, no conformidades con su nivel de riesgo y recomendaciones automáticas.</p></div>
+    <div class="card purple"><span class="pill">CU-4</span><h4>Ver dashboard</h4><p>Muestra indicadores de su organización: cumplimiento global y por categoría, mapa de riesgos (alto/medio/bajo) y tendencia. El Visualizador solo consulta; Auditor y Admin navegan al detalle.</p></div>
+  </div>
+  <div class="slide-footer"><span>Casos de uso 1–4</span><span>Etapa 1 — Requisitos</span></div>
+</section>
+
+<!-- 17. CASOS DE ABUSO -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">17 / 32</div></div>
+  <span class="stage-tag">REQUISITOS · SEGURIDAD</span>
+  <h2>Casos de <span class="accent">abuso</span> y mitigación</h2>
+  <table style="font-size:13.5px;">
+    <thead><tr><th style="width:280px;">Caso de abuso</th><th>Descripción</th><th style="width:300px;">Mitigación</th></tr></thead>
+    <tbody>
+      <tr><td class="strong">Acceso a auditorías ajenas (IDOR)</td><td>Manipular el ID en la URL para leer datos de otra organización</td><td>Validación de permisos en backend por endpoint <span class="sev-media">(A01, RF-02)</span></td></tr>
+      <tr><td class="strong">Inyección SQL en el checklist</td><td>Cadena tipo <code class="inline">'; DROP TABLE auditorias; --</code></td><td>Consultas parametrizadas (ORM), validación de tipo/longitud <span class="sev-media">(A05, RF-09)</span></td></tr>
+      <tr><td class="strong">Fuerza bruta al login</td><td>Pruebas automatizadas de contraseñas sin límite</td><td>Bloqueo tras 5 intentos, CAPTCHA, MFA, logging <span class="sev-media">(A07, RF-01)</span></td></tr>
+      <tr><td class="strong">Robo de sesión (hijacking)</td><td>Intercepción y reutilización del token JWT</td><td>HTTPS/TLS, expiración corta, cookies HttpOnly, invalidación en logout <span class="sev-media">(A07)</span></td></tr>
+      <tr><td class="strong">Manipulación de resultados</td><td>Un auditor altera respuestas de una auditoría cerrada</td><td>Solo admin reabre, RBAC, logs inmutables <span class="sev-media">(A01, A09, RF-09)</span></td></tr>
+    </tbody>
+  </table>
+  <div class="slide-footer"><span>5 casos de abuso identificados</span><span>Etapa 1 — Requisitos</span></div>
+</section>
+
+<!-- 18. ETAPA 2: Activos críticos -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">18 / 32</div></div>
+  <span class="stage-tag">ETAPA 2 · ARQUITECTURA Y DISEÑO</span>
+  <h2>Análisis de riesgos — <span class="accent">activos críticos</span></h2>
+  <p class="lead">El análisis se realizó bajo el marco ISO/IEC 27001:2022, identificando los activos críticos del sistema:</p>
+  <div class="grid grid-3 compact" style="margin-top:30px;">
+    <div class="card red"><h4 style="font-size:19px;">🗄️ Base de datos</h4><p>Auditorías y resultados del SGSI.</p></div>
+    <div class="card orange"><h4 style="font-size:19px;">🔑 Autenticación</h4><p>Módulo de login y gestión de sesiones.</p></div>
+    <div class="card purple"><h4 style="font-size:19px;">📊 Dashboard e informes</h4><p>Visualización de indicadores.</p></div>
+    <div class="card accent"><h4 style="font-size:19px;">📋 Logs de auditoría</h4><p>Registros de actividad inmutables.</p></div>
+    <div class="card green"><h4 style="font-size:19px;">🎫 Credenciales y tokens</h4><p>Datos sensibles de usuarios.</p></div>
+    <div class="card cyan"><h4 style="font-size:19px;">🌐 API REST</h4><p>Superficie expuesta del backend.</p></div>
+  </div>
+  <div class="slide-footer"><span>Activos críticos identificados</span><span>Etapa 2</span></div>
+</section>
+
+<!-- 19. ETAPA 2: Matriz de riesgos -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">19 / 32</div></div>
+  <span class="stage-tag">ETAPA 2 · ARQUITECTURA Y DISEÑO</span>
+  <h2>Matriz de <span class="accent">riesgos</span></h2>
+  <table style="font-size:13px;">
+    <thead><tr><th style="width:60px;">ID</th><th>Activo</th><th>Amenaza</th><th>Nivel</th><th>Tratamiento</th><th>Control ISO 27001</th></tr></thead>
+    <tbody>
+      <tr><td class="id">R01</td><td>Base de datos</td><td>Inyección SQL</td><td class="sev-critica">Crítico</td><td>Consultas parametrizadas (ORM)</td><td>A.8.28</td></tr>
+      <tr><td class="id">R02</td><td>Autenticación</td><td>Fuerza bruta / credential stuffing</td><td class="sev-critica">Crítico</td><td>Bloqueo por intentos + MFA</td><td>A.8.5</td></tr>
+      <tr><td class="id">R03</td><td>Sesiones</td><td>Session hijacking</td><td class="sev-alta">Alto</td><td>JWT con expiración + HTTPS</td><td>A.8.5 · A.5.14</td></tr>
+      <tr><td class="id">R04</td><td>Datos en tránsito</td><td>Interceptación (MITM)</td><td class="sev-alta">Alto</td><td>TLS/HTTPS obligatorio</td><td>A.8.24</td></tr>
+      <tr><td class="id">R05</td><td>Resultados auditoría</td><td>Manipulación no autorizada</td><td class="sev-alta">Alto</td><td>RBAC + logs inmutables</td><td>A.5.18 · A.8.15</td></tr>
+      <tr><td class="id">R06</td><td>Contraseñas</td><td>Exposición por brecha en BD</td><td class="sev-alta">Alto</td><td>Hashing bcrypt/Argon2</td><td>A.8.24</td></tr>
+      <tr><td class="id">R08</td><td>Formularios</td><td>XSS (Cross-Site Scripting)</td><td class="sev-media">Medio</td><td>Sanitización + CSP</td><td>A.8.28</td></tr>
+      <tr><td class="id">R10</td><td>Disponibilidad</td><td>Denegación de servicio (DoS)</td><td class="sev-baja">Bajo</td><td>Rate limiting</td><td>A.8.6</td></tr>
+    </tbody>
+  </table>
+  <div class="slide-footer"><span>10 riesgos identificados y tratados</span><span>Etapa 2</span></div>
+</section>
+
+<!-- 20. ETAPA 2: Patrones de diseño -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">20 / 32</div></div>
+  <span class="stage-tag">ETAPA 2 · ARQUITECTURA Y DISEÑO</span>
+  <h2>Patrones de <span class="accent">diseño</span></h2>
+  <div class="grid grid-2 compact">
+    <div class="card accent"><span class="pill">Arquitectónico</span><h4>MVC (Modelo–Vista–Controlador)</h4><p>Separa lógica de negocio, interfaz y peticiones HTTP. Facilita pruebas unitarias y reduce acoplamiento.</p></div>
+    <div class="card green"><span class="pill">Acceso a datos</span><h4>Repository</h4><p>Abstrae el acceso a la BD. Los controladores nunca consultan directo → fuerza consultas preparadas y reduce riesgo de inyección SQL.</p></div>
+    <div class="card orange"><span class="pill">Cadena de responsabilidad</span><h4>Middleware</h4><p>Cada petición pasa por: auth JWT → verificación RBAC → sanitización → log. Ninguna petición evita los controles (A01, A05, A09).</p></div>
+    <div class="card purple"><span class="pill">Creacional</span><h4>Singleton + DTO</h4><p><strong>Singleton:</strong> única instancia de conexión BD y logs. <strong>DTO:</strong> evita sobreexposición de datos (mass assignment, A01).</p></div>
+  </div>
+  <div class="slide-footer"><span>5 patrones de diseño aplicados</span><span>Etapa 2</span></div>
+</section>
+
+<!-- 21. ETAPA 2: STRIDE -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">21 / 32</div></div>
+  <span class="stage-tag">ETAPA 2 · MODELADO DE AMENAZAS</span>
+  <h2>Threat Modeling con <span class="accent">STRIDE</span></h2>
+  <p class="lead" style="font-size:18px;">Flujo de datos modelado: Usuario → Autenticación → Auditoría → BD → Informe → Dashboard</p>
+  <table style="font-size:13.5px; margin-top:18px;">
+    <thead><tr><th style="width:240px;">Categoría STRIDE</th><th>Amenaza</th><th>Control implementado</th></tr></thead>
+    <tbody>
+      <tr><td class="strong">Spoofing (suplantación)</td><td>Suplantación de usuario auditor</td><td>JWT + MFA + bloqueo por fuerza bruta</td></tr>
+      <tr><td class="strong">Tampering (manipulación)</td><td>Modificación de resultados del checklist</td><td>RBAC + logs inmutables + validación backend</td></tr>
+      <tr><td class="strong">Repudiation (repudio)</td><td>Usuario niega haber hecho una acción</td><td>Log con timestamp, usuario y acción</td></tr>
+      <tr><td class="strong">Information Disclosure</td><td>Exposición de datos del SGSI / contraseñas</td><td>HTTPS/TLS + hashing bcrypt/Argon2</td></tr>
+      <tr><td class="strong">Denial of Service</td><td>Saturación del servidor</td><td>Rate limiting por IP y por usuario</td></tr>
+      <tr><td class="strong">Elevation of Privilege</td><td>Auditor accede a funciones de admin</td><td>Validación de permisos en cada endpoint</td></tr>
+    </tbody>
+  </table>
+  <div class="slide-footer"><span>STRIDE + OWASP Top 10</span><span>Etapa 2</span></div>
+</section>
+
+<!-- 22. ETAPA 2: Superficies de ataque -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">22 / 32</div></div>
+  <span class="stage-tag">ETAPA 2 · MODELADO DE AMENAZAS</span>
+  <h2>Superficies de <span class="accent">ataque</span></h2>
+  <div class="grid grid-2 compact">
+    <div class="card red"><span class="pill">Superficie 1</span><h4>Formulario de autenticación</h4><p>Expuesto a fuerza bruta, credential stuffing y phishing.</p><p style="color:var(--accent-green);">→ Mitigado: bloqueo por intentos, MFA y política de contraseñas.</p></div>
+    <div class="card orange"><span class="pill">Superficie 2</span><h4>Formularios del checklist</h4><p>Expuestos a inyección SQL y XSS.</p><p style="color:var(--accent-green);">→ Mitigado: validación de entradas, consultas parametrizadas y CSP.</p></div>
+    <div class="card purple"><span class="pill">Superficie 3</span><h4>API REST del backend</h4><p>Expuesta a acceso no autorizado y escalación de privilegios.</p><p style="color:var(--accent-green);">→ Mitigado: validación JWT y verificación de roles por endpoint.</p></div>
+    <div class="card accent"><span class="pill">Superficie 4</span><h4>Dashboard e informes</h4><p>Expuesto a divulgación entre organizaciones.</p><p style="color:var(--accent-green);">→ Mitigado: aislamiento de datos por organización (tenancy) y RBAC.</p></div>
+  </div>
+  <p class="note">Resultado: los 5 módulos OWASP cubren las amenazas críticas de STRIDE; la arquitectura reduce la superficie a niveles aceptables para PyMEs.</p>
+  <div class="slide-footer"><span>4 superficies de ataque</span><span>Etapa 2</span></div>
+</section>
+
+<!-- 23. ETAPA 4: SAST vs DAST -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">23 / 32</div></div>
+  <span class="stage-tag">ETAPA 4 · PRUEBAS DE SEGURIDAD</span>
+  <h2>Dos enfoques: <span class="accent">SAST</span> y <span class="accent">DAST</span></h2>
+  <div class="vs">
+    <div class="vs-card left">
+      <div class="ico">📄</div>
+      <h3>SAST</h3>
+      <p class="lead" style="font-size:17px;">Static Application Security Testing</p>
+      <ul><li>Examina el código fuente sin ejecutarlo</li><li>Detecta patrones inseguros conocidos</li><li>Contraseñas hardcodeadas, SQL concatenado, eval()</li><li>Herramienta: <strong>Semgrep</strong></li></ul>
+    </div>
+    <div class="vs-divider">+</div>
+    <div class="vs-card right">
+      <div class="ico">🌐</div>
+      <h3>DAST</h3>
+      <p class="lead" style="font-size:17px;">Dynamic Application Security Testing</p>
+      <ul><li>Interactúa con la app desplegada y en ejecución</li><li>Envía peticiones HTTP reales</li><li>Detecta configuraciones y cabeceras inseguras</li><li>Herramienta: <strong>OWASP ZAP</strong></li></ul>
+    </div>
+  </div>
+  <p class="note">La combinación de ambos cubre el espectro completo de vulnerabilidades, alineado con la metodología S-SDLC.</p>
+  <div class="slide-footer"><span>Análisis de vulnerabilidades</span><span>Etapa 4</span></div>
+</section>
+
+<!-- 24. ETAPA 4: SAST proceso -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">24 / 32</div></div>
+  <span class="stage-tag">ETAPA 4 · SAST</span>
+  <h2>Análisis estático con <span class="accent">Semgrep</span></h2>
+  <div class="grid grid-2">
+    <div>
+      <h3>Proceso ejecutado</h3>
+      <div class="layers" style="justify-content:flex-start; gap:12px;">
+        <div class="layer" style="grid-template-columns:40px 1fr;"><div class="name">1</div><div class="desc">Clonar el repositorio en la máquina local</div></div>
+        <div class="layer" style="grid-template-columns:40px 1fr;"><div class="name">2</div><div class="desc">Instalar Semgrep: <code class="inline">pip install semgrep</code></div></div>
+        <div class="layer" style="grid-template-columns:40px 1fr;"><div class="name">3</div><div class="desc">Escaneo básico (sin login) → omitió +1800 reglas</div></div>
+        <div class="layer" style="grid-template-columns:40px 1fr;"><div class="name">4</div><div class="desc"><code class="inline">semgrep login</code> + <code class="inline">semgrep ci</code> → escaneo completo</div></div>
+      </div>
+    </div>
+    <div>
+      <h3>Comando de escaneo</h3>
+      <pre><span class="cm"># Escaneo con reglas OWASP y React</span>
+semgrep <span class="kw">--config</span>=p/owasp-top-ten \
+        <span class="kw">--config</span>=p/react . \
+        <span class="kw">--output</span> reporte_semgrep.txt
+
+<span class="cm"># Análisis completo autenticado</span>
+semgrep login
+semgrep ci</pre>
+      <p class="note">JavaScript/React: detecta tokens en localStorage, dangerouslySetInnerHTML, console.log con datos sensibles, eval().</p>
+    </div>
+  </div>
+  <div class="slide-footer"><span>SAST con Semgrep</span><span>Etapa 4</span></div>
+</section>
+
+<!-- 25. ETAPA 4: SAST hallazgo CORS -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">25 / 32</div></div>
+  <span class="stage-tag">ETAPA 4 · SAST</span>
+  <h2>Hallazgo y <span class="accent">remediación</span> CORS</h2>
+  <div class="grid grid-2">
+    <div class="card red">
+      <span class="pill">Hallazgo · Medio · A02:2025</span>
+      <h4>Configuración CORS permisiva</h4>
+      <p><code class="inline">server.js</code> línea 93: <code class="inline">app.use(cors());</code></p>
+      <p>Configuración por defecto demasiado permisiva: permite solicitudes desde dominios no autorizados y puede exponer datos sensibles a sitios maliciosos.</p>
+    </div>
+    <div class="card green">
+      <span class="pill">Estado · Remediado</span>
+      <h4>Resultado tras corrección</h4>
+      <p>Se restringió el origen permitido en la configuración CORS. Al reejecutar <code class="inline">semgrep ci</code>:</p>
+      <div class="stat" style="margin-top:10px;"><div class="val" style="background:linear-gradient(135deg,var(--accent-green),var(--accent-cyan));-webkit-background-clip:text;background-clip:text;">0</div><div class="lbl">hallazgos tras remediación</div></div>
+    </div>
+  </div>
+  <p class="note">Conclusión SAST: 1 hallazgo de nivel medio detectado y remediado mediante corrección directa en el código fuente.</p>
+  <div class="slide-footer"><span>Remediación SAST</span><span>Etapa 4</span></div>
+</section>
+
+<!-- 26. ETAPA 4: DAST overview -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">26 / 32</div></div>
+  <span class="stage-tag">ETAPA 4 · DAST</span>
+  <h2>Análisis dinámico con <span class="accent">OWASP ZAP</span></h2>
+  <p class="lead">ZAP escaneó la URL de producción enviando peticiones HTTP reales y analizando las respuestas del servidor en tiempo de ejecución.</p>
+  <div class="grid grid-4" style="margin-top:36px;">
+    <div class="stat"><div class="val">33</div><div class="lbl">peticiones HTTP analizadas</div></div>
+    <div class="stat"><div class="val">8</div><div class="lbl">alertas detectadas</div></div>
+    <div class="stat"><div class="val" style="background:linear-gradient(135deg,var(--accent-green),var(--accent-cyan));-webkit-background-clip:text;background-clip:text;">0</div><div class="lbl">vulnerabilidades altas/críticas</div></div>
+    <div class="stat"><div class="val">v2.17</div><div class="lbl">OWASP ZAP utilizado</div></div>
+  </div>
+  <div style="margin-top:36px;"><div class="url-bar">https://iso-secure.agustinynatalia.site</div></div>
+  <p class="note">Escaneo del 15 de mayo de 2026 · Distribución: 0 Alto | 3 Medio | 2 Bajo | 3 Informativo → postura de seguridad base aceptable.</p>
+  <div class="slide-footer"><span>DAST con OWASP ZAP</span><span>Etapa 4</span></div>
+</section>
+
+<!-- 27. ETAPA 4: DAST hallazgos -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">27 / 32</div></div>
+  <span class="stage-tag">ETAPA 4 · DAST</span>
+  <h2>Hallazgos de <span class="accent">ZAP</span> y remediaciones</h2>
+  <table style="font-size:13.5px;">
+    <thead><tr><th>Alerta ZAP</th><th>Riesgo</th><th>OWASP</th><th>Remediación</th><th>Estado</th></tr></thead>
+    <tbody>
+      <tr><td class="strong">1. CSP no configurada</td><td class="sev-media">Medio</td><td>A05:2021</td><td>add_header Content-Security-Policy</td><td class="ok">Remediado</td></tr>
+      <tr><td class="strong">2. Sin Anti-Clickjacking</td><td class="sev-media">Medio</td><td>A05:2021</td><td>X-Frame-Options 'DENY'</td><td class="ok">Remediado</td></tr>
+      <tr><td class="strong">3. Divulgación de timestamps</td><td class="sev-baja">Bajo</td><td>A02:2025</td><td>Referrer-Policy estricta</td><td class="ok">Remediado</td></tr>
+      <tr><td class="strong">4. Sin X-Content-Type-Options</td><td class="sev-baja">Bajo</td><td>A05:2025</td><td>X-Content-Type-Options 'nosniff'</td><td class="ok">Remediado</td></tr>
+      <tr><td class="strong">5. Sin HSTS</td><td class="sev-baja">Bajo</td><td>A02:2025</td><td>Strict-Transport-Security max-age</td><td class="ok">Remediado</td></tr>
+      <tr><td class="strong">6. App web moderna (SPA)</td><td>Informativo</td><td>A05:2025</td><td>Ajax Spider en futuros escaneos</td><td>Aceptado</td></tr>
+      <tr><td class="strong">7. Recuperado de caché</td><td>Informativo</td><td>A02:2025</td><td>Cache-Control: no-store en API</td><td>Aceptado</td></tr>
+      <tr><td class="strong">8. Control de caché</td><td>Informativo</td><td>A02:2025</td><td>Cache-Control explícito</td><td>Aceptado</td></tr>
+    </tbody>
+  </table>
+  <div class="slide-footer"><span>5 alertas activas remediadas · 3 informativas aceptadas</span><span>Etapa 4</span></div>
+</section>
+
+<!-- 28. ETAPA 4: Remediación cabeceras -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">28 / 32</div></div>
+  <span class="stage-tag">ETAPA 4 · DAST</span>
+  <h2>Bloque unificado de <span class="accent">cabeceras seguras</span></h2>
+  <div class="grid grid-2">
+    <div>
+      <p class="lead" style="font-size:18px;">Todas las alertas activas se resolvieron con un solo bloque de cabeceras en el servidor (archivo <code class="inline">_headers</code> y middleware FastAPI/Nginx):</p>
+      <pre style="margin-top:18px;"><span class="kw">Content-Security-Policy:</span> default-src <span class="str">'self'</span>
+<span class="kw">X-Frame-Options:</span> <span class="str">DENY</span>
+<span class="kw">X-Content-Type-Options:</span> <span class="str">nosniff</span>
+<span class="kw">Strict-Transport-Security:</span>
+   max-age=<span class="str">31536000</span>;
+   includeSubDomains
+<span class="kw">Referrer-Policy:</span> strict-origin-when-cross-origin</pre>
+    </div>
+    <div class="card green" style="justify-content:center;">
+      <span class="pill">Verificación</span>
+      <h4>securityheaders.com</h4>
+      <p>Tras aplicar las correcciones se verificó en <code class="inline">securityheaders.com</code> sin reejecutar ZAP.</p>
+      <div class="grid grid-2 compact" style="margin-top:14px;">
+        <div class="stat red"><div class="val" style="font-size:48px;">F</div><div class="lbl">Antes</div></div>
+        <div class="stat"><div class="val" style="font-size:48px;background:linear-gradient(135deg,var(--accent-green),var(--accent-cyan));-webkit-background-clip:text;background-clip:text;">A+</div><div class="lbl">Después</div></div>
+      </div>
+      <p class="note">Alineado con RNF-02 y el control A.14.1.2 de ISO 27001:2022.</p>
+    </div>
+  </div>
+  <div class="slide-footer"><span>Hardening de cabeceras HTTP</span><span>Etapa 4</span></div>
+</section>
+
+<!-- 29. CONCLUSIÓN PRUEBAS -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">29 / 32</div></div>
+  <span class="stage-tag">ETAPA 4 · CIERRE DE PRUEBAS</span>
+  <h2>Resultado del <span class="accent">ciclo de seguridad</span></h2>
+  <div class="flow" style="flex:none; margin:30px 0;">
+    <div class="flow-node"><div class="t">SAST</div><div class="s">Semgrep · código</div></div>
+    <div class="flow-arrow">+</div>
+    <div class="flow-node"><div class="t">DAST</div><div class="s">ZAP · ejecución</div></div>
+    <div class="flow-arrow">+</div>
+    <div class="flow-node"><div class="t">Config</div><div class="s">Cabeceras seguras</div></div>
+    <div class="flow-arrow">=</div>
+    <div class="flow-node" style="border-color:var(--accent-green);"><div class="t" style="color:var(--accent-green);">Seguridad por diseño</div><div class="s">S-SDLC completo</div></div>
+  </div>
+  <div class="grid grid-3 compact">
+    <div class="card"><div class="num">1</div><p>hallazgo SAST (CORS) detectado y remediado en código.</p></div>
+    <div class="card"><div class="num">8</div><p>alertas DAST: 5 activas remediadas, 3 informativas aceptadas.</p></div>
+    <div class="card green"><div class="num">0</div><p>vulnerabilidades de nivel alto o crítico en producción.</p></div>
+  </div>
+  <p class="note">Los controles de autenticación, acceso e inyección funcionan correctamente en producción. ISO Secure fue desarrollada con enfoque de seguridad por diseño alineado con S-SDLC.</p>
+  <div class="slide-footer"><span>Conclusión del análisis de vulnerabilidades</span><span>Etapa 4</span></div>
+</section>
+
+<!-- 30. CONCLUSIONES -->
+<section class="slide">
+  <div class="slide-header"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">30 / 32</div></div>
+  <span class="stage-tag">CONCLUSIONES</span>
+  <h2>Conclusiones del <span class="accent">proyecto</span></h2>
+  <div class="grid grid-2 compact">
+    <div class="card green"><span class="pill">Objetivo 1</span><h4>Evaluación de controles</h4><p>Se implementó el checklist automatizado de los 93 controles del Anexo A, midiendo el cumplimiento del SGSI en tiempo real.</p></div>
+    <div class="card green"><span class="pill">Objetivo 2</span><h4>Análisis de riesgos</h4><p>El sistema clasifica los riesgos en alto, medio y bajo a partir de las respuestas, con tratamientos alineados a ISO 27001.</p></div>
+    <div class="card green"><span class="pill">Objetivo 3</span><h4>Dashboard e informes</h4><p>Se construyó un dashboard interactivo y la generación automática de informes exportables (PDF/Excel).</p></div>
+    <div class="card accent"><span class="pill">Aporte</span><h4>Seguridad por diseño</h4><p>El uso de S-SDLC, STRIDE y OWASP, validado por SAST y DAST, entrega una solución accesible y segura para PyMEs.</p></div>
+  </div>
+  <div class="slide-footer"><span>Las conclusiones responden a los objetivos planteados</span><span>Capítulo final</span></div>
+</section>
+
+<!-- 31. DEMO -->
+<section class="slide closing">
+  <div class="slide-header" style="position:absolute;top:56px;left:80px;right:80px;"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">31 / 32</div></div>
+  <span class="cover-tag">DEMOSTRACIÓN EN VIVO</span>
+  <h1 style="font-size:64px;">Veámoslo funcionando</h1>
+  <div class="subtitle" style="margin-bottom:30px;">Login con MFA · Checklist ISO · Análisis de riesgos · Dashboard · Reportes</div>
+  <div class="url-bar" style="font-size:22px; padding:14px 26px;">https://iso-secure.agustinynatalia.site</div>
+</section>
+
+<!-- 32. CIERRE -->
+<section class="slide closing">
+  <div class="slide-header" style="position:absolute;top:56px;left:80px;right:80px;"><div class="brand"><div class="brand-dot"></div>ISO SECURE</div><div class="slide-num">32 / 32</div></div>
+  <h1>Gracias</h1>
+  <div class="quote">Automatizar la auditoría del SGSI no reemplaza al auditor: <strong>lo potencia</strong>, eliminando el trabajo manual y haciendo la seguridad accesible para las PyMEs.</div>
+  <div class="authors" style="justify-content:center;">
+    <div class="author"><div class="author-name">Agustín Peralta</div><div class="author-role">Backend & Arquitectura</div></div>
+    <div class="author"><div class="author-name">Natalia Moncaleano</div><div class="author-role">Modelo de amenazas</div></div>
+    <div class="author"><div class="author-name">Johan Salazar</div><div class="author-role">Hardening & DevSecOps</div></div>
+    <div class="author"><div class="author-name">José Eduardo Patiño</div><div class="author-role">Requisitos & Pruebas</div></div>
+  </div>
+  <p class="note" style="margin-top:30px;">¿Preguntas? · Universidad de San Buenaventura · 2026</p>
+</section>
+
+</body>
+</html>
